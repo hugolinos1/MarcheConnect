@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { TreePine, LayoutDashboard, CheckCircle, XCircle, FileText, Search, UserCheck } from 'lucide-react';
+import { LayoutDashboard, CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Star } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
@@ -55,7 +55,7 @@ export default function AdminDashboard() {
 
   const stats = {
     pending: exhibitors.filter(e => e.status === 'pending').length,
-    accepted: exhibitors.filter(e => e.status === 'accepted_form1' || e.status === 'submitted_form2' || e.status === 'validated').length,
+    accepted: exhibitors.filter(e => ['accepted_form1', 'submitted_form2', 'validated'].includes(e.status)).length,
     validated: exhibitors.filter(e => e.status === 'validated').length,
   };
 
@@ -63,14 +63,13 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-background">
       <ChristmasSnow />
       
-      {/* Sidebar-like Header */}
       <div className="bg-primary text-white py-6 shadow-lg relative z-10">
         <div className="container mx-auto px-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <LayoutDashboard className="w-8 h-8" />
             <div>
-              <h1 className="text-2xl font-headline font-bold">MarchéConnect Admin</h1>
-              <p className="text-sm opacity-80">Gestion des candidatures 2024</p>
+              <h1 className="text-2xl font-headline font-bold">Marché de Noël Félix Admin</h1>
+              <p className="text-sm opacity-80">Gestion des candidatures 2026</p>
             </div>
           </div>
           <div className="flex gap-4">
@@ -82,27 +81,26 @@ export default function AdminDashboard() {
       </div>
 
       <main className="container mx-auto px-4 py-10 relative z-10 space-y-8">
-        {/* Stats Grid */}
         <div className="grid md:grid-cols-3 gap-6">
-          <Card className="bg-white/80 backdrop-blur">
+          <Card className="bg-white/80 backdrop-blur border-t-4 border-t-primary">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground uppercase">En attente</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground uppercase">À Étudier</CardTitle>
               <Search className="w-4 h-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-primary">{stats.pending}</div>
             </CardContent>
           </Card>
-          <Card className="bg-white/80 backdrop-blur">
+          <Card className="bg-white/80 backdrop-blur border-t-4 border-t-secondary">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground uppercase">Acceptés</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground uppercase">En cours / Acceptés</CardTitle>
               <CheckCircle className="w-4 h-4 text-secondary" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-secondary">{stats.accepted}</div>
             </CardContent>
           </Card>
-          <Card className="bg-white/80 backdrop-blur">
+          <Card className="bg-white/80 backdrop-blur border-t-4 border-t-accent">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground uppercase">Validés Final</CardTitle>
               <UserCheck className="w-4 h-4 text-accent" />
@@ -113,12 +111,11 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-        {/* Search & Actions */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="relative w-full md:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
-              placeholder="Rechercher un exposant..." 
+              placeholder="Rechercher par nom ou enseigne..." 
               className="pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -126,65 +123,112 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Applications Table */}
         <Card className="overflow-hidden">
           <Table>
             <TableHeader className="bg-muted/50">
               <TableRow>
-                <TableHead>Exposant</TableHead>
-                <TableHead>Entreprise</TableHead>
+                <TableHead>Exposant / Enseigne</TableHead>
+                <TableHead>Origine</TableHead>
+                <TableHead>Tables</TableHead>
                 <TableHead>Statut</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-right">Détails</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredExhibitors.map((exhibitor) => (
                 <TableRow key={exhibitor.id} className="hover:bg-muted/30">
                   <TableCell>
-                    <div className="font-semibold">{exhibitor.name}</div>
-                    <div className="text-xs text-muted-foreground">{exhibitor.email}</div>
+                    <div className="font-semibold">{exhibitor.companyName}</div>
+                    <div className="text-xs text-muted-foreground">{exhibitor.name}</div>
                   </TableCell>
-                  <TableCell>{exhibitor.companyName}</TableCell>
                   <TableCell>
-                    {exhibitor.status === 'pending' && <Badge variant="secondary">En attente</Badge>}
-                    {exhibitor.status === 'accepted_form1' && <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Form 2 envoyé</Badge>}
-                    {exhibitor.status === 'submitted_form2' && <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">Dossier reçu</Badge>}
-                    {exhibitor.status === 'validated' && <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Validé</Badge>}
+                    <div className="flex items-center gap-1 text-xs">
+                      <MapPin className="w-3 h-3 text-muted-foreground" />
+                      {exhibitor.origin}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{exhibitor.requestedTables} table(s)</Badge>
+                  </TableCell>
+                  <TableCell>
+                    {exhibitor.status === 'pending' && <Badge variant="secondary">À étudier</Badge>}
+                    {exhibitor.status === 'accepted_form1' && <Badge className="bg-blue-100 text-blue-800">Finalisation envoyée</Badge>}
+                    {exhibitor.status === 'submitted_form2' && <Badge className="bg-orange-100 text-orange-800">Dossier final reçu</Badge>}
+                    {exhibitor.status === 'validated' && <Badge className="bg-green-100 text-green-800">Validé</Badge>}
                     {exhibitor.status === 'rejected' && <Badge variant="destructive">Refusé</Badge>}
                   </TableCell>
-                  <TableCell className="text-xs">{new Date(exhibitor.createdAt).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right space-x-2">
+                  <TableCell className="text-right">
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button variant="outline" size="sm" onClick={() => setSelectedExhibitor(exhibitor)}>
-                          <FileText className="w-4 h-4 mr-1" /> Dossier
+                          <FileText className="w-4 h-4" />
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-2xl">
+                      <DialogContent className="max-w-3xl overflow-y-auto max-h-[90vh]">
                         <DialogHeader>
-                          <DialogTitle>Détails de la candidature</DialogTitle>
+                          <DialogTitle>Dossier Candidature - {exhibitor.companyName}</DialogTitle>
                           <DialogDescription>
-                            Entreprise : {exhibitor.companyName}
+                            Déposé le {new Date(exhibitor.createdAt).toLocaleDateString()}
                           </DialogDescription>
                         </DialogHeader>
-                        <div className="space-y-4 py-4">
-                          <div className="p-4 bg-muted rounded-lg">
-                            <h4 className="font-semibold mb-2">Description des produits :</h4>
-                            <p className="text-sm whitespace-pre-wrap">{exhibitor.productDescription}</p>
+                        
+                        <div className="space-y-6 py-4">
+                          {/* Étude Initiale */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="p-3 bg-muted/50 rounded-lg space-y-2">
+                              <h4 className="text-xs font-bold uppercase text-muted-foreground">Profil</h4>
+                              <p className="text-sm"><strong>Contact :</strong> {exhibitor.name}</p>
+                              <p className="text-sm"><strong>Email :</strong> {exhibitor.email}</p>
+                              <p className="text-sm"><strong>Tel :</strong> {exhibitor.phone}</p>
+                              <p className="text-sm flex items-center gap-1"><strong>Statut :</strong> {exhibitor.isRegistered ? 'Déclaré' : 'Particulier'}</p>
+                            </div>
+                            <div className="p-3 bg-muted/50 rounded-lg space-y-2">
+                              <h4 className="text-xs font-bold uppercase text-muted-foreground">Logistique Demandée</h4>
+                              <p className="text-sm"><strong>Tables :</strong> {exhibitor.requestedTables}</p>
+                              <p className="text-sm"><strong>Origine :</strong> {exhibitor.origin}</p>
+                              {exhibitor.websiteUrl && (
+                                <p className="text-sm flex items-center gap-1">
+                                  <strong>Web :</strong> 
+                                  <a href={exhibitor.websiteUrl} target="_blank" className="text-primary hover:underline flex items-center gap-1">
+                                    Lien <Globe className="w-3 h-3" />
+                                  </a>
+                                </p>
+                              )}
+                            </div>
                           </div>
-                          {exhibitor.status === 'submitted_form2' && exhibitor.detailedInfo && (
-                            <div className="p-4 border-2 border-secondary/20 rounded-lg">
-                              <h4 className="font-semibold mb-2 text-secondary">Informations complémentaires :</h4>
-                              <ul className="text-sm space-y-1">
-                                <li><strong>Stand :</strong> {exhibitor.detailedInfo.boothSize}</li>
-                                <li><strong>Electricité :</strong> {exhibitor.detailedInfo.needsElectricity ? `Oui (${exhibitor.detailedInfo.electricityPower})` : 'Non'}</li>
-                                <li><strong>Assurance :</strong> {exhibitor.detailedInfo.insuranceCompany} ({exhibitor.detailedInfo.insurancePolicyNumber})</li>
-                              </ul>
+
+                          <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                            <h4 className="font-bold text-primary mb-2">Description / Nature du stand :</h4>
+                            <p className="text-sm italic">{exhibitor.productDescription}</p>
+                          </div>
+
+                          {/* Dossier Final (si reçu) */}
+                          {exhibitor.detailedInfo && (
+                            <div className="p-4 border-2 border-secondary/20 rounded-lg space-y-4">
+                              <h4 className="font-bold text-secondary flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4" /> Dossier Finalisé
+                              </h4>
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div className="space-y-1">
+                                  <p className="flex items-center gap-2"><Zap className="w-3 h-3" /> Électricité : {exhibitor.detailedInfo.needsElectricity ? "OUI" : "NON"}</p>
+                                  <p className="flex items-center gap-2"><Utensils className="w-3 h-3" /> Repas Dimanche : {exhibitor.detailedInfo.sundayLunchCount}</p>
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="flex items-center gap-2"><Ticket className="w-3 h-3" /> Lot Tombola : {exhibitor.detailedInfo.tombolaLot ? "OUI" : "NON"}</p>
+                                  {exhibitor.detailedInfo.tombolaLotDescription && (
+                                    <p className="text-xs text-muted-foreground ml-5">{exhibitor.detailedInfo.tombolaLotDescription}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-xs pt-2 border-t space-y-1">
+                                <p><strong>Assurance :</strong> {exhibitor.detailedInfo.insuranceCompany} ({exhibitor.detailedInfo.insurancePolicyNumber})</p>
+                                <p><strong>Accords :</strong> Droit image : {exhibitor.detailedInfo.agreedToImageRights ? "OK" : "-"} | Règlement : {exhibitor.detailedInfo.agreedToTerms ? "OK" : "-"}</p>
+                              </div>
                             </div>
                           )}
                         </div>
-                        <DialogFooter className="flex-col sm:flex-row gap-2">
+
+                        <DialogFooter className="gap-2">
                           {exhibitor.status === 'pending' && (
                             <>
                               <Dialog>
@@ -195,22 +239,21 @@ export default function AdminDashboard() {
                                 </DialogTrigger>
                                 <DialogContent>
                                   <DialogHeader>
-                                    <DialogTitle>Justification du refus</DialogTitle>
-                                    <DialogDescription>Utilisez l'IA pour générer un message poli.</DialogDescription>
+                                    <DialogTitle>Motif du refus</DialogTitle>
+                                    <DialogDescription>Générer un message poli avec l'IA.</DialogDescription>
                                   </DialogHeader>
                                   <div className="space-y-4 py-4">
                                     <Button 
-                                      onClick={() => handleReject(exhibitor, ["Manque de place", "Catégorie déjà saturée"])}
+                                      onClick={() => handleReject(exhibitor, ["Trop d'articles similaires", "Non artisanal", "Plus de place disponible"])}
                                       disabled={isGenerating}
                                       variant="outline"
                                       className="w-full"
                                     >
-                                      {isGenerating ? "Génération..." : "Générer avec l'IA"}
+                                      {isGenerating ? "Génération..." : "Générer Justification IA"}
                                     </Button>
                                     <Textarea 
                                       value={justification} 
                                       onChange={(e) => setJustification(e.target.value)} 
-                                      placeholder="Le message s'affichera ici..."
                                       className="min-h-[200px]"
                                     />
                                   </div>
@@ -222,7 +265,7 @@ export default function AdminDashboard() {
                                         setJustification('');
                                       }}
                                     >
-                                      Confirmer le refus
+                                      Confirmer Refus
                                     </Button>
                                   </DialogFooter>
                                 </DialogContent>
@@ -231,7 +274,7 @@ export default function AdminDashboard() {
                                 className="bg-secondary hover:bg-secondary/90 text-white gap-2"
                                 onClick={() => updateStatus(exhibitor.id, 'accepted_form1')}
                               >
-                                <CheckCircle className="w-4 h-4" /> Accepter Étape 1
+                                <CheckCircle className="w-4 h-4" /> Accepter & Envoyer Form. 2
                               </Button>
                             </>
                           )}
@@ -240,7 +283,7 @@ export default function AdminDashboard() {
                               className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2"
                               onClick={() => updateStatus(exhibitor.id, 'validated')}
                             >
-                              <UserCheck className="w-4 h-4" /> Valider Définitivement
+                              <UserCheck className="w-4 h-4" /> Valider Inscription Finale
                             </Button>
                           )}
                         </DialogFooter>
@@ -260,17 +303,16 @@ export default function AdminDashboard() {
           </Table>
         </Card>
 
-        {/* Section Debug (Mock simulation for testing Flow 1 -> Flow 2) */}
+        {/* Section Debug Simulation */}
         {exhibitors.some(e => e.status === 'accepted_form1') && (
           <div className="mt-12 p-6 bg-accent/10 border border-accent rounded-xl space-y-4">
-            <h3 className="font-headline font-bold text-accent-foreground flex items-center gap-2">
-              <Star className="w-5 h-5 fill-accent" /> Mode Test (Simulation email)
+            <h3 className="font-headline font-bold text-accent-foreground flex items-center gap-2 text-sm uppercase">
+              <Star className="w-5 h-5 fill-accent" /> Mode Simulation (Liens envoyés par email)
             </h3>
-            <p className="text-sm">En conditions réelles, un email contenant ce lien est envoyé à l'exposant :</p>
             <div className="flex flex-wrap gap-4">
               {exhibitors.filter(e => e.status === 'accepted_form1').map(e => (
                 <Button key={e.id} asChild variant="secondary" size="sm" className="bg-white">
-                  <Link href={`/details/${e.id}`}>Lien Formulaire 2 pour {e.companyName}</Link>
+                  <Link href={`/details/${e.id}`}>Lien Finalisation : {e.companyName}</Link>
                 </Button>
               ))}
             </div>

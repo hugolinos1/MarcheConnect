@@ -8,6 +8,10 @@ export interface Exhibitor {
   phone: string;
   companyName: string;
   productDescription: string;
+  origin: string; // Origine géographique
+  isRegistered: boolean; // Déclaré au RC ou association
+  websiteUrl?: string; // Adresse site marchand / réseaux
+  requestedTables: '1' | '2'; // 1 ou 2 tables
   status: ApplicationStatus;
   rejectionReason?: string;
   rejectionJustification?: string;
@@ -16,11 +20,15 @@ export interface Exhibitor {
 }
 
 export interface DetailedExhibitorInfo {
-  boothSize: string;
+  boothSize: string; // Gardé pour compatibilité mais supplanté par requestedTables
   needsElectricity: boolean;
-  electricityPower?: string;
+  sundayLunchCount: number; // Nombre de plateaux repas
+  tombolaLot: boolean; // Participe à la tombola
+  tombolaLotDescription?: string; // Nature du don
   insuranceCompany: string;
   insurancePolicyNumber: string;
+  agreedToImageRights: boolean;
+  agreedToTerms: boolean;
   additionalComments?: string;
   submittedAt: string;
 }
