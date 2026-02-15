@@ -72,6 +72,7 @@ export default function Home() {
                     alt="Affiche Marché de Noël 2026"
                     fill
                     className="object-cover"
+                    data-ai-hint="christmas poster"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent" />
                 </div>
@@ -90,8 +91,58 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Selection Process Section (Timeline) */}
+        <section className="py-24 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16 space-y-4">
+              <h2 className="text-3xl font-headline font-bold text-primary">Processus de sélection</h2>
+              <div className="w-24 h-1 bg-accent mx-auto" />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-12 relative">
+              {/* Connector Line (Desktop) */}
+              <div className="hidden md:block absolute top-12 left-0 right-0 h-0.5 bg-muted z-0" />
+              
+              {[
+                {
+                  step: "1",
+                  title: "Préinscription",
+                  desc: "Remplissez le formulaire avec vos informations de base et la nature de votre stand."
+                },
+                {
+                  step: "2",
+                  title: "Étude",
+                  desc: "Le comité examine votre candidature (réponse sous 15 semaines maximum)."
+                },
+                {
+                  step: "3",
+                  title: "Validation",
+                  desc: "Si accepté, vous recevez un lien unique pour compléter votre dossier administratif."
+                },
+                {
+                  step: "4",
+                  title: "Confirmation",
+                  desc: "Après réception du règlement et validation du dossier, votre emplacement est réservé."
+                }
+              ].map((item, idx) => (
+                <div key={idx} className="relative z-10 flex flex-col items-center text-center space-y-6">
+                  <div className="w-20 h-20 rounded-full bg-primary text-white flex items-center justify-center text-2xl font-bold shadow-xl border-4 border-white transition-transform hover:scale-110">
+                    {item.step}
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-bold text-foreground font-headline">{item.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed max-w-[200px] mx-auto">
+                      {item.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* Features Section */}
-        <section className="py-20">
+        <section className="py-20 bg-muted/20">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16 space-y-4">
               <h2 className="text-3xl font-headline font-bold text-primary">Pourquoi nous rejoindre ?</h2>
@@ -128,7 +179,7 @@ export default function Home() {
         </section>
 
         {/* Info Section */}
-        <section className="py-20 bg-muted/30">
+        <section className="py-20">
           <div className="container mx-auto px-4 max-w-4xl">
             <div className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border flex flex-col md:flex-row items-center gap-10">
               <div className="w-32 h-32 relative shrink-0 overflow-hidden rounded-full border-4 border-primary/5">
