@@ -6,6 +6,7 @@ import Image from 'next/image';
 
 export default function Home() {
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
+  const posterUrl = "https://i.ibb.co/3y3KRNW4/Affiche-March.jpg";
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -66,15 +67,15 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex-1 relative">
-                <div className="relative aspect-[3/4] max-w-[400px] mx-auto rounded-2xl overflow-hidden shadow-2xl ring-8 ring-white/10">
+                <div className="relative aspect-[3/4] max-w-[400px] mx-auto rounded-2xl overflow-hidden shadow-2xl ring-8 ring-white/10 bg-white">
                   <Image 
-                    src="https://picsum.photos/seed/marche-felix-affiche/600/800"
+                    src={posterUrl}
                     alt="Affiche Marché de Noël 2026"
                     fill
-                    className="object-cover"
+                    className="object-contain"
                     data-ai-hint="christmas poster"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent pointer-events-none" />
                 </div>
                 {/* Petit badge flottant */}
                 <div className="absolute -bottom-6 -right-6 bg-accent p-4 rounded-xl shadow-xl flex items-center gap-3 text-accent-foreground animate-pulse">
