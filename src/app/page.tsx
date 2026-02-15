@@ -61,9 +61,6 @@ export default function Home() {
                       Déposer ma candidature <ChevronRight className="w-4 h-4" />
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" size="lg" className="border-white/30 text-white hover:bg-white/10 w-full sm:w-auto">
-                    <Link href="/admin">Accès Organisateur</Link>
-                  </Button>
                 </div>
               </div>
               <div className="flex-1 relative">
@@ -220,7 +217,7 @@ export default function Home() {
                 className="object-cover"
               />
             </div>
-            <span className="font-headline font-bold text-lg">Marché de Noël Félix</span>
+            <span className="font-headline font-bold text-lg">Le Marché de Félix</span>
           </div>
           <p className="text-sm opacity-80">© 2026 Association "Un jardin pour Félix"</p>
           <div className="flex gap-4">
