@@ -1,29 +1,28 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 45 30% 96%; /* #F5F5DC - Off-white beige */
-    --foreground: 0 0% 3.9%;
+    --background: 220 33% 98%; /* Blanc cassé très légèrement bleuté */
+    --foreground: 224 71.4% 4.1%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 2 90% 38%; /* #B80F0A - Deep Red */
-    --primary-foreground: 0 0% 98%;
-    --secondary: 120 61% 34%; /* #228B22 - Forest Green */
-    --secondary-foreground: 0 0% 98%;
-    --muted: 45 10% 90%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 45 100% 50%; /* #FFD700 - Gold */
-    --accent-foreground: 0 0% 9%;
+    --popover-foreground: 224 71.4% 4.1%;
+    --primary: 232 52% 38%; /* Bleu profond de l'affiche #2E3192 */
+    --primary-foreground: 210 20% 98%;
+    --secondary: 354 70% 50%; /* Rouge festif de l'affiche */
+    --secondary-foreground: 210 20% 98%;
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 220 8.9% 46.1%;
+    --accent: 45 100% 50%; /* Or / Jaune pour les étoiles */
+    --accent-foreground: 224 71.4% 4.1%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 2 90% 38%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 232 52% 38%;
     --radius: 0.75rem;
   }
 }
@@ -41,7 +40,7 @@
 }
 
 .christmas-gradient {
-  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(120 61% 25%) 100%);
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(232 52% 20%) 100%);
 }
 
 .gold-glow {

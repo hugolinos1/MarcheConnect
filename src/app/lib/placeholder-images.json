@@ -1,4 +1,3 @@
-
 {
   "placeholderImages": [
     {
@@ -18,6 +17,12 @@
       "description": "Logo Un Jardin pour Félix",
       "imageUrl": "https://picsum.photos/seed/felix-logo/200/200",
       "imageHint": "colorful flower logo"
+    },
+    {
+      "id": "affiche-2026",
+      "description": "Affiche officielle du Marché de Noël 2026",
+      "imageUrl": "https://picsum.photos/seed/marche-felix-affiche/600/800",
+      "imageHint": "christmas poster"
     }
   ]
 }

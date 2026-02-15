@@ -1,8 +1,7 @@
-
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { Gift, TreePine, Star, ChevronRight } from 'lucide-react';
+import { Gift, TreePine, Star, ChevronRight, Info } from 'lucide-react';
 import Image from 'next/image';
 
 export default function Home() {
@@ -11,7 +10,7 @@ export default function Home() {
       <ChristmasSnow />
       
       {/* Header */}
-      <header className="border-b bg-white/50 backdrop-blur-md sticky top-0 z-40">
+      <header className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-40">
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative w-12 h-12">
@@ -39,49 +38,51 @@ export default function Home() {
 
       <main>
         {/* Hero Section */}
-        <section className="py-20 overflow-hidden">
-          <div className="container mx-auto px-4">
+        <section className="py-20 overflow-hidden bg-primary text-white relative">
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20"></div>
+          <div className="container mx-auto px-4 relative z-10">
             <div className="flex flex-col lg:flex-row items-center gap-12">
               <div className="flex-1 space-y-6 text-center lg:text-left">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent text-accent-foreground text-xs font-semibold uppercase tracking-wider">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/20 border border-accent/30 text-accent text-xs font-semibold uppercase tracking-wider">
                   <Star className="w-3 h-3 fill-accent" />
                   Edition Noël 2026
                 </div>
-                <h1 className="text-5xl lg:text-7xl font-headline font-bold text-primary leading-tight">
+                <h1 className="text-5xl lg:text-7xl font-headline font-bold leading-tight">
                   Rejoignez la Magie de notre Marché Solidaire
                 </h1>
-                <p className="text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0">
+                <p className="text-lg opacity-90 max-w-xl mx-auto lg:mx-0">
                   Devenez exposant pour soutenir Félix. Un événement chaleureux privilégiant l'artisanat et le fait-main à Chazay d'Azergues.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-                  <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-white gold-glow w-full sm:w-auto">
+                  <Button asChild size="lg" className="bg-secondary hover:bg-secondary/90 text-white gold-glow w-full sm:w-auto border-none">
                     <Link href="/register" className="gap-2">
                       Déposer ma candidature <ChevronRight className="w-4 h-4" />
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" size="lg" className="border-secondary text-secondary hover:bg-secondary/10 w-full sm:w-auto">
+                  <Button asChild variant="outline" size="lg" className="border-white/30 text-white hover:bg-white/10 w-full sm:w-auto">
                     <Link href="/admin">Accès Organisateur</Link>
                   </Button>
                 </div>
               </div>
               <div className="flex-1 relative">
-                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl rotate-2">
+                <div className="relative aspect-[3/4] max-w-[400px] mx-auto rounded-2xl overflow-hidden shadow-2xl ring-8 ring-white/10">
                   <Image 
-                    src="https://images.unsplash.com/photo-1543259565-2bc8ca966bb0?q=80&w=1200&h=600&auto=format&fit=crop"
-                    alt="Marché de Noël"
+                    src="https://picsum.photos/seed/marche-felix-affiche/600/800"
+                    alt="Affiche Marché de Noël 2026"
                     fill
                     className="object-cover"
-                    data-ai-hint="christmas market"
+                    data-ai-hint="christmas poster"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-primary/40 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent" />
                 </div>
-                <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-xl flex items-center gap-4 animate-bounce">
-                  <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
-                    <Gift className="w-6 h-6" />
+                {/* Petit badge flottant */}
+                <div className="absolute -bottom-6 -right-6 bg-accent p-4 rounded-xl shadow-xl flex items-center gap-3 text-accent-foreground animate-pulse">
+                   <div className="w-10 h-10 rounded-full bg-black/10 flex items-center justify-center">
+                    <Gift className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="font-bold text-primary">6ème Édition</p>
-                    <p className="text-sm text-muted-foreground">Artisanat & Solidarité</p>
+                    <p className="font-bold text-sm">6ème Édition</p>
+                    <p className="text-[10px] uppercase font-bold opacity-70">Solidarité</p>
                   </div>
                 </div>
               </div>
@@ -90,16 +91,16 @@ export default function Home() {
         </section>
 
         {/* Features Section */}
-        <section className="py-20 bg-secondary/5">
+        <section className="py-20">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16 space-y-4">
-              <h2 className="text-3xl font-headline font-bold text-secondary">Pourquoi nous rejoindre ?</h2>
+              <h2 className="text-3xl font-headline font-bold text-primary">Pourquoi nous rejoindre ?</h2>
               <div className="w-24 h-1 bg-accent mx-auto" />
             </div>
             <div className="grid md:grid-cols-3 gap-8">
               {[
                 {
-                  icon: <TreePine className="w-8 h-8 text-secondary" />,
+                  icon: <TreePine className="w-8 h-8 text-primary" />,
                   title: "Esprit de Noël",
                   desc: "Une ambiance féérique et familiale très appréciée des visiteurs."
                 },
@@ -109,13 +110,13 @@ export default function Home() {
                   desc: "Nous privilégions le fait-main pour garder un marché authentique."
                 },
                 {
-                  icon: <Gift className="w-8 h-8 text-primary" />,
+                  icon: <Gift className="w-8 h-8 text-secondary" />,
                   title: "Action Solidaire",
                   desc: "Tous les bénéfices aident Félix dans ses progrès quotidiens."
                 }
               ].map((f, i) => (
-                <div key={i} className="bg-white p-8 rounded-2xl shadow-sm border hover:shadow-md transition-shadow text-center space-y-4">
-                  <div className="inline-flex p-3 rounded-xl bg-muted/50 mb-2">
+                <div key={i} className="bg-white p-8 rounded-2xl shadow-sm border border-muted hover:shadow-md transition-shadow text-center space-y-4">
+                  <div className="inline-flex p-3 rounded-xl bg-muted mb-2">
                     {f.icon}
                   </div>
                   <h3 className="text-xl font-headline font-semibold text-foreground">{f.title}</h3>
@@ -125,9 +126,38 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* Info Section */}
+        <section className="py-20 bg-muted/30">
+          <div className="container mx-auto px-4 max-w-4xl">
+            <div className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border flex flex-col md:flex-row items-center gap-10">
+              <div className="w-32 h-32 relative shrink-0">
+                <Image 
+                  src="https://picsum.photos/seed/felix-logo/200/200"
+                  alt="Logo"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              <div className="space-y-4 text-center md:text-left">
+                <h3 className="text-2xl font-headline font-bold text-primary">L'association "Un Jardin pour Félix"</h3>
+                <p className="text-muted-foreground italic">
+                  "L’association permet de financer des intervenants à domicile pour stimuler Félix, atteint d’une maladie génétique rare, et le faire progresser au quotidien."
+                </p>
+                <div className="pt-2">
+                  <Button asChild variant="link" className="text-secondary p-0 h-auto font-bold">
+                    <a href="https://www.unjardinpourfelix.org/" target="_blank" className="flex items-center gap-2">
+                      <Info className="w-4 h-4" /> En savoir plus sur le blog de Félix
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
-      <footer className="py-12 border-t bg-secondary text-secondary-foreground">
+      <footer className="py-12 border-t bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-3">
             <div className="relative w-10 h-10 brightness-0 invert">
@@ -143,7 +173,7 @@ export default function Home() {
           <p className="text-sm opacity-80">© 2026 Association "Un jardin pour Félix"</p>
           <div className="flex gap-4">
             <Link href="https://www.unjardinpourfelix.org/" target="_blank" className="text-sm hover:underline">Blog de Félix</Link>
-            <Link href="https://www.lemarchedefelix.com" target="_blank" className="text-sm hover:underline">Boutique Solidaire</Link>
+            <Link href="https://www.facebook.com/unjardinpourfelix" target="_blank" className="text-sm hover:underline">Facebook</Link>
           </div>
         </div>
       </footer>

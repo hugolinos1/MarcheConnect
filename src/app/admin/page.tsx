@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useEffect, useState } from 'react';
 import { Exhibitor, ApplicationStatus } from '@/lib/types';
@@ -81,7 +80,7 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="flex gap-4">
-            <Button asChild variant="secondary" size="sm">
+            <Button asChild variant="secondary" size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90">
               <Link href="/">Voir le site</Link>
             </Button>
           </div>
@@ -131,7 +130,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden border-none shadow-xl">
           <Table>
             <TableHeader className="bg-muted/50">
               <TableRow>
@@ -156,7 +155,7 @@ export default function AdminDashboard() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{exhibitor.requestedTables} table(s)</Badge>
+                    <Badge variant="outline" className="border-primary/20">{exhibitor.requestedTables} table(s)</Badge>
                   </TableCell>
                   <TableCell>
                     {exhibitor.status === 'pending' && <Badge variant="secondary">À étudier</Badge>}
@@ -279,7 +278,7 @@ export default function AdminDashboard() {
                                 </DialogContent>
                               </Dialog>
                               <Button 
-                                className="bg-secondary hover:bg-secondary/90 text-white gap-2"
+                                className="bg-secondary hover:bg-secondary/90 text-white gap-2 border-none"
                                 onClick={() => updateStatus(exhibitor.id, 'accepted_form1')}
                               >
                                 <CheckCircle className="w-4 h-4" /> Accepter & Envoyer Form. 2
@@ -288,7 +287,7 @@ export default function AdminDashboard() {
                           )}
                           {exhibitor.status === 'submitted_form2' && (
                             <Button 
-                              className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2"
+                              className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2 border-none"
                               onClick={() => updateStatus(exhibitor.id, 'validated')}
                             >
                               <UserCheck className="w-4 h-4" /> Valider Inscription Finale
@@ -317,22 +316,6 @@ export default function AdminDashboard() {
             <Heart className="w-4 h-4 fill-secondary" /> Soutien à l'association "Un jardin pour Félix"
           </p>
         </div>
-
-        {/* Section Debug Simulation */}
-        {exhibitors.some(e => e.status === 'accepted_form1') && (
-          <div className="mt-12 p-6 bg-accent/10 border border-accent rounded-xl space-y-4">
-            <h3 className="font-headline font-bold text-accent-foreground flex items-center gap-2 text-sm uppercase">
-              <Star className="w-5 h-5 fill-accent" /> Mode Simulation (Liens envoyés par email)
-            </h3>
-            <div className="flex flex-wrap gap-4">
-              {exhibitors.filter(e => e.status === 'accepted_form1').map(e => (
-                <Button key={e.id} asChild variant="secondary" size="sm" className="bg-white">
-                  <Link href={`/details/${e.id}`}>Lien Finalisation : {e.companyName}</Link>
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
       </main>
     </div>
   );
