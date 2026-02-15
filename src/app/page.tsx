@@ -12,10 +12,21 @@ export default function Home() {
       
       {/* Header */}
       <header className="border-b bg-white/50 backdrop-blur-md sticky top-0 z-40">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TreePine className="text-secondary w-8 h-8" />
-            <span className="font-headline font-bold text-xl tracking-tight text-primary">MarchéConnect</span>
+        <div className="container mx-auto px-4 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="relative w-12 h-12">
+              <Image 
+                src="https://picsum.photos/seed/felix-logo/200/200"
+                alt="Logo Un Jardin pour Félix"
+                fill
+                className="object-contain"
+                data-ai-hint="flower logo"
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-headline font-bold text-lg leading-none text-primary">Le Marché de Félix</span>
+              <span className="text-[10px] uppercase tracking-widest text-secondary font-bold">Un Jardin pour Félix</span>
+            </div>
           </div>
           <nav className="hidden md:flex items-center gap-6">
             <Link href="/admin" className="text-sm font-medium hover:text-primary transition-colors">Portail Admin</Link>
@@ -34,13 +45,13 @@ export default function Home() {
               <div className="flex-1 space-y-6 text-center lg:text-left">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent text-accent-foreground text-xs font-semibold uppercase tracking-wider">
                   <Star className="w-3 h-3 fill-accent" />
-                  Edition Noël 2024
+                  Edition Noël 2026
                 </div>
                 <h1 className="text-5xl lg:text-7xl font-headline font-bold text-primary leading-tight">
-                  Rejoignez la Magie de notre Marché de Noël
+                  Rejoignez la Magie de notre Marché Solidaire
                 </h1>
                 <p className="text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0">
-                  Devenez exposant au cœur de l'événement le plus attendu de l'hiver. Déposez votre candidature en quelques clics.
+                  Devenez exposant pour soutenir Félix. Un événement chaleureux privilégiant l'artisanat et le fait-main à Chazay d'Azergues.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
                   <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-white gold-glow w-full sm:w-auto">
@@ -69,8 +80,8 @@ export default function Home() {
                     <Gift className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="font-bold text-primary">Places limitées !</p>
-                    <p className="text-sm text-muted-foreground">Postulez dès aujourd'hui</p>
+                    <p className="font-bold text-primary">6ème Édition</p>
+                    <p className="text-sm text-muted-foreground">Artisanat & Solidarité</p>
                   </div>
                 </div>
               </div>
@@ -89,18 +100,18 @@ export default function Home() {
               {[
                 {
                   icon: <TreePine className="w-8 h-8 text-secondary" />,
-                  title: "Emplacement Premium",
-                  desc: "Nos chalets sont situés au cœur du flux touristique."
+                  title: "Esprit de Noël",
+                  desc: "Une ambiance féérique et familiale très appréciée des visiteurs."
                 },
                 {
                   icon: <Star className="w-8 h-8 text-accent" />,
-                  title: "Visibilité Maximale",
-                  desc: "Une campagne de communication d'envergure pour l'événement."
+                  title: "Sélection de Qualité",
+                  desc: "Nous privilégions le fait-main pour garder un marché authentique."
                 },
                 {
                   icon: <Gift className="w-8 h-8 text-primary" />,
-                  title: "Ambiance Festive",
-                  desc: "Un décor féérique soigné pour mettre en valeur vos produits."
+                  title: "Action Solidaire",
+                  desc: "Tous les bénéfices aident Félix dans ses progrès quotidiens."
                 }
               ].map((f, i) => (
                 <div key={i} className="bg-white p-8 rounded-2xl shadow-sm border hover:shadow-md transition-shadow text-center space-y-4">
@@ -118,14 +129,21 @@ export default function Home() {
 
       <footer className="py-12 border-t bg-secondary text-secondary-foreground">
         <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex items-center gap-2">
-            <TreePine className="w-6 h-6" />
-            <span className="font-headline font-bold text-lg">MarchéConnect</span>
+          <div className="flex items-center gap-3">
+            <div className="relative w-10 h-10 brightness-0 invert">
+              <Image 
+                src="https://picsum.photos/seed/felix-logo/200/200"
+                alt="Logo Un Jardin pour Félix"
+                fill
+                className="object-contain"
+              />
+            </div>
+            <span className="font-headline font-bold text-lg">Marché de Noël Félix</span>
           </div>
-          <p className="text-sm opacity-80">© 2024 Comité d'Organisation du Marché de Noël</p>
+          <p className="text-sm opacity-80">© 2026 Association "Un jardin pour Félix"</p>
           <div className="flex gap-4">
-            <Link href="/privacy" className="text-sm hover:underline">Mentions légales</Link>
-            <Link href="/contact" className="text-sm hover:underline">Contact</Link>
+            <Link href="https://www.unjardinpourfelix.org/" target="_blank" className="text-sm hover:underline">Blog de Félix</Link>
+            <Link href="https://www.lemarchedefelix.com" target="_blank" className="text-sm hover:underline">Boutique Solidaire</Link>
           </div>
         </div>
       </footer>

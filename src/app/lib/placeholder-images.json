@@ -12,6 +12,12 @@
       "description": "A cozy wooden Christmas market booth",
       "imageUrl": "https://images.unsplash.com/photo-1511210164875-f2910777559e?q=80&w=800&h=600&auto=format&fit=crop",
       "imageHint": "christmas stall"
+    },
+    {
+      "id": "logo-felix",
+      "description": "Logo Un Jardin pour Félix",
+      "imageUrl": "https://picsum.photos/seed/felix-logo/200/200",
+      "imageHint": "colorful flower logo"
     }
   ]
 }

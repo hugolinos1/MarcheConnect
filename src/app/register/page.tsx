@@ -10,12 +10,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { TreePine, ArrowLeft, Send, Info, FileText, Heart, Star } from 'lucide-react';
+import { TreePine, ArrowLeft, Send, Info, FileText, Heart, Star, Globe } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import Image from 'next/image';
 
 const formSchema = z.object({
   name: z.string().min(2, "Le nom est requis"),
@@ -62,7 +63,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-12 px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-background py-12 px-4 relative overflow-hidden text-foreground">
       <ChristmasSnow />
       <div className="container mx-auto max-w-4xl relative z-10">
         <Link href="/" className="inline-flex items-center gap-2 text-primary hover:underline mb-8 font-medium">
@@ -70,27 +71,41 @@ export default function RegisterPage() {
         </Link>
         
         {/* Présentation Association */}
-        <Card className="mb-8 border-l-4 border-l-secondary">
-          <CardHeader className="flex flex-row items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
-              <Heart className="w-6 h-6 fill-secondary" />
+        <Card className="mb-8 border-l-4 border-l-secondary shadow-lg overflow-hidden">
+          <div className="bg-secondary/5 p-6 border-b flex flex-col md:flex-row items-center gap-6">
+            <div className="relative w-24 h-24 shrink-0">
+              <Image 
+                src="https://picsum.photos/seed/felix-logo/200/200"
+                alt="Logo Un Jardin pour Félix"
+                fill
+                className="object-contain"
+                data-ai-hint="colorful flower logo"
+              />
             </div>
-            <div>
-              <CardTitle className="text-xl text-secondary">Un Jardin pour Félix</CardTitle>
-              <CardDescription>Marché de Noël Solidaire - Chazay d'Azergues</CardDescription>
+            <div className="text-center md:text-left">
+              <CardTitle className="text-2xl text-secondary font-headline mb-1">Un Jardin pour Félix</CardTitle>
+              <CardDescription className="text-base font-medium">Marché de Noël Solidaire - Chazay d'Azergues</CardDescription>
             </div>
-          </CardHeader>
-          <CardContent className="text-sm space-y-3 text-muted-foreground leading-relaxed">
+          </div>
+          <CardContent className="pt-6 text-sm space-y-4 text-muted-foreground leading-relaxed">
             <p>
-              L’association « Un jardin pour Félix » a été créé en 2014 pour soutenir Félix, atteint d'une maladie génétique rare. 
-              Les bénéfices du marché sont intégralement reversés pour financer ses stimulations à domicile.
+              L’association « Un jardin pour Félix » a été créé en 2014 par les parents de Félix. Il est atteint d’une maladie génétique rare le syndrome POTOCKI LUPSKI et d’un trouble autistique très envahissant. 
+              L’association permet de financer des intervenants à domicile pour le stimuler et le faire progresser.
             </p>
-            <p className="font-semibold text-foreground italic">
-              "C’est notre 6ème édition, notre marché commence à avoir une belle réputation, c’est pourquoi nous devenons plus sélectives sur le choix des exposants. Nous privilégions l'artisanat et le fait-main."
+            <p className="font-semibold text-foreground italic border-l-2 border-accent pl-4 py-1">
+              "C’est notre 6ème édition, notre marché commence à avoir une belle réputation autour de Lyon ouest, c’est pourquoi nous devenons plus sélectives sur le choix des exposants. Nous privilégions l'artisanat et le fait-main."
             </p>
-            <div className="flex gap-4 pt-2">
-              <a href="https://www.unjardinpourfelix.org/" target="_blank" className="text-primary hover:underline font-medium">Blog de Félix</a>
-              <a href="https://www.lemarchedefelix.com" target="_blank" className="text-primary hover:underline font-medium">Boutique solidaire</a>
+            <div className="flex flex-wrap gap-4 pt-2">
+              <Button asChild variant="outline" size="sm" className="gap-2">
+                <a href="https://www.unjardinpourfelix.org/" target="_blank">
+                  <Globe className="w-3 h-3" /> Blog de Félix
+                </a>
+              </Button>
+              <Button asChild variant="outline" size="sm" className="gap-2">
+                <a href="https://www.lemarchedefelix.com" target="_blank">
+                  <Heart className="w-3 h-3 text-primary" /> Boutique solidaire
+                </a>
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -100,25 +115,25 @@ export default function RegisterPage() {
           <AccordionItem value="reglement" className="border-none">
             <AccordionTrigger className="px-6 hover:no-underline hover:bg-muted/50">
               <span className="flex items-center gap-2 font-bold text-primary">
-                <FileText className="w-5 h-5" /> Règlement du Marché 2026
+                <FileText className="w-5 h-5" /> Règlement du Marché 2026 (Consulter avant inscription)
               </span>
             </AccordionTrigger>
             <AccordionContent className="px-6 pb-6 text-xs text-muted-foreground space-y-4 max-h-96 overflow-y-auto">
               <div>
-                <h4 className="font-bold text-foreground">Dates & Lieu</h4>
+                <h4 className="font-bold text-foreground">Article 1 : Dates & Lieu</h4>
                 <p>Samedi 5/12/2026 (14h-19h) et Dimanche 6/12/2026 (10h-17h30). Salle Maurice Baquet, Chazay d’Azergues.</p>
               </div>
               <div>
-                <h4 className="font-bold text-foreground">Sélection</h4>
+                <h4 className="font-bold text-foreground">Article 3 : Sélection</h4>
                 <p>Réponse sous 15 semaines. Nous privilégions le fait-main. Pas de revente. Tables de 1m75 fournies. Installation le samedi entre 11h et 13h.</p>
               </div>
               <div>
-                <h4 className="font-bold text-foreground">Tarifs</h4>
+                <h4 className="font-bold text-foreground">Article 5 : Tarifs & Restauration</h4>
                 <p>40€ pour 1 table (1m75), 60€ pour 2 tables (3m50). Repas du dimanche midi : 8€/personne.</p>
               </div>
               <div>
-                <h4 className="font-bold text-foreground">Engagement</h4>
-                <p>Présence obligatoire sur les 2 jours. Soin apporté au stand. Droit à l'image consenti pour la communication de l'événement.</p>
+                <h4 className="font-bold text-foreground">Article 7 & 8 : Engagement & Assurance</h4>
+                <p>Présence obligatoire sur les 2 jours. Droit à l'image consenti pour la communication. Assurance RC obligatoire.</p>
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -214,7 +229,7 @@ export default function RegisterPage() {
                     name="websiteUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Site web ou Réseaux (Facebook, Instagram, Etsy...)</FormLabel>
+                        <FormLabel>Lien Boutique ou Réseaux (Insta, FB, Etsy...)</FormLabel>
                         <FormControl>
                           <Input placeholder="https://..." {...field} />
                         </FormControl>
@@ -308,7 +323,7 @@ export default function RegisterPage() {
                           {...field} 
                         />
                       </FormControl>
-                      <FormDescription>Merci de joindre vos photos par mail ou via vos liens web ci-dessus.</FormDescription>
+                      <FormDescription>Les bénéfices aident Félix à progresser grâce à ses stimulations.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -318,8 +333,8 @@ export default function RegisterPage() {
                   <Send className="w-5 h-5" /> Envoyer ma candidature pour étude
                 </Button>
                 
-                <p className="text-[10px] text-center text-muted-foreground uppercase tracking-wider">
-                  Les bénéfices sont intégralement reversés à l'association "Un jardin pour Félix"
+                <p className="text-[10px] text-center text-muted-foreground uppercase tracking-wider font-bold">
+                  Bénévolat & Solidarité pour l'association "Un jardin pour Félix"
                 </p>
               </form>
             </Form>

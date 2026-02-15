@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { LayoutDashboard, CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Star } from 'lucide-react';
+import { LayoutDashboard, CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Star, Heart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function AdminDashboard() {
   const [exhibitors, setExhibitors] = useState<Exhibitor[]>([]);
@@ -63,13 +64,20 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-background">
       <ChristmasSnow />
       
-      <div className="bg-primary text-white py-6 shadow-lg relative z-10">
+      <div className="bg-primary text-white py-4 shadow-lg relative z-10">
         <div className="container mx-auto px-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <LayoutDashboard className="w-8 h-8" />
+          <div className="flex items-center gap-4">
+            <div className="relative w-12 h-12 brightness-0 invert">
+              <Image 
+                src="https://picsum.photos/seed/felix-logo/200/200"
+                alt="Logo"
+                fill
+                className="object-contain"
+              />
+            </div>
             <div>
-              <h1 className="text-2xl font-headline font-bold">Marché de Noël Félix Admin</h1>
-              <p className="text-sm opacity-80">Gestion des candidatures 2026</p>
+              <h1 className="text-xl font-headline font-bold">Admin : Le Marché de Félix</h1>
+              <p className="text-xs opacity-80">Gestion des candidatures 2026</p>
             </div>
           </div>
           <div className="flex gap-4">
@@ -302,6 +310,13 @@ export default function AdminDashboard() {
             </TableBody>
           </Table>
         </Card>
+
+        {/* Footer info solidatité */}
+        <div className="text-center py-6">
+          <p className="flex items-center justify-center gap-2 text-secondary font-bold text-sm uppercase tracking-wider">
+            <Heart className="w-4 h-4 fill-secondary" /> Soutien à l'association "Un jardin pour Félix"
+          </p>
+        </div>
 
         {/* Section Debug Simulation */}
         {exhibitors.some(e => e.status === 'accepted_form1') && (
