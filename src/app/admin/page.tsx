@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { LayoutDashboard, CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Star, Heart } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
@@ -20,6 +20,7 @@ export default function AdminDashboard() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [justification, setJustification] = useState('');
   const [selectedExhibitor, setSelectedExhibitor] = useState<Exhibitor | null>(null);
+  const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
 
   useEffect(() => {
     const data = JSON.parse(localStorage.getItem('exhibitors') || '[]');
@@ -66,12 +67,12 @@ export default function AdminDashboard() {
       <div className="bg-primary text-white py-4 shadow-lg relative z-10">
         <div className="container mx-auto px-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <div className="relative w-12 h-12 brightness-0 invert">
+            <div className="relative w-14 h-14 overflow-hidden rounded-full border-2 border-white/20">
               <Image 
-                src="https://picsum.photos/seed/felix-logo/200/200"
-                alt="Logo"
+                src={logoUrl}
+                alt="Logo Un Jardin pour Félix"
                 fill
-                className="object-contain"
+                className="object-cover"
               />
             </div>
             <div>

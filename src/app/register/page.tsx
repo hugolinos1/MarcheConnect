@@ -1,4 +1,3 @@
-
 "use client"
 import React from 'react';
 import { useForm } from 'react-hook-form';
@@ -32,6 +31,8 @@ const formSchema = z.object({
 
 export default function RegisterPage() {
   const router = useRouter();
+  const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -73,13 +74,12 @@ export default function RegisterPage() {
         {/* Présentation Association */}
         <Card className="mb-8 border-l-4 border-l-secondary shadow-lg overflow-hidden">
           <div className="bg-secondary/5 p-6 border-b flex flex-col md:flex-row items-center gap-6">
-            <div className="relative w-24 h-24 shrink-0">
+            <div className="relative w-28 h-28 shrink-0 overflow-hidden rounded-full border-4 border-white shadow-md">
               <Image 
-                src="https://picsum.photos/seed/felix-logo/200/200"
+                src={logoUrl}
                 alt="Logo Un Jardin pour Félix"
                 fill
-                className="object-contain"
-                data-ai-hint="colorful flower logo"
+                className="object-cover"
               />
             </div>
             <div className="text-center md:text-left">

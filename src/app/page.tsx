@@ -5,6 +5,8 @@ import { Gift, TreePine, Star, ChevronRight, Info } from 'lucide-react';
 import Image from 'next/image';
 
 export default function Home() {
+  const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
+
   return (
     <div className="min-h-screen bg-background relative">
       <ChristmasSnow />
@@ -13,13 +15,12 @@ export default function Home() {
       <header className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-40">
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="relative w-12 h-12">
+            <div className="relative w-14 h-14 overflow-hidden rounded-full border-2 border-primary/10">
               <Image 
-                src="https://picsum.photos/seed/felix-logo/200/200"
+                src={logoUrl}
                 alt="Logo Un Jardin pour Félix"
                 fill
-                className="object-contain"
-                data-ai-hint="flower logo"
+                className="object-cover"
               />
             </div>
             <div className="flex flex-col">
@@ -71,7 +72,6 @@ export default function Home() {
                     alt="Affiche Marché de Noël 2026"
                     fill
                     className="object-cover"
-                    data-ai-hint="christmas poster"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent" />
                 </div>
@@ -131,12 +131,12 @@ export default function Home() {
         <section className="py-20 bg-muted/30">
           <div className="container mx-auto px-4 max-w-4xl">
             <div className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border flex flex-col md:flex-row items-center gap-10">
-              <div className="w-32 h-32 relative shrink-0">
+              <div className="w-32 h-32 relative shrink-0 overflow-hidden rounded-full border-4 border-primary/5">
                 <Image 
-                  src="https://picsum.photos/seed/felix-logo/200/200"
-                  alt="Logo"
+                  src={logoUrl}
+                  alt="Logo Un Jardin pour Félix"
                   fill
-                  className="object-contain"
+                  className="object-cover"
                 />
               </div>
               <div className="space-y-4 text-center md:text-left">
@@ -160,12 +160,12 @@ export default function Home() {
       <footer className="py-12 border-t bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-3">
-            <div className="relative w-10 h-10 brightness-0 invert">
+            <div className="relative w-12 h-12 overflow-hidden rounded-full border border-white/20">
               <Image 
-                src="https://picsum.photos/seed/felix-logo/200/200"
+                src={logoUrl}
                 alt="Logo Un Jardin pour Félix"
                 fill
-                className="object-contain"
+                className="object-cover"
               />
             </div>
             <span className="font-headline font-bold text-lg">Marché de Noël Félix</span>
