@@ -11,14 +11,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { TreePine, ShieldCheck, Zap, Utensils, Ticket, Camera, Info } from 'lucide-react';
+import { ShieldCheck, Zap, Utensils, Ticket, Camera, Info, ArrowLeft, Heart, CheckCircle2 } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
 
 const formSchema = z.object({
   needsElectricity: z.boolean().default(false),
-  sundayLunchCount: z.coerce.number().min(0, "Minimum 0").max(4, "Maximum 4 par stand"),
+  sundayLunchCount: z.coerce.number().min(0, "Minimum 0").max(6, "Maximum 6 par stand"),
   tombolaLot: z.boolean().default(false),
   tombolaLotDescription: z.string().optional(),
   insuranceCompany: z.string().min(2, "Nom de l'assurance requis"),
@@ -32,14 +33,20 @@ export default function DetailsPage() {
   const { id } = useParams();
   const router = useRouter();
   const [exhibitor, setExhibitor] = useState<Exhibitor | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
 
   useEffect(() => {
     const data = JSON.parse(localStorage.getItem('exhibitors') || '[]');
     const found = data.find((e: any) => e.id === id);
-    if (!found || found.status !== 'accepted_form1') {
+    
+    // On ne permet l'accès que si le dossier est en attente de finalisation (accepted_form1)
+    // ou si on veut simplement consulter un dossier déjà soumis (submitted_form2)
+    if (!found || (found.status !== 'accepted_form1' && found.status !== 'submitted_form2')) {
       router.push('/');
     } else {
       setExhibitor(found);
+      setIsLoaded(true);
     }
   }, [id, router]);
 
@@ -58,6 +65,15 @@ export default function DetailsPage() {
     },
   });
 
+  // Pré-remplissage si les données existent déjà
+  useEffect(() => {
+    if (exhibitor?.detailedInfo) {
+      form.reset({
+        ...exhibitor.detailedInfo,
+      });
+    }
+  }, [exhibitor, form]);
+
   function onSubmit(values: z.infer<typeof formSchema>) {
     const data = JSON.parse(localStorage.getItem('exhibitors') || '[]');
     const updated = data.map((e: any) => 
@@ -71,56 +87,79 @@ export default function DetailsPage() {
     router.push('/register/success');
   }
 
-  if (!exhibitor) return null;
+  if (!isLoaded || !exhibitor) return null;
 
   return (
-    <div className="min-h-screen bg-background py-12 px-4 relative">
+    <div className="min-h-screen bg-background py-12 px-4 relative selection:bg-accent selection:text-accent-foreground">
       <ChristmasSnow />
+      
       <div className="container mx-auto max-w-3xl relative z-10">
-        <Card className="border-t-4 border-t-secondary shadow-xl overflow-hidden">
-          <div className="bg-secondary text-white p-6 flex items-center justify-between">
-            <div className="space-y-1">
-              <h1 className="text-2xl font-headline font-bold">Dossier de Finalisation</h1>
-              <p className="text-sm opacity-90">Exposant : {exhibitor.companyName}</p>
+        <Link href="/" className="inline-flex items-center gap-2 text-primary hover:underline mb-8 font-medium">
+          <ArrowLeft className="w-4 h-4" /> Retour au site
+        </Link>
+
+        <Card className="border-t-8 border-t-primary shadow-2xl overflow-hidden bg-white/95 backdrop-blur-sm">
+          <div className="bg-primary text-white p-8 flex flex-col md:flex-row items-center justify-between gap-6 border-b">
+            <div className="space-y-2 text-center md:text-left">
+              <h1 className="text-3xl font-headline font-bold">Dossier de Finalisation</h1>
+              <div className="flex flex-col gap-1">
+                <p className="text-lg font-medium text-accent">Exposant : {exhibitor.companyName}</p>
+                <p className="text-xs opacity-80 uppercase tracking-widest">Marché de Noël Solidaire 2026</p>
+              </div>
             </div>
-            <TreePine className="w-10 h-10 opacity-50" />
+            <div className="relative w-20 h-20 rounded-full border-4 border-white/20 overflow-hidden shadow-lg bg-white">
+              <Image src={logoUrl} alt="Logo" fill className="object-cover" />
+            </div>
           </div>
           
-          <CardHeader>
-            <CardTitle className="text-xl font-headline font-bold text-primary">Informations Logistiques & Administratives</CardTitle>
-            <CardDescription>
-              Votre candidature pour {exhibitor.requestedTables === '1' ? '1 table' : '2 tables'} a été retenue. 
-              Merci de compléter ces derniers détails.
-            </CardDescription>
+          <CardHeader className="bg-muted/30 py-8 border-b">
+            <div className="flex items-start gap-4">
+              <div className="bg-secondary/10 p-3 rounded-full text-secondary">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <CardTitle className="text-xl font-headline font-bold text-primary">Confirmation de votre demande</CardTitle>
+                <CardDescription className="text-base">
+                  Votre candidature pour <strong>{exhibitor.requestedTables} table(s)</strong> a été retenue par notre comité. 
+                  Veuillez maintenant compléter les détails logistiques ci-dessous pour valider votre emplacement.
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           
-          <CardContent>
+          <CardContent className="p-8">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
                 
                 {/* Logistique & Electricité */}
-                <div className="space-y-4">
-                  <h3 className="font-bold flex items-center gap-2 text-secondary border-b pb-2">
-                    <Zap className="w-4 h-4" /> Électricité & Tables
+                <div className="space-y-6">
+                  <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3">
+                    <Zap className="w-5 h-5 text-secondary" /> Logistique & Énergie
                   </h3>
-                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-800 flex gap-3">
-                    <Info className="w-5 h-5 shrink-0" />
-                    <p>
-                      Nombre de tables réservées : <strong>{exhibitor.requestedTables}</strong>. 
-                      L'électricité est facturée 1€ de supplément le jour J (limité aux produits alimentaires en priorité).
-                    </p>
+                  <div className="p-4 bg-primary/5 border border-primary/10 rounded-xl text-sm text-primary flex gap-4">
+                    <Info className="w-5 h-5 shrink-0 mt-0.5" />
+                    <div className="space-y-2">
+                      <p>
+                        Emplacement réservé : <strong>{exhibitor.requestedTables === '1' ? '1.75m (1 table)' : '3.50m (2 tables)'}</strong>.
+                      </p>
+                      <p className="text-xs italic opacity-80">
+                        L'électricité est facturée 1€ de supplément le jour de l'installation (limité en priorité aux produits alimentaires).
+                      </p>
+                    </div>
                   </div>
                   <FormField
                     control={form.control}
                     name="needsElectricity"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 bg-white shadow-sm">
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-xl border p-5 bg-white hover:bg-muted/10 transition-colors shadow-sm cursor-pointer">
                         <FormControl>
                           <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel>Besoin d'un raccordement électrique ?</FormLabel>
-                          <FormDescription>Prévoir vos rallonges. Confirmation début novembre.</FormDescription>
+                          <FormLabel className="text-base font-bold">Besoin d'un raccordement électrique ?</FormLabel>
+                          <FormDescription className="text-sm">
+                            Attention : veuillez prévoir vos propres rallonges et multiprises (normes CE).
+                          </FormDescription>
                         </div>
                       </FormItem>
                     )}
@@ -128,19 +167,24 @@ export default function DetailsPage() {
                 </div>
 
                 {/* Restauration */}
-                <div className="space-y-4">
-                  <h3 className="font-bold flex items-center gap-2 text-secondary border-b pb-2">
-                    <Utensils className="w-4 h-4" /> Restauration (Dimanche midi)
+                <div className="space-y-6">
+                  <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3">
+                    <Utensils className="w-5 h-5 text-secondary" /> Restauration (Dimanche midi)
                   </h3>
                   <FormField
                     control={form.control}
                     name="sundayLunchCount"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nombre de plateaux repas (8€ / unité)</FormLabel>
-                        <FormDescription>Fait maison : quiche, salade, fromage, dessert, eau.</FormDescription>
+                      <FormItem className="space-y-4">
+                        <FormLabel className="text-base font-bold text-foreground">Nombre de plateaux repas souhaités (8€ / unité)</FormLabel>
+                        <FormDescription className="text-sm">
+                          Menu complet "Fait Maison" : Quiche, salade composée, fromage, dessert, eau.
+                        </FormDescription>
                         <FormControl>
-                          <Input type="number" {...field} className="w-24" />
+                          <div className="flex items-center gap-4">
+                            <Input type="number" {...field} className="w-24 text-center text-lg font-bold border-2 border-primary/20 focus:border-primary h-12" />
+                            <span className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Plateaux</span>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -149,21 +193,23 @@ export default function DetailsPage() {
                 </div>
 
                 {/* Tombola */}
-                <div className="space-y-4">
-                  <h3 className="font-bold flex items-center gap-2 text-secondary border-b pb-2">
-                    <Ticket className="w-4 h-4" /> Action Solidaire : Tombola
+                <div className="space-y-6">
+                  <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3">
+                    <Ticket className="w-5 h-5 text-secondary" /> Action Solidaire : Tombola
                   </h3>
                   <FormField
                     control={form.control}
                     name="tombolaLot"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 bg-white shadow-sm">
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-xl border p-5 bg-white hover:bg-muted/10 transition-colors shadow-sm cursor-pointer">
                         <FormControl>
                           <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel>Je souhaite offrir un lot pour la tombola</FormLabel>
-                          <FormDescription>Don au profit de l'association (au bon vouloir de chacun).</FormDescription>
+                          <FormLabel className="text-base font-bold">Je souhaite offrir un lot pour la tombola de l'association</FormLabel>
+                          <FormDescription className="text-sm">
+                            Votre générosité aide directement Félix. Le lot sera collecté sur votre stand le samedi après-midi.
+                          </FormDescription>
                         </div>
                       </FormItem>
                     )}
@@ -173,10 +219,10 @@ export default function DetailsPage() {
                       control={form.control}
                       name="tombolaLotDescription"
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nature du lot (optionnel)</FormLabel>
+                        <FormItem className="animate-in fade-in slide-in-from-top-2">
+                          <FormLabel className="text-sm font-bold">Nature du lot (ex: Bougie, Bijou, Bon d'achat...)</FormLabel>
                           <FormControl>
-                            <Input placeholder="Ex: Un bijou, une pochette en tissu..." {...field} />
+                            <Input placeholder="Précisez ici..." {...field} className="border-2 border-primary/10 h-11" />
                           </FormControl>
                         </FormItem>
                       )}
@@ -185,9 +231,9 @@ export default function DetailsPage() {
                 </div>
 
                 {/* Assurance */}
-                <div className="space-y-4">
-                  <h3 className="font-bold flex items-center gap-2 text-secondary border-b pb-2">
-                    <ShieldCheck className="w-4 h-4" /> Responsabilité Civile
+                <div className="space-y-6">
+                  <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3">
+                    <ShieldCheck className="w-5 h-5 text-secondary" /> Responsabilité Civile (Obligatoire)
                   </h3>
                   <div className="grid md:grid-cols-2 gap-6">
                     <FormField
@@ -195,9 +241,9 @@ export default function DetailsPage() {
                       name="insuranceCompany"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Compagnie d'Assurance</FormLabel>
+                          <FormLabel className="text-sm font-bold">Compagnie d'Assurance</FormLabel>
                           <FormControl>
-                            <Input placeholder="Ex: AXA, MMA..." {...field} />
+                            <Input placeholder="Ex: AXA, MAIF, MMA..." {...field} className="h-11 border-primary/10" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -208,19 +254,22 @@ export default function DetailsPage() {
                       name="insurancePolicyNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Numéro de Police</FormLabel>
+                          <FormLabel className="text-sm font-bold">Numéro de Contrat (Police)</FormLabel>
                           <FormControl>
-                            <Input placeholder="N° de contrat" {...field} />
+                            <Input placeholder="N° de contrat" {...field} className="h-11 border-primary/10" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
+                  <p className="text-[10px] text-muted-foreground italic bg-muted/30 p-2 rounded">
+                    L'exposant doit être couvert par une assurance responsabilité civile pour les risques liés à son activité durant toute la durée du marché (Art. 6 du règlement).
+                  </p>
                 </div>
 
                 {/* Consentements */}
-                <div className="space-y-4 p-4 bg-muted/20 rounded-lg">
+                <div className="space-y-4 p-6 bg-secondary/5 rounded-2xl border border-secondary/10">
                   <FormField
                     control={form.control}
                     name="agreedToImageRights"
@@ -230,16 +279,20 @@ export default function DetailsPage() {
                           <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel className="flex items-center gap-2">
-                            <Camera className="w-3 h-3" /> Droits à l'image (Art. 7)
+                          <FormLabel className="flex items-center gap-2 font-bold text-sm text-primary">
+                            <Camera className="w-4 h-4" /> Droit à l'image
                           </FormLabel>
-                          <FormDescription className="text-[10px]">
-                            J'accepte la diffusion gratuite de vues de mon stand pour la communication.
+                          <FormDescription className="text-xs text-primary/70">
+                            J'autorise l'association à utiliser des photos de mon stand pour sa communication (réseaux sociaux, presse, blog).
                           </FormDescription>
+                          <FormMessage />
                         </div>
                       </FormItem>
                     )}
                   />
+                  
+                  <div className="h-px bg-primary/10 my-2" />
+
                   <FormField
                     control={form.control}
                     name="agreedToTerms"
@@ -249,10 +302,11 @@ export default function DetailsPage() {
                           <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel className="font-bold">Acceptation du Règlement (Art. 1 à 9)</FormLabel>
-                          <FormDescription className="text-[10px]">
-                            Je déclare avoir pris connaissance des conditions d'assurance et des obligations.
+                          <FormLabel className="font-bold text-sm text-primary">Acceptation définitive du Règlement</FormLabel>
+                          <FormDescription className="text-xs text-primary/70">
+                            Je confirme avoir lu et accepté l'intégralité du règlement intérieur du Marché de Noël 2026.
                           </FormDescription>
+                          <FormMessage />
                         </div>
                       </FormItem>
                     )}
@@ -264,22 +318,29 @@ export default function DetailsPage() {
                   name="additionalComments"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Commentaires finaux</FormLabel>
+                      <FormLabel className="text-sm font-bold">Commentaires ou besoins spécifiques</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Précisez ici vos éventuels besoins spécifiques..." {...field} />
+                        <Textarea placeholder="Une question ? Un besoin particulier pour l'installation ?" {...field} className="min-h-[100px] border-primary/10" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <Button type="submit" className="w-full bg-secondary hover:bg-secondary/90 text-white h-12 text-lg gold-glow font-bold">
-                  Valider définitivement mon inscription
-                </Button>
-                
-                <p className="text-center text-xs text-muted-foreground">
-                  Le chèque de règlement (40€ ou 60€ + repas) devra être envoyé pour valider l'inscription.
-                </p>
+                <div className="pt-6 space-y-6">
+                  <Button type="submit" className="w-full bg-secondary hover:bg-secondary/90 text-white h-16 text-xl gold-glow font-bold shadow-lg transition-all hover:scale-[1.01] active:scale-[0.99] border-none">
+                    Valider définitivement mon inscription
+                  </Button>
+                  
+                  <div className="text-center space-y-2">
+                    <p className="flex items-center justify-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
+                      <Heart className="w-4 h-4 fill-primary" /> Merci pour votre soutien à Félix
+                    </p>
+                    <p className="text-[10px] text-muted-foreground max-w-xs mx-auto">
+                      Une fois validé, vous recevrez les instructions pour l'envoi de votre règlement par chèque.
+                    </p>
+                  </div>
+                </div>
               </form>
             </Form>
           </CardContent>
