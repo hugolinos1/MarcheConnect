@@ -35,7 +35,6 @@ const formSchema = z.object({
 
 export default function RegisterPage() {
   const router = useRouter();
-  const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -79,29 +78,6 @@ export default function RegisterPage() {
           <ArrowLeft className="w-4 h-4" /> Retour à l'accueil
         </Link>
         
-        <Card className="mb-8 border-l-4 border-l-secondary shadow-lg overflow-hidden">
-          <div className="bg-secondary/5 p-6 border-b flex flex-col md:flex-row items-center gap-6">
-            <div className="relative w-28 h-28 shrink-0 overflow-hidden rounded-full border-4 border-white shadow-md">
-              <Image 
-                src={logoUrl}
-                alt="Logo Un Jardin pour Félix"
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div className="text-center md:text-left">
-              <CardTitle className="text-2xl text-secondary font-headline mb-1">Un Jardin pour Félix</CardTitle>
-              <CardDescription className="text-base font-medium">Marché de Noël Solidaire - Chazay d'Azergues</CardDescription>
-            </div>
-          </div>
-          <CardContent className="pt-6 text-sm space-y-4 text-muted-foreground leading-relaxed">
-            <p>
-              L’association « Un jardin pour Félix » a été créé en 2014 par les parents de Félix. Il est atteint d’une maladie génétique rare le syndrome POTOCKI LUPSKI et d’un trouble autistique très envahissant. 
-              L’association permet de financer des intervenants à domicile pour le stimuler et le faire progresser.
-            </p>
-          </CardContent>
-        </Card>
-
         <div className="grid gap-4 mb-8">
           <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border overflow-hidden">
             <AccordionItem value="reglement" className="border-none">
