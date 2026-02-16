@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { Gift, TreePine, Star, ChevronRight, Info } from 'lucide-react';
+import { Gift, TreePine, Star, ChevronRight, Info, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -203,10 +203,15 @@ export default function Home() {
                 <p className="font-semibold text-foreground italic border-l-2 border-accent pl-4 py-1">
                   "C’est notre 6ème édition, notre marché commence à avoir une belle réputation autour de Lyon ouest, c’est pourquoi nous devenons plus sélectives sur le choix des exposants. Nous privilégions l'artisanat et le fait-main."
                 </p>
-                <div className="pt-4 flex justify-center md:justify-start">
+                <div className="pt-4 flex flex-wrap justify-center md:justify-start gap-6">
                   <Button asChild variant="link" className="text-secondary p-0 h-auto font-bold">
                     <a href="https://www.unjardinpourfelix.org/" target="_blank" className="flex items-center gap-2">
-                      <Info className="w-4 h-4" /> En savoir plus sur le blog de Félix
+                      <Info className="w-4 h-4" /> Blog de Félix
+                    </a>
+                  </Button>
+                  <Button asChild variant="link" className="text-primary p-0 h-auto font-bold">
+                    <a href="https://un-jardin-pour-felix.sumupstore.com/" target="_blank" className="flex items-center gap-2">
+                      <ShoppingBag className="w-4 h-4" /> Boutique Solidaire
                     </a>
                   </Button>
                 </div>
