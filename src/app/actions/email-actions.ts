@@ -175,8 +175,14 @@ export async function sendFinalConfirmationEmail(exhibitor: any, details: any, m
 
   const year = marketConfig?.marketYear || '2026';
   const notificationEmail = marketConfig?.notificationEmail || "lemarchedefelix2020@gmail.com";
-  const standPrice = exhibitor.requestedTables === '1' ? 40 : 60;
-  const mealsPrice = details.sundayLunchCount * 8;
+  
+  const priceTable1 = marketConfig?.priceTable1 ?? 40;
+  const priceTable2 = marketConfig?.priceTable2 ?? 60;
+  const priceMeal = marketConfig?.priceMeal ?? 8;
+  const priceElectricity = marketConfig?.priceElectricity ?? 1;
+
+  const standPrice = exhibitor.requestedTables === '1' ? priceTable1 : priceTable2;
+  const mealsPrice = (details.sundayLunchCount || 0) * priceMeal;
   const total = standPrice + mealsPrice;
 
   const mailOptions = {
@@ -193,10 +199,10 @@ Récapitulatif de vos options :
 Enseigne : ${exhibitor.companyName}
 Emplacement : ${exhibitor.requestedTables === '1' ? '1.75m (1 table)' : '3.50m (2 tables)'}
 Repas Dimanche midi : ${details.sundayLunchCount}
-Besoin Électricité : ${details.needsElectricity ? 'Oui (prévoir rallonges)' : 'Non'}
+Besoin Électricité : ${details.needsElectricity ? `Oui (prévoir ${priceElectricity}€ le jour de l'installation + rallonges)` : 'Non'}
 Lot Tombola : ${details.tombolaLot ? 'Oui - Merci !' : 'Non'}
 
-MONTANT TOTAL À RÉGLER : ${total} €
+MONTANT TOTAL À RÉGLER PAR CHÈQUE : ${total} €
 
 Pour confirmer définitivement votre réservation, merci de nous faire parvenir votre chèque à l'ordre de "Association Un Jardin pour Félix" sous 15 jours par courrier.
 

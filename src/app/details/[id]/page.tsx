@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -34,6 +35,12 @@ export default function DetailsPage() {
   const { data: configs } = useCollection(marketConfigRef);
   const currentConfig = configs?.find(c => c.currentMarket) || configs?.[0];
   const currentYear = currentConfig?.marketYear || 2026;
+
+  // Prices from config
+  const priceTable1 = currentConfig?.priceTable1 ?? 40;
+  const priceTable2 = currentConfig?.priceTable2 ?? 60;
+  const priceMeal = currentConfig?.priceMeal ?? 8;
+  const priceElectricity = currentConfig?.priceElectricity ?? 1;
 
   // Exhibitor fetching from Firestore
   const exhibitorRef = useMemoFirebase(() => id ? doc(db, 'pre_registrations', id as string) : null, [db, id]);
@@ -83,8 +90,8 @@ export default function DetailsPage() {
   const watchGrid = form.watch("needsGrid");
   const idCardPhoto = form.watch("idCardPhoto");
   
-  const standPrice = exhibitor?.requestedTables === '1' ? 40 : 60;
-  const mealsPrice = watchLunchCount * 8;
+  const standPrice = exhibitor?.requestedTables === '1' ? priceTable1 : priceTable2;
+  const mealsPrice = watchLunchCount * priceMeal;
   const totalToPay = standPrice + mealsPrice;
 
   useEffect(() => {
@@ -336,7 +343,7 @@ export default function DetailsPage() {
                         Emplacement réservé : <strong>{exhibitor.requestedTables === '1' ? '1.75m (1 table)' : '3.50m (2 tables)'}</strong>.
                       </p>
                       <p className="text-xs italic opacity-80">
-                        L'électricité est facturée 1€ de supplément le jour de l'installation (limité en priorité aux produits alimentaires).
+                        L'électricité est facturée {priceElectricity}€ de supplément le jour de l'installation (limité en priorité aux produits alimentaires).
                       </p>
                     </div>
                   </div>
@@ -390,7 +397,7 @@ export default function DetailsPage() {
                     name="sundayLunchCount"
                     render={({ field }) => (
                       <FormItem className="space-y-4">
-                        <FormLabel className="text-base font-bold text-foreground">Nombre de plateaux repas souhaités (8€ / unité)</FormLabel>
+                        <FormLabel className="text-base font-bold text-foreground">Nombre de plateaux repas souhaités ({priceMeal}€ / unité)</FormLabel>
                         <FormDescription className="text-sm">
                           Menu complet "Fait Maison" : Quiche, salade composée, fromage, dessert, eau.
                         </FormDescription>
@@ -530,14 +537,14 @@ export default function DetailsPage() {
                     </div>
                     {watchLunchCount > 0 && (
                       <div className="flex justify-between items-center">
-                        <span>Repas Dimanche ({watchLunchCount} x 8€) :</span>
+                        <span>Repas Dimanche ({watchLunchCount} x {priceMeal}€) :</span>
                         <span className="font-bold">{mealsPrice} €</span>
                       </div>
                     )}
                     {watchElectricity && (
                       <div className="flex justify-between items-center text-accent text-xs italic">
                         <span>Option Électricité (à régler sur place) :</span>
-                        <span className="font-bold">1 €</span>
+                        <span className="font-bold">{priceElectricity} €</span>
                       </div>
                     )}
                     {watchGrid && (

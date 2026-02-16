@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, EyeOff, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck, UserPlus2, Clock, Lock, Info, ExternalLink, Sparkles, Download, Camera, LayoutGrid, Fingerprint } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, EyeOff, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck, UserPlus2, Clock, Lock, Info, ExternalLink, Sparkles, Download, Camera, LayoutGrid, Fingerprint, Euro } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -94,7 +94,11 @@ export default function AdminDashboard() {
     marketYear: 2026,
     editionNumber: "6ème",
     posterImageUrl: "https://i.ibb.co/3y3KRNW4/Affiche-March.jpg",
-    notificationEmail: "lemarchedefelix2020@gmail.com"
+    notificationEmail: "lemarchedefelix2020@gmail.com",
+    priceTable1: 40,
+    priceTable2: 60,
+    priceMeal: 8,
+    priceElectricity: 1
   });
 
   useEffect(() => {
@@ -103,7 +107,11 @@ export default function AdminDashboard() {
         marketYear: currentConfig.marketYear,
         editionNumber: currentConfig.editionNumber,
         posterImageUrl: currentConfig.posterImageUrl,
-        notificationEmail: currentConfig.notificationEmail || "lemarchedefelix2020@gmail.com"
+        notificationEmail: currentConfig.notificationEmail || "lemarchedefelix2020@gmail.com",
+        priceTable1: currentConfig.priceTable1 ?? 40,
+        priceTable2: currentConfig.priceTable2 ?? 60,
+        priceMeal: currentConfig.priceMeal ?? 8,
+        priceElectricity: currentConfig.priceElectricity ?? 1
       });
     }
   }, [currentConfig]);
@@ -449,14 +457,44 @@ export default function AdminDashboard() {
           <TabsContent value="settings">
             <Card className="max-w-2xl mx-auto shadow-md border-t-4 border-t-primary">
               <CardHeader><CardTitle className="text-primary">Configuration du Marché</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Année</label><Input type="number" className="border-primary/20 focus:border-primary" value={configForm.marketYear} onChange={(e) => setConfigForm({...configForm, marketYear: parseInt(e.target.value)})} /></div>
-                  <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Édition</label><Input className="border-primary/20 focus:border-primary" value={configForm.editionNumber} onChange={(e) => setConfigForm({...configForm, editionNumber: e.target.value})} /></div>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                   <h3 className="text-sm font-bold border-b pb-1 uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                     <Settings className="w-4 h-4" /> Général
+                   </h3>
+                   <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Année</label><Input type="number" className="border-primary/20 focus:border-primary" value={configForm.marketYear} onChange={(e) => setConfigForm({...configForm, marketYear: parseInt(e.target.value)})} /></div>
+                    <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Édition</label><Input className="border-primary/20 focus:border-primary" value={configForm.editionNumber} onChange={(e) => setConfigForm({...configForm, editionNumber: e.target.value})} /></div>
+                  </div>
+                  <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">URL de l'Affiche</label><Input className="border-primary/20 focus:border-primary" value={configForm.posterImageUrl} onChange={(e) => setConfigForm({...configForm, posterImageUrl: e.target.value})} /></div>
+                  <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Email de notification (Réception & Copie)</label><Input type="email" className="border-primary/20 focus:border-primary" value={configForm.notificationEmail} onChange={(e) => setConfigForm({...configForm, notificationEmail: e.target.value})} /></div>
                 </div>
-                <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">URL de l'Affiche</label><Input className="border-primary/20 focus:border-primary" value={configForm.posterImageUrl} onChange={(e) => setConfigForm({...configForm, posterImageUrl: e.target.value})} /></div>
-                <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Email de notification (Réception & Copie)</label><Input type="email" className="border-primary/20 focus:border-primary" value={configForm.notificationEmail} onChange={(e) => setConfigForm({...configForm, notificationEmail: e.target.value})} /></div>
-                <Button onClick={handleSaveConfig} className="w-full font-bold shadow-sm">Enregistrer les paramètres</Button>
+
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold border-b pb-1 uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <Euro className="w-4 h-4" /> Tarification (€)
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Prix 1 Table (1.75m)</label>
+                      <Input type="number" className="border-primary/20 focus:border-primary" value={configForm.priceTable1} onChange={(e) => setConfigForm({...configForm, priceTable1: parseFloat(e.target.value)})} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Prix 2 Tables (3.50m)</label>
+                      <Input type="number" className="border-primary/20 focus:border-primary" value={configForm.priceTable2} onChange={(e) => setConfigForm({...configForm, priceTable2: parseFloat(e.target.value)})} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Prix Repas Dimanche</label>
+                      <Input type="number" className="border-primary/20 focus:border-primary" value={configForm.priceMeal} onChange={(e) => setConfigForm({...configForm, priceMeal: parseFloat(e.target.value)})} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Prix Option Électricité</label>
+                      <Input type="number" className="border-primary/20 focus:border-primary" value={configForm.priceElectricity} onChange={(e) => setConfigForm({...configForm, priceElectricity: parseFloat(e.target.value)})} />
+                    </div>
+                  </div>
+                </div>
+
+                <Button onClick={handleSaveConfig} className="w-full font-bold shadow-sm mt-4">Enregistrer les paramètres</Button>
               </CardContent>
             </Card>
           </TabsContent>

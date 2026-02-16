@@ -47,6 +47,22 @@
         "currentMarket": {
           "type": "boolean",
           "description": "A flag indicating if this market configuration is currently the active one for the website."
+        },
+        "priceTable1": {
+          "type": "number",
+          "description": "Price for 1 table (1.75m)."
+        },
+        "priceTable2": {
+          "type": "number",
+          "description": "Price for 2 tables (3.50m)."
+        },
+        "priceMeal": {
+          "type": "number",
+          "description": "Price per Sunday lunch meal."
+        },
+        "priceElectricity": {
+          "type": "number",
+          "description": "Price for electricity option."
         }
       },
       "required": [
