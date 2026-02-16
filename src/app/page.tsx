@@ -44,9 +44,6 @@ export default function Home() {
           </div>
           <nav className="hidden md:flex items-center gap-6">
             <Link href="/admin" className="text-sm font-medium hover:text-primary transition-colors">Portail Admin</Link>
-            <Button asChild variant="default" className="bg-primary hover:bg-primary/90">
-              <Link href="/register">S'inscrire</Link>
-            </Button>
           </nav>
         </div>
       </header>
@@ -69,9 +66,9 @@ export default function Home() {
                   Devenez exposant pour soutenir Félix. Un événement chaleureux privilégiant l'artisanat et le fait-main à Chazay d'Azergues.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-                  <Button asChild size="lg" className="bg-secondary hover:bg-secondary/90 text-white gold-glow w-full sm:w-auto border-none">
+                  <Button asChild className="bg-secondary hover:bg-secondary/90 text-white gold-glow w-full sm:w-auto border-none h-16 text-xl px-12 font-bold transition-all hover:scale-105 active:scale-95">
                     <Link href="/register" className="gap-2">
-                      Déposer ma candidature <ChevronRight className="w-4 h-4" />
+                      Déposer ma candidature <ChevronRight className="w-6 h-6" />
                     </Link>
                   </Button>
                 </div>
