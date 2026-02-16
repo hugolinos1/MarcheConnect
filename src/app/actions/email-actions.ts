@@ -106,7 +106,6 @@ L'équipe de l'association "Un jardin pour Félix"
 
 /**
  * Action serveur pour envoyer l'e-mail de refus motivé.
- * Copie de confirmation envoyée à l'adresse Gmail de l'association.
  */
 export async function sendRejectionEmail(exhibitor: any, justification: string) {
   const transporter = nodemailer.createTransport({
@@ -147,5 +146,61 @@ L'équipe de l'association "Un jardin pour Félix"
   } catch (error) {
     console.error('Erreur envoi mail refus:', error);
     return { success: false, error: 'Failed to send rejection email' };
+  }
+}
+
+/**
+ * Action serveur pour confirmer la réception du dossier technique final.
+ */
+export async function sendFinalConfirmationEmail(exhibitor: any, details: any) {
+  const transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: Number(process.env.EMAIL_PORT),
+    secure: process.env.EMAIL_USE_SSL === 'True',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const standPrice = exhibitor.requestedTables === '1' ? 40 : 60;
+  const mealsPrice = details.sundayLunchCount * 8;
+  const total = standPrice + mealsPrice;
+
+  const mailOptions = {
+    from: `"Le Marché de Félix" <${process.env.EMAIL_USER}>`,
+    to: exhibitor.email,
+    cc: "lemarchedefelix2020@gmail.com",
+    subject: `Confirmation de réception de votre dossier technique - ${exhibitor.companyName}`,
+    text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
+
+Nous avons bien reçu votre dossier technique et de finalisation pour le Marché de Noël 2026 "Un jardin pour Félix".
+
+Récapitulatif de vos options :
+---------------------------
+Enseigne : ${exhibitor.companyName}
+Emplacement : ${exhibitor.requestedTables === '1' ? '1.75m (1 table)' : '3.50m (2 tables)'}
+Repas Dimanche midi : ${details.sundayLunchCount}
+Besoin Électricité : ${details.needsElectricity ? 'Oui (prévoir rallonges)' : 'Non'}
+Lot Tombola : ${details.tombolaLot ? 'Oui - Merci !' : 'Non'}
+
+MONTANT TOTAL À RÉGLER : ${total} €
+
+Pour confirmer définitivement votre réservation, merci de nous faire parvenir votre chèque à l'ordre de "Association Un Jardin pour Félix" par courrier.
+
+Une confirmation finale de réservation vous sera adressée dès réception de votre règlement.
+
+Nous avons hâte de vous retrouver pour cette belle édition !
+
+L'équipe de l'association "Un jardin pour Félix"
+`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return { success: true };
+  } catch (error) {
+    console.error('Erreur envoi mail confirmation finale:', error);
+    return { success: false, error: 'Failed to send final confirmation email' };
   }
 }

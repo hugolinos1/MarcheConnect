@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -8,14 +7,15 @@ import * as z from 'zod';
 import { Exhibitor } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { ShieldCheck, Zap, Utensils, Ticket, Camera, Info, ArrowLeft, Heart, CheckCircle2, Calculator, Mail } from 'lucide-react';
+import { ShieldCheck, Zap, Utensils, Ticket, Camera, Info, ArrowLeft, Heart, CheckCircle2, Calculator, Mail, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { sendFinalConfirmationEmail } from '@/app/actions/email-actions';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   needsElectricity: z.boolean().default(false),
@@ -32,8 +32,10 @@ const formSchema = z.object({
 export default function DetailsPage() {
   const { id } = useParams();
   const router = useRouter();
+  const { toast } = useToast();
   const [exhibitor, setExhibitor] = useState<Exhibitor | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
 
   useEffect(() => {
@@ -63,7 +65,6 @@ export default function DetailsPage() {
     },
   });
 
-  // Calcul dynamique des prix
   const watchLunchCount = form.watch("sundayLunchCount") || 0;
   const watchElectricity = form.watch("needsElectricity");
   
@@ -79,17 +80,44 @@ export default function DetailsPage() {
     }
   }, [exhibitor, form]);
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    const data = JSON.parse(localStorage.getItem('exhibitors') || '[]');
-    const updated = data.map((e: any) => 
-      e.id === id ? { 
-        ...e, 
-        status: 'submitted_form2', 
-        detailedInfo: { ...values, submittedAt: new Date().toISOString() } 
-      } : e
-    );
-    localStorage.setItem('exhibitors', JSON.stringify(updated));
-    router.push('/register/success?type=final');
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!exhibitor) return;
+    setIsSubmitting(true);
+    
+    try {
+      // Envoi de l'email de confirmation
+      const emailResult = await sendFinalConfirmationEmail(exhibitor, values);
+      
+      if (!emailResult.success) {
+        toast({
+          variant: "destructive",
+          title: "Erreur d'envoi",
+          description: "Le dossier est enregistré mais l'email n'a pu être envoyé.",
+        });
+      }
+
+      // Mise à jour locale
+      const data = JSON.parse(localStorage.getItem('exhibitors') || '[]');
+      const updated = data.map((e: any) => 
+        e.id === id ? { 
+          ...e, 
+          status: 'submitted_form2', 
+          detailedInfo: { ...values, submittedAt: new Date().toISOString() } 
+        } : e
+      );
+      localStorage.setItem('exhibitors', JSON.stringify(updated));
+      
+      router.push('/register/success?type=final');
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la validation.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   if (!isLoaded || !exhibitor) return null;
@@ -136,7 +164,6 @@ export default function DetailsPage() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
                 
-                {/* Logistique & Electricité */}
                 <div className="space-y-6">
                   <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3">
                     <Zap className="w-5 h-5 text-secondary" /> Logistique & Énergie
@@ -171,7 +198,6 @@ export default function DetailsPage() {
                   />
                 </div>
 
-                {/* Restauration */}
                 <div className="space-y-6">
                   <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3">
                     <Utensils className="w-5 h-5 text-secondary" /> Restauration (Dimanche midi)
@@ -197,7 +223,6 @@ export default function DetailsPage() {
                   />
                 </div>
 
-                {/* Tombola */}
                 <div className="space-y-6">
                   <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3">
                     <Ticket className="w-5 h-5 text-secondary" /> Action Solidaire : Tombola
@@ -235,7 +260,6 @@ export default function DetailsPage() {
                   )}
                 </div>
 
-                {/* Assurance */}
                 <div className="space-y-6">
                   <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3">
                     <ShieldCheck className="w-5 h-5 text-secondary" /> Responsabilité Civile (Obligatoire)
@@ -270,7 +294,6 @@ export default function DetailsPage() {
                   </div>
                 </div>
 
-                {/* Consentements */}
                 <div className="space-y-4 p-6 bg-secondary/5 rounded-2xl border border-secondary/10">
                   <FormField
                     control={form.control}
@@ -313,7 +336,6 @@ export default function DetailsPage() {
                   />
                 </div>
 
-                {/* Récapitulatif Financier */}
                 <div className="p-6 bg-primary text-white rounded-2xl shadow-lg space-y-4 border-2 border-accent/20">
                   <h3 className="text-lg font-bold flex items-center gap-3 border-b border-white/20 pb-3">
                     <Calculator className="w-5 h-5 text-accent" /> Récapitulatif de votre règlement
@@ -342,13 +364,17 @@ export default function DetailsPage() {
                   </div>
                   <div className="bg-white/10 p-3 rounded-lg flex items-start gap-3 text-xs">
                     <Mail className="w-4 h-4 shrink-0 mt-0.5" />
-                    <p>Chèque à libeller à l'ordre de <strong>"Association Un Jardin pour Félix"</strong> et à envoyer à l'adresse qui vous sera communiquée par e-mail après validation.</p>
+                    <p>Chèque à libeller à l'ordre de <strong>"Association Un Jardin pour Félix"</strong> et à envoyer par courrier.</p>
                   </div>
                 </div>
 
                 <div className="pt-6 space-y-6">
-                  <Button type="submit" className="w-full bg-secondary hover:bg-secondary/90 text-white h-16 text-xl gold-glow font-bold shadow-lg transition-all hover:scale-[1.01] active:scale-[0.99] border-none">
-                    Valider définitivement mon inscription
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="w-full bg-secondary hover:bg-secondary/90 text-white h-16 text-xl gold-glow font-bold shadow-lg transition-all hover:scale-[1.01] active:scale-[0.99] border-none"
+                  >
+                    {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : "Valider définitivement mon inscription"}
                   </Button>
                   
                   <div className="text-center space-y-2">
