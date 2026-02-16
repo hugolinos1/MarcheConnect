@@ -13,6 +13,7 @@ export interface Exhibitor {
   postalCode: string; // Code Postal
   isRegistered: boolean; // Déclaré au RC ou association
   websiteUrl?: string; // Adresse site marchand / réseaux
+  productImages?: string[]; // 3 photos illustrant les produits (base64 compressé)
   requestedTables: '1' | '2'; // 1 ou 2 tables
   status: ApplicationStatus;
   rejectionReason?: string;

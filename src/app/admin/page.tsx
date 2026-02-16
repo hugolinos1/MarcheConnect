@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, EyeOff, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck, UserPlus2, Clock, Lock, Info, ExternalLink, Sparkles, Download } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, EyeOff, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck, UserPlus2, Clock, Lock, Info, ExternalLink, Sparkles, Download, Camera } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -521,6 +521,22 @@ export default function AdminDashboard() {
                   <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Téléphone</p><p className="text-sm">{viewingExhibitor.phone}</p></div>
                   <div className="col-span-2"><p className="text-[10px] font-bold uppercase text-muted-foreground">Adresse</p><p className="text-sm">{viewingExhibitor.address}, {viewingExhibitor.postalCode} {viewingExhibitor.city}</p></div>
                 </section>
+
+                {/* Displaying Product Images */}
+                {viewingExhibitor.productImages && viewingExhibitor.productImages.length > 0 && (
+                  <section className="space-y-2">
+                    <h4 className="text-sm font-bold border-b pb-1 text-primary flex items-center gap-2">
+                      <Camera className="w-4 h-4" /> Photos des produits
+                    </h4>
+                    <div className="grid grid-cols-3 gap-2">
+                      {viewingExhibitor.productImages.map((img, idx) => (
+                        <div key={idx} className="relative aspect-square rounded-md overflow-hidden border shadow-inner">
+                          <Image src={img} alt={`Produit ${idx + 1}`} fill className="object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
 
                 <section className="space-y-2">
                   <h4 className="text-sm font-bold border-b pb-1 text-primary">Détails du Stand</h4>

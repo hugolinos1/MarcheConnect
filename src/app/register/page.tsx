@@ -1,6 +1,6 @@
 
 "use client"
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { TreePine, ArrowLeft, Send, Info, FileText, Heart, Star, Globe, ShieldCheck, MapPin, Loader2 } from 'lucide-react';
+import { TreePine, ArrowLeft, Send, Info, FileText, Heart, Star, Globe, ShieldCheck, MapPin, Loader2, Camera, X } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
@@ -21,6 +21,7 @@ import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import Image from 'next/image';
 
 const formSchema = z.object({
   firstName: z.string().min(2, "Le prénom est requis"),
@@ -43,6 +44,8 @@ export default function RegisterPage() {
   const router = useRouter();
   const db = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [images, setImages] = useState<string[]>([]);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   
   // Market Config fetching
   const marketConfigRef = useMemoFirebase(() => collection(db, 'market_configurations'), [db]);
@@ -70,7 +73,71 @@ export default function RegisterPage() {
     },
   });
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    if (images.length >= 3) return;
+
+    setIsProcessingImage(true);
+    const file = files[0];
+
+    // Client-side resize and compression to avoid Firestore limits (1MB per doc)
+    const compressImage = (file: File): Promise<string> => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new (window as any).Image();
+          img.src = event.target?.result;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 800;
+            const MAX_HEIGHT = 800;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            // Compress to JPEG with 0.6 quality to keep it small (approx 50-100KB per image)
+            resolve(canvas.toDataURL('image/jpeg', 0.6));
+          };
+        };
+      });
+    };
+
+    try {
+      const compressed = await compressImage(file);
+      setImages(prev => [...prev, compressed]);
+    } catch (err) {
+      console.error("Compression error:", err);
+    } finally {
+      setIsProcessingImage(false);
+      e.target.value = ''; // Reset input
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (images.length === 0) {
+      alert("Merci de fournir au moins une photo de vos produits.");
+      return;
+    }
     setIsSubmitting(true);
     
     try {
@@ -80,6 +147,7 @@ export default function RegisterPage() {
         status: 'pending',
         marketConfigurationId: currentConfig?.id || 'default',
         createdAt: new Date().toISOString(),
+        productImages: images, // Adding the 3 images here
       };
       
       const colRef = collection(db, 'pre_registrations');
@@ -136,7 +204,7 @@ export default function RegisterPage() {
                       <p>L’installation des exposants (artisans/créateurs exclusivement) aura lieu le samedi entre 11h et 13h. Les emplacements seront attribués à l’arrivée de chaque exposant. Grilles, tables et chaises sont fournies et installées préalablement, en fonction des besoins exprimés.</p>
                       <p className="mt-2">Nous pourrons fournir en électricité 8 à 10 stands maximum, merci d’en faire la demande lors de l’inscription. Nous ne garantirons pas de pouvoir répondre à toutes les demandes, priorité sera donnée aux produits alimentaires. Les rallonges sont à prévoir par l'exposant.</p>
                       <p className="mt-2">Nous vous préviendrons début novembre de l’attribution du point électrique. Le jour du marché, nous vous indiquerons l’emplacement avec l’électricité pour un supplément de 1€.</p>
-                      <p className="mt-2">Il est essentiel de respecter les horaires d’installation pour ne pas retarder l’ouverture du marché de Noël. Si vous pensez avoir du retard ou avez un empêchement de dernière minute, merci de prévenir Cécile Rabier au 06 81 14 77 76. Le démontage du stand ne pourra se faire que le dimanche après la fermeture du marché soit 17h30.</p>
+                      <p className="mt-2">Il est essentiel de respecter les horaires d’installation pour ne pas retarder l’ouverture du marché de Noël. Si vous pensez avoir du retard ou avez un empêchement de dernière minute, merci de prévenir Cécile Rabier au 06 81 14 77 76. Le démontage du stand ne pourra se faire que le dimanche après la fermeture du marché soit 17h30. Nous ne prévoyons pas de bénévoles pour vous aider à ranger, nos bénévoles sont là pour l’organisation du marché en priorité.</p>
                     </div>
 
                     <div>
@@ -144,7 +212,9 @@ export default function RegisterPage() {
                       <p>- Un chèque correspondant au nombre de tables souhaité (1 table = 1m75 ou 2 tables = 3m50) est demandé après validation de votre inscription. Sans ce versement, l’inscription ne sera pas prise en compte. Tarif {marketYear} : 40€ pour 1 table et 60€ pour 2 tables (mesures table : 1m75x0.8m).</p>
                       <p>- Chèque à l’ordre de « Les amis d’un jardin pour Félix » association locale de Chazay d’Azergues. Le chèque sera encaissé à partir du 20 novembre {marketYear}. Toute annulation à partir de cette date ne donnera pas lieu à remboursement.</p>
                       <p>- Restauration : nous proposons aux exposants un plateau repas le dimanche midi (8€). Réservation et paiement demandés en même temps que l’inscription. Plateau fait maison : salade, quiche, fromage, dessert, eau.</p>
+                      <p>- Un café, un thé ou une boisson fraîche vous sera offert le samedi contre remise d’un ticket qui vous sera attribué à votre arrivée.</p>
                       <p>- Le dimanche matin à 9h30 : moment convivial offert (café, thé, gâteaux) pour débriefer de la veille.</p>
+                      <p>- Pour des raisons de sécurité, les appareils de chauffage et de cuisson sont strictement interdits sur les stands.</p>
                     </div>
 
                     <div>
@@ -159,7 +229,7 @@ export default function RegisterPage() {
 
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 8 : Responsabilité & Assurance</h4>
-                      <p>Les organisateurs ne sont pas responsables des vols ou dégradations. L’exposant est tenu de souscrire, à ses frais, toutes assurances couvrant les risques que lui-même, son matériel ou ses accompagnateurs encourent ou font courir à des tiers.</p>
+                      <p>Les organisateurs ne sont pas responsables des vols ou dégradations. L’exposant est tenu de souscrire, à ses frais, toutes assurances couvrant les risques que lui-même, son matériel ou ses accompagnateurs encourent ou font courir à des tiers. L'organisateur se réserve le droit d'annuler la manifestation en cas de force majeure.</p>
                     </div>
 
                     <div>
@@ -337,6 +407,52 @@ export default function RegisterPage() {
                     </FormItem>
                   )}
                 />
+
+                {/* New Section: Product Images */}
+                <div className="space-y-4 p-6 bg-muted/20 rounded-xl border-2 border-dashed border-primary/20">
+                  <div className="flex items-center gap-3 text-primary mb-2">
+                    <Camera className="w-6 h-6" />
+                    <h3 className="text-lg font-bold">Photos de vos produits</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Veuillez fournir <strong>3 photos</strong> qui illustrent les produits que vous proposez pour notre sélection.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {images.map((img, idx) => (
+                      <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border shadow-sm group">
+                        <Image src={img} alt={`Produit ${idx + 1}`} fill className="object-cover" />
+                        <button 
+                          type="button"
+                          onClick={() => removeImage(idx)}
+                          className="absolute top-1 right-1 bg-destructive text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    {images.length < 3 && (
+                      <label className="flex flex-col items-center justify-center aspect-square rounded-lg border-2 border-dashed border-muted-foreground/30 bg-white hover:bg-muted/50 cursor-pointer transition-colors">
+                        {isProcessingImage ? (
+                          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                        ) : (
+                          <>
+                            <Camera className="w-8 h-8 text-muted-foreground mb-2" />
+                            <span className="text-[10px] font-bold uppercase text-muted-foreground">Ajouter photo</span>
+                            <span className="text-[10px] text-muted-foreground/60 mt-1">({images.length}/3)</span>
+                          </>
+                        )}
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={handleImageUpload} 
+                          disabled={isProcessingImage}
+                        />
+                      </label>
+                    )}
+                  </div>
+                </div>
 
                 <div className="grid md:grid-cols-2 gap-6 p-4 bg-muted/30 rounded-lg">
                   <FormField
