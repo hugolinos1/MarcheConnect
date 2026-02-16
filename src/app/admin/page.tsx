@@ -295,8 +295,17 @@ export default function AdminDashboard() {
             <h1 className="text-lg font-bold hidden md:block">Admin : Le Marché de Félix</h1>
           </div>
           <div className="flex gap-2">
-            <Button asChild variant="secondary" size="sm"><Link href="/">Voir le site</Link></Button>
-            <Button onClick={() => auth.signOut()} variant="outline" size="sm">Déconnexion</Button>
+            <Button asChild variant="secondary" size="sm" className="font-bold">
+              <Link href="/">Voir le site</Link>
+            </Button>
+            <Button 
+              onClick={() => auth.signOut()} 
+              variant="ghost" 
+              size="sm" 
+              className="text-white border border-white/50 hover:bg-white hover:text-primary transition-colors font-bold"
+            >
+              Déconnexion
+            </Button>
           </div>
         </div>
       </div>
@@ -332,72 +341,99 @@ export default function AdminDashboard() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input placeholder="Rechercher un exposant..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
               </div>
-              <Button onClick={handleExportExcel} variant="outline" className="gap-2 w-full md:w-auto">
+              <Button onClick={handleExportExcel} variant="outline" className="gap-2 w-full md:w-auto border-primary/20 bg-white shadow-sm font-bold text-primary">
                 <Download className="w-4 h-4" /> Exporter Excel
               </Button>
             </div>
 
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden border-2 shadow-sm">
               <Table>
-                <TableHeader><TableRow><TableHead>Exposant</TableHead><TableHead>Tables</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                <TableHeader className="bg-muted/30">
+                  <TableRow>
+                    <TableHead className="font-bold">Exposant</TableHead>
+                    <TableHead className="font-bold">Tables</TableHead>
+                    <TableHead className="font-bold">Statut</TableHead>
+                    <TableHead className="text-right font-bold">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
                   {isExhibitorsLoading ? <TableRow><TableCell colSpan={4} className="text-center py-8"><Loader2 className="animate-spin mx-auto" /></TableCell></TableRow> :
                     filteredExhibitors.map(exhibitor => (
-                      <TableRow key={exhibitor.id}>
+                      <TableRow key={exhibitor.id} className="hover:bg-muted/10 transition-colors">
                         <TableCell>
-                          <div className="font-bold">{exhibitor.companyName}</div>
-                          <div className="text-xs text-muted-foreground">{exhibitor.firstName} {exhibitor.lastName}</div>
+                          <div className="font-bold text-primary">{exhibitor.companyName}</div>
+                          <div className="text-xs text-muted-foreground font-medium">{exhibitor.firstName} {exhibitor.lastName}</div>
                         </TableCell>
-                        <TableCell><Badge variant="outline">{exhibitor.requestedTables}</Badge></TableCell>
+                        <TableCell><Badge variant="outline" className="border-primary/20">{exhibitor.requestedTables}</Badge></TableCell>
                         <TableCell>
-                          <Badge variant={exhibitor.status === 'pending' ? 'secondary' : exhibitor.status === 'rejected' ? 'destructive' : 'default'}>
+                          <Badge variant={exhibitor.status === 'pending' ? 'secondary' : exhibitor.status === 'rejected' ? 'destructive' : 'default'} className="shadow-none">
                             {exhibitor.status === 'pending' ? 'À étudier' : exhibitor.status === 'accepted_form1' ? 'Accepté (F1)' : exhibitor.status === 'submitted_form2' ? 'Dossier reçu' : exhibitor.status === 'validated' ? 'Validé' : 'Refusé'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right space-x-2">
-                          <Button variant="ghost" size="sm" onClick={() => setViewingExhibitor(exhibitor)} title="Voir détails" className="bg-muted/50 hover:bg-primary/10 transition-colors">
-                            <Eye className="w-5 h-5 text-primary" />
-                          </Button>
-                          
-                          {exhibitor.status === 'pending' && (
-                            <>
-                              <Dialog>
-                                <DialogTrigger asChild><Button size="sm" className="bg-green-600 hover:bg-green-700 shadow-sm"><CheckCircle className="w-4 h-4" /></Button></DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader><DialogTitle>Accepter la candidature</DialogTitle></DialogHeader>
-                                  <Textarea placeholder="Message personnalisé (optionnel)..." value={acceptanceMessage} onChange={(e) => setAcceptanceMessage(e.target.value)} />
-                                  <DialogFooter><Button onClick={() => handleAcceptAndSend(exhibitor)} disabled={isSending}>Confirmer et Envoyer l'email</Button></DialogFooter>
-                                </DialogContent>
-                              </Dialog>
-                              
-                              <Dialog>
-                                <DialogTrigger asChild><Button variant="destructive" size="sm" className="shadow-sm"><XCircle className="w-4 h-4" /></Button></DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader><DialogTitle>Refuser la candidature</DialogTitle></DialogHeader>
-                                  <div className="space-y-4">
-                                    <div className="flex gap-2">
-                                      <Button variant="outline" onClick={() => handleGenerateRejectIA(exhibitor, ["Manque de place"])} disabled={isGenerating}>IA: Manque de place</Button>
-                                      <Button variant="outline" onClick={() => handleGenerateRejectIA(exhibitor, ["Produits non artisanaux"])} disabled={isGenerating}>IA: Non artisanal</Button>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => setViewingExhibitor(exhibitor)} 
+                              title="Voir détails" 
+                              className="bg-white border-primary/30 text-primary hover:bg-primary/5 transition-all shadow-sm"
+                            >
+                              <Eye className="w-5 h-5" />
+                            </Button>
+                            
+                            {exhibitor.status === 'pending' && (
+                              <>
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button size="sm" className="bg-green-600 hover:bg-green-700 shadow-sm">
+                                      <CheckCircle className="w-4 h-4" />
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader><DialogTitle>Accepter la candidature</DialogTitle></DialogHeader>
+                                    <Textarea placeholder="Message personnalisé (optionnel)..." value={acceptanceMessage} onChange={(e) => setAcceptanceMessage(e.target.value)} />
+                                    <DialogFooter><Button onClick={() => handleAcceptAndSend(exhibitor)} disabled={isSending}>Confirmer et Envoyer l'email</Button></DialogFooter>
+                                  </DialogContent>
+                                </Dialog>
+                                
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button variant="destructive" size="sm" className="shadow-sm">
+                                      <XCircle className="w-4 h-4" />
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader><DialogTitle>Refuser la candidature</DialogTitle></DialogHeader>
+                                    <div className="space-y-4">
+                                      <div className="flex gap-2">
+                                        <Button variant="outline" onClick={() => handleGenerateRejectIA(exhibitor, ["Manque de place"])} disabled={isGenerating}>IA: Manque de place</Button>
+                                        <Button variant="outline" onClick={() => handleGenerateRejectIA(exhibitor, ["Produits non artisanaux"])} disabled={isGenerating}>IA: Non artisanal</Button>
+                                      </div>
+                                      <Textarea value={justification} onChange={(e) => setJustification(e.target.value)} placeholder="Motif du refus..." rows={6} />
                                     </div>
-                                    <Textarea value={justification} onChange={(e) => setJustification(e.target.value)} placeholder="Motif du refus..." rows={6} />
-                                  </div>
-                                  <DialogFooter><Button variant="destructive" onClick={() => handleConfirmReject(exhibitor)} disabled={isSending}>Envoyer le refus</Button></DialogFooter>
-                                </DialogContent>
-                              </Dialog>
-                            </>
-                          )}
+                                    <DialogFooter><Button variant="destructive" onClick={() => handleConfirmReject(exhibitor)} disabled={isSending}>Envoyer le refus</Button></DialogFooter>
+                                  </DialogContent>
+                                </Dialog>
+                              </>
+                            )}
 
-                          <Button asChild variant="ghost" size="sm" title="Voir page dossier" className="bg-muted/50 hover:bg-muted transition-colors">
-                            <Link href={`/details/${exhibitor.id}`} target="_blank"><ExternalLink className="w-4 h-4" /></Link>
-                          </Button>
-                          
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild><Button variant="ghost" size="sm" className="bg-muted/50 text-destructive hover:bg-destructive/10 transition-colors"><Trash2 className="w-4 h-4" /></Button></AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader><AlertDialogTitle>Supprimer ?</AlertDialogTitle></AlertDialogHeader>
-                              <AlertDialogFooter><AlertDialogCancel>Annuler</AlertDialogCancel><AlertDialogAction onClick={() => deleteDocumentNonBlocking(doc(db, 'pre_registrations', exhibitor.id))}>Supprimer</AlertDialogAction></AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                            <Button asChild variant="outline" size="sm" title="Voir page dossier" className="bg-white border-muted-foreground/30 hover:bg-muted transition-all shadow-sm">
+                              <Link href={`/details/${exhibitor.id}`} target="_blank"><ExternalLink className="w-4 h-4" /></Link>
+                            </Button>
+                            
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="outline" size="sm" className="bg-white border-destructive/30 text-destructive hover:bg-destructive/5 transition-all shadow-sm">
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader><AlertDialogTitle>Supprimer ?</AlertDialogTitle></AlertDialogHeader>
+                                <AlertDialogFooter><AlertDialogCancel>Annuler</AlertDialogCancel><AlertDialogAction onClick={() => deleteDocumentNonBlocking(doc(db, 'pre_registrations', exhibitor.id))}>Supprimer</AlertDialogAction></AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -407,39 +443,43 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="settings">
-            <Card className="max-w-2xl mx-auto">
-              <CardHeader><CardTitle>Configuration du Marché</CardTitle></CardHeader>
+            <Card className="max-w-2xl mx-auto shadow-md border-t-4 border-t-primary">
+              <CardHeader><CardTitle className="text-primary">Configuration du Marché</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><label className="text-xs font-bold">Année</label><Input type="number" value={configForm.marketYear} onChange={(e) => setConfigForm({...configForm, marketYear: parseInt(e.target.value)})} /></div>
-                  <div className="space-y-2"><label className="text-xs font-bold">Édition</label><Input value={configForm.editionNumber} onChange={(e) => setConfigForm({...configForm, editionNumber: e.target.value})} /></div>
+                  <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Année</label><Input type="number" className="border-primary/20 focus:border-primary" value={configForm.marketYear} onChange={(e) => setConfigForm({...configForm, marketYear: parseInt(e.target.value)})} /></div>
+                  <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Édition</label><Input className="border-primary/20 focus:border-primary" value={configForm.editionNumber} onChange={(e) => setConfigForm({...configForm, editionNumber: e.target.value})} /></div>
                 </div>
-                <div className="space-y-2"><label className="text-xs font-bold">URL de l'Affiche</label><Input value={configForm.posterImageUrl} onChange={(e) => setConfigForm({...configForm, posterImageUrl: e.target.value})} /></div>
-                <Button onClick={handleSaveConfig} className="w-full">Enregistrer</Button>
+                <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">URL de l'Affiche</label><Input className="border-primary/20 focus:border-primary" value={configForm.posterImageUrl} onChange={(e) => setConfigForm({...configForm, posterImageUrl: e.target.value})} /></div>
+                <Button onClick={handleSaveConfig} className="w-full font-bold shadow-sm">Enregistrer les paramètres</Button>
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="access">
              <div className="grid md:grid-cols-2 gap-8">
-               <Card>
-                 <CardHeader><CardTitle>Ajouter un Administrateur</CardTitle></CardHeader>
+               <Card className="shadow-md border-t-4 border-t-primary">
+                 <CardHeader><CardTitle className="text-primary">Ajouter un Administrateur</CardTitle></CardHeader>
                  <CardContent className="space-y-4">
-                   <Input placeholder="Email" value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} />
-                   <Input placeholder="UID Firebase" value={newAdminUid} onChange={(e) => setNewAdminUid(e.target.value)} />
-                   <Button onClick={handleAddAdmin} className="w-full">Autoriser</Button>
+                   <Input placeholder="Email" className="border-primary/20" value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} />
+                   <Input placeholder="UID Firebase" className="border-primary/20" value={newAdminUid} onChange={(e) => setNewAdminUid(e.target.value)} />
+                   <Button onClick={handleAddAdmin} className="w-full font-bold">Autoriser l'accès</Button>
                  </CardContent>
                </Card>
-               <Card>
-                 <CardHeader><CardTitle>Liste des Admins</CardTitle></CardHeader>
+               <Card className="shadow-md border-t-4 border-t-primary">
+                 <CardHeader><CardTitle className="text-primary">Liste des Admins</CardTitle></CardHeader>
                  <CardContent>
                     <Table>
                       <TableBody>
                         {adminUsers?.map(admin => (
                           <TableRow key={admin.uid}>
-                            <TableCell>{admin.email}</TableCell>
+                            <TableCell className="font-medium">{admin.email}</TableCell>
                             <TableCell className="text-right">
-                              {admin.email !== "hugues.rabier@gmail.com" && <Button variant="ghost" onClick={() => handleRemoveAdmin(admin.uid)} className="bg-muted/50 hover:bg-destructive/10 text-destructive"><Trash2 className="w-4 h-4" /></Button>}
+                              {admin.email !== "hugues.rabier@gmail.com" && (
+                                <Button variant="outline" onClick={() => handleRemoveAdmin(admin.uid)} className="border-destructive/30 text-destructive hover:bg-destructive/10">
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -456,15 +496,15 @@ export default function AdminDashboard() {
       <Dialog open={!!viewingExhibitor} onOpenChange={(open) => !open && setViewingExhibitor(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary" /> Détails de la candidature
+            <DialogTitle className="flex items-center gap-2 text-primary">
+              <FileText className="w-6 h-6" /> Détails de la candidature
             </DialogTitle>
           </DialogHeader>
-          <ScrollArea className="pr-4">
+          <ScrollArea className="pr-4 h-[70vh]">
             {viewingExhibitor && (
               <div className="space-y-6 py-4">
-                <section className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg">
-                  <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Enseigne</p><p className="font-bold">{viewingExhibitor.companyName}</p></div>
+                <section className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg border">
+                  <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Enseigne</p><p className="font-bold text-primary">{viewingExhibitor.companyName}</p></div>
                   <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Contact</p><p>{viewingExhibitor.firstName} {viewingExhibitor.lastName}</p></div>
                   <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Email</p><p className="text-sm">{viewingExhibitor.email}</p></div>
                   <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Téléphone</p><p className="text-sm">{viewingExhibitor.phone}</p></div>
@@ -472,18 +512,18 @@ export default function AdminDashboard() {
                 </section>
 
                 <section className="space-y-2">
-                  <h4 className="text-sm font-bold border-b pb-1">Détails du Stand</h4>
+                  <h4 className="text-sm font-bold border-b pb-1 text-primary">Détails du Stand</h4>
                   <div className="grid grid-cols-2 gap-4">
-                    <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Tables demandées</p><p>{viewingExhibitor.requestedTables} table(s)</p></div>
-                    <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Statut Pro</p><p>{viewingExhibitor.isRegistered ? "Déclaré" : "Particulier"}</p></div>
+                    <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Tables demandées</p><p className="font-medium">{viewingExhibitor.requestedTables} table(s)</p></div>
+                    <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Statut Pro</p><p className="font-medium">{viewingExhibitor.isRegistered ? "Déclaré" : "Particulier"}</p></div>
                     <div className="col-span-2">
                       <p className="text-[10px] font-bold uppercase text-muted-foreground">Description produits</p>
-                      <p className="text-sm whitespace-pre-wrap bg-white p-3 rounded border italic">{viewingExhibitor.productDescription}</p>
+                      <p className="text-sm whitespace-pre-wrap bg-white p-3 rounded border italic shadow-inner">{viewingExhibitor.productDescription}</p>
                     </div>
                     {viewingExhibitor.websiteUrl && (
                       <div className="col-span-2">
                         <p className="text-[10px] font-bold uppercase text-muted-foreground">Site / Réseaux</p>
-                        <a href={viewingExhibitor.websiteUrl} target="_blank" className="text-sm text-primary hover:underline flex items-center gap-1">
+                        <a href={viewingExhibitor.websiteUrl} target="_blank" className="text-sm text-primary hover:underline flex items-center gap-1 font-medium">
                           {viewingExhibitor.websiteUrl} <ExternalLink className="w-3 h-3" />
                         </a>
                       </div>
@@ -494,11 +534,11 @@ export default function AdminDashboard() {
                 {viewingExhibitor.detailedInfo && (
                   <section className="space-y-2">
                     <h4 className="text-sm font-bold border-b pb-1 text-secondary">Détails Techniques (Form. 2)</h4>
-                    <div className="grid grid-cols-2 gap-4 bg-secondary/5 p-4 rounded-lg">
-                      <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Électricité</p><p>{viewingExhibitor.detailedInfo.needsElectricity ? "Oui" : "Non"}</p></div>
-                      <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Repas Dimanche</p><p>{viewingExhibitor.detailedInfo.sundayLunchCount} plateaux</p></div>
-                      <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Assurance</p><p className="text-xs">{viewingExhibitor.detailedInfo.insuranceCompany} (N° {viewingExhibitor.detailedInfo.insurancePolicyNumber})</p></div>
-                      <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Lot Tombola</p><p>{viewingExhibitor.detailedInfo.tombolaLot ? "Oui" : "Non"}</p></div>
+                    <div className="grid grid-cols-2 gap-4 bg-secondary/5 p-4 rounded-lg border border-secondary/20">
+                      <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Électricité</p><p className="font-medium">{viewingExhibitor.detailedInfo.needsElectricity ? "Oui" : "Non"}</p></div>
+                      <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Repas Dimanche</p><p className="font-medium">{viewingExhibitor.detailedInfo.sundayLunchCount} plateaux</p></div>
+                      <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Assurance</p><p className="text-xs font-medium">{viewingExhibitor.detailedInfo.insuranceCompany} (N° {viewingExhibitor.detailedInfo.insurancePolicyNumber})</p></div>
+                      <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Lot Tombola</p><p className="font-medium">{viewingExhibitor.detailedInfo.tombolaLot ? "Oui" : "Non"}</p></div>
                     </div>
                   </section>
                 )}
