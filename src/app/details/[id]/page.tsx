@@ -426,7 +426,7 @@ export default function DetailsPage() {
                   </div>
                   <div className="bg-white/10 p-3 rounded-lg flex items-start gap-3 text-xs">
                     <Mail className="w-4 h-4 shrink-0 mt-0.5" />
-                    <p>Chèque à libeller à l'ordre de <strong>"Association Un Jardin pour Félix"</strong> et à envoyer sous 15 jours par courrier.</p>
+                    <p>Chèque à libeller à l'ordre de <strong>"Association Un Jardin pour Félix"</strong> et à envoyer <u className="font-bold">sous 15 jours</u> par courrier.</p>
                   </div>
                 </div>
 
