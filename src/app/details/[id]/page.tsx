@@ -13,7 +13,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { ShieldCheck, Zap, Utensils, Ticket, Camera, Info, ArrowLeft, Heart, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Zap, Utensils, Ticket, Camera, Info, ArrowLeft, Heart, CheckCircle2, Calculator, Mail } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -40,8 +40,6 @@ export default function DetailsPage() {
     const data = JSON.parse(localStorage.getItem('exhibitors') || '[]');
     const found = data.find((e: any) => e.id === id);
     
-    // On ne permet l'accès que si le dossier est en attente de finalisation (accepted_form1)
-    // ou si on veut simplement consulter un dossier déjà soumis (submitted_form2)
     if (!found || (found.status !== 'accepted_form1' && found.status !== 'submitted_form2')) {
       router.push('/');
     } else {
@@ -65,7 +63,14 @@ export default function DetailsPage() {
     },
   });
 
-  // Pré-remplissage si les données existent déjà
+  // Calcul dynamique des prix
+  const watchLunchCount = form.watch("sundayLunchCount") || 0;
+  const watchElectricity = form.watch("needsElectricity");
+  
+  const standPrice = exhibitor?.requestedTables === '1' ? 40 : 60;
+  const mealsPrice = watchLunchCount * 8;
+  const totalToPay = standPrice + mealsPrice;
+
   useEffect(() => {
     if (exhibitor?.detailedInfo) {
       form.reset({
@@ -120,8 +125,8 @@ export default function DetailsPage() {
               <div className="space-y-1">
                 <CardTitle className="text-xl font-headline font-bold text-primary">Confirmation de votre demande</CardTitle>
                 <CardDescription className="text-base">
-                  Votre candidature pour <strong>{exhibitor.requestedTables} table(s)</strong> a été retenue par notre comité. 
-                  Veuillez maintenant compléter les détails logistiques ci-dessous pour valider votre emplacement.
+                  Votre candidature pour <strong>{exhibitor.requestedTables === '1' ? '1 table (1.75m)' : '2 tables (3.50m)'}</strong> a été retenue. 
+                  Complétez les détails ci-dessous pour finaliser votre réservation.
                 </CardDescription>
               </div>
             </div>
@@ -263,9 +268,6 @@ export default function DetailsPage() {
                       )}
                     />
                   </div>
-                  <p className="text-[10px] text-muted-foreground italic bg-muted/30 p-2 rounded">
-                    L'exposant doit être couvert par une assurance responsabilité civile pour les risques liés à son activité durant toute la durée du marché (Art. 6 du règlement).
-                  </p>
                 </div>
 
                 {/* Consentements */}
@@ -283,16 +285,14 @@ export default function DetailsPage() {
                             <Camera className="w-4 h-4" /> Droit à l'image
                           </FormLabel>
                           <FormDescription className="text-xs text-primary/70">
-                            J'autorise l'association à utiliser des photos de mon stand pour sa communication (réseaux sociaux, presse, blog).
+                            J'autorise l'association à utiliser des photos de mon stand pour sa communication.
                           </FormDescription>
                           <FormMessage />
                         </div>
                       </FormItem>
                     )}
                   />
-                  
                   <div className="h-px bg-primary/10 my-2" />
-
                   <FormField
                     control={form.control}
                     name="agreedToTerms"
@@ -304,7 +304,7 @@ export default function DetailsPage() {
                         <div className="space-y-1 leading-none">
                           <FormLabel className="font-bold text-sm text-primary">Acceptation définitive du Règlement</FormLabel>
                           <FormDescription className="text-xs text-primary/70">
-                            Je confirme avoir lu et accepté l'intégralité du règlement intérieur du Marché de Noël 2026.
+                            Je confirme avoir lu et accepté l'intégralité du règlement intérieur 2026.
                           </FormDescription>
                           <FormMessage />
                         </div>
@@ -313,19 +313,38 @@ export default function DetailsPage() {
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="additionalComments"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-bold">Commentaires ou besoins spécifiques</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="Une question ? Un besoin particulier pour l'installation ?" {...field} className="min-h-[100px] border-primary/10" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Récapitulatif Financier */}
+                <div className="p-6 bg-primary text-white rounded-2xl shadow-lg space-y-4 border-2 border-accent/20">
+                  <h3 className="text-lg font-bold flex items-center gap-3 border-b border-white/20 pb-3">
+                    <Calculator className="w-5 h-5 text-accent" /> Récapitulatif de votre règlement
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span>Emplacement ({exhibitor.requestedTables === '1' ? '1 table' : '2 tables'}) :</span>
+                      <span className="font-bold">{standPrice} €</span>
+                    </div>
+                    {watchLunchCount > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span>Repas Dimanche ({watchLunchCount} x 8€) :</span>
+                        <span className="font-bold">{mealsPrice} €</span>
+                      </div>
+                    )}
+                    {watchElectricity && (
+                      <div className="flex justify-between items-center text-accent text-xs italic">
+                        <span>Option Électricité (à régler sur place) :</span>
+                        <span className="font-bold">1 €</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="pt-3 border-t border-white/40 flex justify-between items-center">
+                    <span className="text-xl font-headline font-bold">TOTAL À ENVOYER :</span>
+                    <span className="text-3xl font-headline font-bold text-accent">{totalToPay} €</span>
+                  </div>
+                  <div className="bg-white/10 p-3 rounded-lg flex items-start gap-3 text-xs">
+                    <Mail className="w-4 h-4 shrink-0 mt-0.5" />
+                    <p>Chèque à libeller à l'ordre de <strong>"Association Un Jardin pour Félix"</strong> et à envoyer à l'adresse qui vous sera communiquée par e-mail après validation.</p>
+                  </div>
+                </div>
 
                 <div className="pt-6 space-y-6">
                   <Button type="submit" className="w-full bg-secondary hover:bg-secondary/90 text-white h-16 text-xl gold-glow font-bold shadow-lg transition-all hover:scale-[1.01] active:scale-[0.99] border-none">
@@ -335,9 +354,6 @@ export default function DetailsPage() {
                   <div className="text-center space-y-2">
                     <p className="flex items-center justify-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
                       <Heart className="w-4 h-4 fill-primary" /> Merci pour votre soutien à Félix
-                    </p>
-                    <p className="text-[10px] text-muted-foreground max-w-xs mx-auto">
-                      Une fois validé, vous recevrez les instructions pour l'envoi de votre règlement par chèque.
                     </p>
                   </div>
                 </div>
