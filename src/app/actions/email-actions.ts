@@ -2,6 +2,17 @@
 'use server';
 
 import nodemailer from 'nodemailer';
+import { headers } from 'next/headers';
+
+/**
+ * Récupère la base URL de manière dynamique.
+ */
+async function getBaseUrl() {
+  const headersList = await headers();
+  const host = headersList.get('host');
+  const protocol = host?.includes('localhost') ? 'http' : 'https';
+  return `${protocol}://${host}`;
+}
 
 /**
  * Action serveur pour envoyer une notification par e-mail lors d'une nouvelle candidature.
@@ -76,7 +87,8 @@ export async function sendAcceptanceEmail(exhibitor: any, customMessage: string,
   const year = marketConfig?.marketYear || '2026';
   const edition = marketConfig?.editionNumber || '6ème';
   const notificationEmail = marketConfig?.notificationEmail || "lemarchedefelix2020@gmail.com";
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002';
+  
+  const baseUrl = await getBaseUrl();
   const detailsLink = `${baseUrl}/details/${exhibitor.id}`;
 
   const mailOptions = {
