@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useEffect, useState } from 'react';
 import { Exhibitor, ApplicationStatus } from '@/lib/types';
@@ -17,7 +18,7 @@ import Image from 'next/image';
 import { sendAcceptanceEmail, sendRejectionEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useMemoFirebase, useCollection, useUser, useAuth } from '@/firebase';
-import { collection, doc, deleteDoc } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 import { updateDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 
@@ -36,8 +37,6 @@ export default function AdminDashboard() {
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
 
   // Check if current user is admin
-  const adminRoleRef = useMemoFirebase(() => user ? doc(db, 'roles_admin', user.uid) : null, [db, user]);
-  // We use a separate check for admin status existence
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -45,19 +44,21 @@ export default function AdminDashboard() {
       setIsAdmin(false);
       return;
     }
-    // In a real app, we'd use a useDoc hook here, but let's assume existence for now if logged in 
-    // or handle the error gracefully via security rules.
-    // For this prototype, if you're signed in, we'll try to show the dashboard.
+    // In prototype mode, any signed in user is treated as admin
     setIsAdmin(true);
   }, [user]);
 
-  // Market Config fetching
+  // Market Config fetching - Publicly readable
   const marketConfigRef = useMemoFirebase(() => collection(db, 'market_configurations'), [db]);
   const { data: configs } = useCollection(marketConfigRef);
   const currentConfig = configs?.find(c => c.currentMarket) || configs?.[0];
 
-  // Exhibitors fetching
-  const exhibitorsRef = useMemoFirebase(() => collection(db, 'pre_registrations'), [db]);
+  // Exhibitors fetching - Only if user is authenticated to avoid permission errors on load
+  const exhibitorsRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(db, 'pre_registrations');
+  }, [db, user]);
+  
   const { data: exhibitorsData, isLoading: isExhibitorsLoading } = useCollection<Exhibitor>(exhibitorsRef);
 
   const [configForm, setConfigForm] = useState({
@@ -217,7 +218,7 @@ export default function AdminDashboard() {
           <CardContent className="space-y-4">
             <Button 
               onClick={() => initiateAnonymousSignIn(auth)} 
-              className="w-full h-12 text-lg font-bold gap-2 bg-secondary hover:bg-secondary/90"
+              className="w-full h-12 text-lg font-bold gap-2 bg-secondary hover:bg-secondary/90 text-white"
             >
               <LogIn className="w-5 h-5" /> Se connecter (Démo)
             </Button>
