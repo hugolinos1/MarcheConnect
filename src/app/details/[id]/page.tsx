@@ -11,7 +11,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { ShieldCheck, Zap, Utensils, Ticket, Camera, Info, ArrowLeft, Heart, CheckCircle2, Calculator, Mail, Loader2 } from 'lucide-react';
+import { ShieldCheck, Zap, Utensils, Ticket, Camera, Info, ArrowLeft, Heart, CheckCircle2, Calculator, Mail, Loader2, LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { sendFinalConfirmationEmail } from '@/app/actions/email-actions';
@@ -22,6 +22,7 @@ import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/no
 
 const formSchema = z.object({
   needsElectricity: z.boolean().default(false),
+  needsGrid: z.boolean().default(false),
   sundayLunchCount: z.coerce.number().min(0, "Minimum 0").max(6, "Maximum 6 par stand"),
   tombolaLot: z.boolean().default(false),
   tombolaLotDescription: z.string().optional(),
@@ -54,6 +55,7 @@ export default function DetailsPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       needsElectricity: false,
+      needsGrid: false,
       sundayLunchCount: 0,
       tombolaLot: true,
       tombolaLotDescription: "",
@@ -67,6 +69,7 @@ export default function DetailsPage() {
 
   const watchLunchCount = form.watch("sundayLunchCount") || 0;
   const watchElectricity = form.watch("needsElectricity");
+  const watchGrid = form.watch("needsGrid");
   
   const standPrice = exhibitor?.requestedTables === '1' ? 40 : 60;
   const mealsPrice = watchLunchCount * 8;
@@ -209,23 +212,45 @@ export default function DetailsPage() {
                       </p>
                     </div>
                   </div>
-                  <FormField
-                    control={form.control}
-                    name="needsElectricity"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-xl border p-5 bg-white hover:bg-muted/10 transition-colors shadow-sm cursor-pointer">
-                        <FormControl>
-                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel className="text-base font-bold">Besoin d'un raccordement électrique ?</FormLabel>
-                          <FormDescription className="text-sm">
-                            Attention : veuillez prévoir vos propres rallonges et multiprises (normes CE).
-                          </FormDescription>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid gap-6">
+                    <FormField
+                      control={form.control}
+                      name="needsElectricity"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-xl border p-5 bg-white hover:bg-muted/10 transition-colors shadow-sm cursor-pointer">
+                          <FormControl>
+                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="text-base font-bold">Besoin d'un raccordement électrique ?</FormLabel>
+                            <FormDescription className="text-sm">
+                              Attention : veuillez prévoir vos propres rallonges et multiprises (normes CE).
+                            </FormDescription>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="needsGrid"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-xl border p-5 bg-white hover:bg-muted/10 transition-colors shadow-sm cursor-pointer">
+                          <FormControl>
+                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="text-base font-bold flex items-center gap-2">
+                               <LayoutGrid className="w-4 h-4 text-secondary" /> Besoin d'une grille d'exposition ?
+                            </FormLabel>
+                            <FormDescription className="text-sm">
+                              Les grilles sont fournies par l'organisation pour l'accrochage de vos produits.
+                            </FormDescription>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-6">
@@ -385,6 +410,12 @@ export default function DetailsPage() {
                       <div className="flex justify-between items-center text-accent text-xs italic">
                         <span>Option Électricité (à régler sur place) :</span>
                         <span className="font-bold">1 €</span>
+                      </div>
+                    )}
+                    {watchGrid && (
+                      <div className="flex justify-between items-center text-accent text-xs italic">
+                        <span>Grille d'exposition :</span>
+                        <span className="font-bold">Offert sous réserve de disponibilité</span>
                       </div>
                     )}
                   </div>

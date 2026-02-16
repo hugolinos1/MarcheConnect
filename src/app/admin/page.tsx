@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, EyeOff, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck, UserPlus2, Clock, Lock, Info, ExternalLink, Sparkles, Download, Camera } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, EyeOff, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck, UserPlus2, Clock, Lock, Info, ExternalLink, Sparkles, Download, Camera, LayoutGrid } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -212,6 +212,7 @@ export default function AdminDashboard() {
       "Site Web": e.websiteUrl || "",
       "Description": e.productDescription,
       "Electricité": e.detailedInfo?.needsElectricity ? "Oui" : "Non",
+      "Grille": e.detailedInfo?.needsGrid ? "Oui" : "Non",
       "Repas Dimanche": e.detailedInfo?.sundayLunchCount || 0,
       "Assurance": e.detailedInfo?.insuranceCompany || "",
       "N° Police": e.detailedInfo?.insurancePolicyNumber || "",
@@ -323,12 +324,7 @@ export default function AdminDashboard() {
               <Card className="col-span-1">
                 <CardHeader className="p-4 pb-2"><CardTitle className="text-sm">Édition</CardTitle></CardHeader>
                 <CardContent className="p-4 pt-0">
-                  <Select value={selectedConfigId} onValueChange={setSelectedConfigId}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {configs?.map(c => <SelectItem key={c.id} value={c.id}>Marché {c.marketYear}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <span className="text-sm font-medium">Marché {currentConfig?.marketYear}</span>
                 </CardContent>
               </Card>
               <Card><CardHeader className="p-4 pb-0"><CardTitle className="text-xs text-muted-foreground uppercase">À Étudier</CardTitle></CardHeader><CardContent className="p-4 text-2xl font-bold text-primary">{stats.pending}</CardContent></Card>
@@ -563,9 +559,10 @@ export default function AdminDashboard() {
                     <h4 className="text-sm font-bold border-b pb-1 text-secondary">Détails Techniques (Form. 2)</h4>
                     <div className="grid grid-cols-2 gap-4 bg-secondary/5 p-4 rounded-lg border border-secondary/20">
                       <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Électricité</p><p className="font-medium">{viewingExhibitor.detailedInfo.needsElectricity ? "Oui" : "Non"}</p></div>
+                      <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Grille</p><p className="font-medium">{viewingExhibitor.detailedInfo.needsGrid ? "Oui" : "Non"}</p></div>
                       <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Repas Dimanche</p><p className="font-medium">{viewingExhibitor.detailedInfo.sundayLunchCount} plateaux</p></div>
-                      <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Assurance</p><p className="text-xs font-medium">{viewingExhibitor.detailedInfo.insuranceCompany} (N° {viewingExhibitor.detailedInfo.insurancePolicyNumber})</p></div>
                       <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Lot Tombola</p><p className="font-medium">{viewingExhibitor.detailedInfo.tombolaLot ? "Oui" : "Non"}</p></div>
+                      <div className="col-span-2"><p className="text-[10px] font-bold uppercase text-muted-foreground">Assurance</p><p className="text-xs font-medium">{viewingExhibitor.detailedInfo.insuranceCompany} (N° {viewingExhibitor.detailedInfo.insurancePolicyNumber})</p></div>
                     </div>
                   </section>
                 )}

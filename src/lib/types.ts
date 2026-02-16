@@ -27,6 +27,7 @@ export interface Exhibitor {
 export interface DetailedExhibitorInfo {
   boothSize: string; // Gardé pour compatibilité mais supplanté par requestedTables
   needsElectricity: boolean;
+  needsGrid: boolean; // Besoin d'une grille d'exposition
   sundayLunchCount: number; // Nombre de plateaux repas
   tombolaLot: boolean; // Participe à la tombola
   tombolaLotDescription?: string; // Nature du don
