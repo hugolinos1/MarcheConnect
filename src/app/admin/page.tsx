@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck, UserPlus2, Clock, Lock } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, EyeOff, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck, UserPlus2, Clock, Lock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -38,6 +38,7 @@ export default function AdminDashboard() {
   const [justification, setJustification] = useState('');
   const [acceptanceMessage, setAcceptanceMessage] = useState('');
   const [selectedConfigId, setSelectedConfigId] = useState<string>('');
+  const [showPassword, setShowPassword] = useState(false);
   
   // Login/Signup states
   const [email, setEmail] = useState('');
@@ -337,7 +338,22 @@ export default function AdminDashboard() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-bold text-muted-foreground uppercase">Mot de passe</label>
-                <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <div className="relative">
+                  <Input 
+                    type={showPassword ? "text" : "password"} 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                    required 
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
               {authError && <p className="text-xs text-destructive font-bold p-2 bg-destructive/10 rounded border border-destructive/20">{authError}</p>}
               
