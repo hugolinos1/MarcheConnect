@@ -18,10 +18,11 @@ export async function sendApplicationNotification(exhibitorData: any, marketConf
   });
 
   const year = marketConfig?.marketYear || '2026';
+  const notificationEmail = marketConfig?.notificationEmail || "lemarchedefelix2020@gmail.com";
 
   const mailOptions = {
     from: `"Le Marché de Félix" <${process.env.EMAIL_USER}>`,
-    to: "lemarchedefelix2020@gmail.com",
+    to: notificationEmail,
     subject: `Nouvelle Candidature : ${exhibitorData.companyName}`,
     text: `Bonjour,
 
@@ -74,13 +75,14 @@ export async function sendAcceptanceEmail(exhibitor: any, customMessage: string,
 
   const year = marketConfig?.marketYear || '2026';
   const edition = marketConfig?.editionNumber || '6ème';
+  const notificationEmail = marketConfig?.notificationEmail || "lemarchedefelix2020@gmail.com";
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002';
   const detailsLink = `${baseUrl}/details/${exhibitor.id}`;
 
   const mailOptions = {
     from: `"Le Marché de Félix" <${process.env.EMAIL_USER}>`,
     to: exhibitor.email,
-    cc: "lemarchedefelix2020@gmail.com",
+    cc: notificationEmail,
     subject: `Votre candidature pour le Marché de Félix ${year} a été retenue !`,
     text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 
@@ -124,11 +126,12 @@ export async function sendRejectionEmail(exhibitor: any, justification: string, 
   });
 
   const year = marketConfig?.marketYear || '2026';
+  const notificationEmail = marketConfig?.notificationEmail || "lemarchedefelix2020@gmail.com";
 
   const mailOptions = {
     from: `"Le Marché de Félix" <${process.env.EMAIL_USER}>`,
     to: exhibitor.email,
-    cc: "lemarchedefelix2020@gmail.com",
+    cc: notificationEmail,
     subject: `Votre candidature pour le Marché de Noël ${year}`,
     text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 
@@ -171,6 +174,7 @@ export async function sendFinalConfirmationEmail(exhibitor: any, details: any, m
   });
 
   const year = marketConfig?.marketYear || '2026';
+  const notificationEmail = marketConfig?.notificationEmail || "lemarchedefelix2020@gmail.com";
   const standPrice = exhibitor.requestedTables === '1' ? 40 : 60;
   const mealsPrice = details.sundayLunchCount * 8;
   const total = standPrice + mealsPrice;
@@ -178,7 +182,7 @@ export async function sendFinalConfirmationEmail(exhibitor: any, details: any, m
   const mailOptions = {
     from: `"Le Marché de Félix" <${process.env.EMAIL_USER}>`,
     to: exhibitor.email,
-    cc: "lemarchedefelix2020@gmail.com",
+    cc: notificationEmail,
     subject: `Confirmation de réception de votre dossier technique - ${exhibitor.companyName}`,
     text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 

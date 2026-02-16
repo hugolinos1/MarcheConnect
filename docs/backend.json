@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "MarketConfiguration": {
@@ -22,6 +23,11 @@
           "type": "string",
           "description": "URL to the hosted image of the main promotional poster for this market edition, displayed on the main page.",
           "format": "uri"
+        },
+        "notificationEmail": {
+          "type": "string",
+          "description": "The email address where administrator notifications are sent and which is placed in CC for exhibitor communications.",
+          "format": "email"
         },
         "preRegistrationStartDate": {
           "type": "string",
@@ -48,9 +54,6 @@
         "marketYear",
         "editionNumber",
         "posterImageUrl",
-        "preRegistrationStartDate",
-        "preRegistrationEndDate",
-        "detailedInformationDeadline",
         "currentMarket"
       ]
     },

@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useEffect, useState } from 'react';
 import { Exhibitor, ApplicationStatus } from '@/lib/types';
@@ -92,7 +93,8 @@ export default function AdminDashboard() {
   const [configForm, setConfigForm] = useState({
     marketYear: 2026,
     editionNumber: "6ème",
-    posterImageUrl: "https://i.ibb.co/3y3KRNW4/Affiche-March.jpg"
+    posterImageUrl: "https://i.ibb.co/3y3KRNW4/Affiche-March.jpg",
+    notificationEmail: "lemarchedefelix2020@gmail.com"
   });
 
   useEffect(() => {
@@ -100,7 +102,8 @@ export default function AdminDashboard() {
       setConfigForm({
         marketYear: currentConfig.marketYear,
         editionNumber: currentConfig.editionNumber,
-        posterImageUrl: currentConfig.posterImageUrl
+        posterImageUrl: currentConfig.posterImageUrl,
+        notificationEmail: currentConfig.notificationEmail || "lemarchedefelix2020@gmail.com"
       });
     }
   }, [currentConfig]);
@@ -452,6 +455,7 @@ export default function AdminDashboard() {
                   <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Édition</label><Input className="border-primary/20 focus:border-primary" value={configForm.editionNumber} onChange={(e) => setConfigForm({...configForm, editionNumber: e.target.value})} /></div>
                 </div>
                 <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">URL de l'Affiche</label><Input className="border-primary/20 focus:border-primary" value={configForm.posterImageUrl} onChange={(e) => setConfigForm({...configForm, posterImageUrl: e.target.value})} /></div>
+                <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Email de notification (Réception & Copie)</label><Input type="email" className="border-primary/20 focus:border-primary" value={configForm.notificationEmail} onChange={(e) => setConfigForm({...configForm, notificationEmail: e.target.value})} /></div>
                 <Button onClick={handleSaveConfig} className="w-full font-bold shadow-sm">Enregistrer les paramètres</Button>
               </CardContent>
             </Card>
