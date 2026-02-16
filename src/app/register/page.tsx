@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -19,6 +20,7 @@ import { sendApplicationNotification } from '@/app/actions/email-actions';
 import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const formSchema = z.object({
   firstName: z.string().min(2, "Le prénom est requis"),
@@ -80,11 +82,9 @@ export default function RegisterPage() {
         createdAt: new Date().toISOString(),
       };
       
-      // Save to Firestore instead of localStorage
       const colRef = collection(db, 'pre_registrations');
       await addDocumentNonBlocking(colRef, newExhibitor);
       
-      // Envoi de la notification par email (Action Serveur)
       await sendApplicationNotification(newExhibitor, currentConfig);
       
       router.push('/register/success');
@@ -111,19 +111,63 @@ export default function RegisterPage() {
                   <FileText className="w-5 h-5" /> Règlement du Marché {marketYear}
                 </span>
               </AccordionTrigger>
-              <AccordionContent className="px-6 pb-6 text-xs text-muted-foreground space-y-4 max-h-96 overflow-y-auto">
-                <div>
-                  <h4 className="font-bold text-foreground">Article 1 : Dates & Lieu</h4>
-                  <p>Samedi et Dimanche de début Décembre {marketYear}. Salle Maurice Baquet, Chazay d’Azergues.</p>
-                </div>
-                <div>
-                  <h4 className="font-bold text-foreground">Article 3 : Sélection</h4>
-                  <p>Réponse sous 15 semaines. Nous privilégions le fait-main. Pas de revente. Tables de 1m75 fournies. Installation le samedi matin.</p>
-                </div>
-                <div>
-                  <h4 className="font-bold text-foreground">Article 5 : Tarifs & Restauration</h4>
-                  <p>40€ pour 1 table (1m75), 60€ pour 2 tables (3m50). Repas du dimanche midi : 8€/personne.</p>
-                </div>
+              <AccordionContent className="px-6 pb-6">
+                <ScrollArea className="h-96 pr-4 text-xs text-muted-foreground space-y-4">
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 1 : Dates & Lieu</h4>
+                      <p>Le marché aura lieu le samedi 05/12/{marketYear} de 14h à 19h et le dimanche 06/12/{marketYear} de 10h à 17h30 à la salle Maurice Baquet, rue Pierre Coubertin (à droite de l’entrée du stade de foot) à Chazay d’Azergues (69380).</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 2 : Inscription</h4>
+                      <p>L’inscription n’est possible que sur les 2 jours. Pas de dérogation possible.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 3 : Sélection & Candidature</h4>
+                      <p>Nous répondrons à toutes les candidatures, par mail (que la réponse soit positive ou négative) dans les 15 semaines suivant votre demande. Nous nous octroyons le droit de refuser une candidature si les articles proposés ne conviennent pas à notre sélection : Hors thématique Noël /idée cadeau Noël ou si plusieurs exposants proposent des articles similaires. Nous privilégions les articles et produits artisanaux. Nous n’acceptons pas la revente. Les attributions et les emplacements ne sont pas systématiquement renouvelés d’une année sur l’autre, ceci afin de garder notre marché attrayant.</p>
+                      <p className="mt-2">Vous vous engagez à ne mettre sur votre stand que les articles qui ont été validés par le bureau du marché de Noël. Si besoin, nous vous demanderons de retirer les articles inadéquats. Dans la mesure du possible, merci de porter un soin à votre stand : nappes pour recouvrir la table, mettre en avant le nom de votre marque, rendre lisible ce que vous vendez.</p>
+                      <p className="mt-2">Nous serons sensibles aux demandes de personnes étant déclarées au registre du commerce. Le régime de micro-entreprise (régime micro-Bic) calcule les taxes qu’au strict pourcentage des ventes, cela n’engage donc pas de frais supplémentaires pour vous. Dans le cas où vous n’êtes pas déclaré, l’article L30-2 du code de commerce autorise les particuliers non inscrits à participer 2 fois/an à des marchés.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 4 : Installation & Logistique</h4>
+                      <p>L’installation des exposants (artisans/créateurs exclusivement) aura lieu le samedi entre 11h et 13h. Les emplacements seront attribués à l’arrivée de chaque exposant. Grilles, tables et chaises sont fournies et installées préalablement, en fonction des besoins exprimés.</p>
+                      <p className="mt-2">Nous pourrons fournir en électricité 8 à 10 stands maximum, merci d’en faire la demande lors de l’inscription. Nous ne garantirons pas de pouvoir répondre à toutes les demandes, priorité sera donnée aux produits alimentaires. Les rallonges sont à prévoir par l'exposant.</p>
+                      <p className="mt-2">Nous vous préviendrons début novembre de l’attribution du point électrique. Le jour du marché, nous vous indiquerons l’emplacement avec l’électricité pour un supplément de 1€.</p>
+                      <p className="mt-2">Il est essentiel de respecter les horaires d’installation pour ne pas retarder l’ouverture du marché de Noël. Si vous pensez avoir du retard ou avez un empêchement de dernière minute, merci de prévenir Cécile Rabier au 06 81 14 77 76. Le démontage du stand ne pourra se faire que le dimanche après la fermeture du marché soit 17h30.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 5 : Tarifs & Restauration</h4>
+                      <p>- Un chèque correspondant au nombre de tables souhaité (1 table = 1m75 ou 2 tables = 3m50) est demandé après validation de votre inscription. Sans ce versement, l’inscription ne sera pas prise en compte. Tarif {marketYear} : 40€ pour 1 table et 60€ pour 2 tables (mesures table : 1m75x0.8m).</p>
+                      <p>- Chèque à l’ordre de « Les amis d’un jardin pour Félix » association locale de Chazay d’Azergues. Le chèque sera encaissé à partir du 20 novembre {marketYear}. Toute annulation à partir de cette date ne donnera pas lieu à remboursement.</p>
+                      <p>- Restauration : nous proposons aux exposants un plateau repas le dimanche midi (8€). Réservation et paiement demandés en même temps que l’inscription. Plateau fait maison : salade, quiche, fromage, dessert, eau.</p>
+                      <p>- Le dimanche matin à 9h30 : moment convivial offert (café, thé, gâteaux) pour débriefer de la veille.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 6 : Action Solidaire & Tombola</h4>
+                      <p>Nous organisons cette année une tombola solidaire. Nous vous sollicitons pour offrir un lot (sans obligation) mettant en avant votre savoir-faire. N’hésitez pas à joindre votre carte de visite. Les lots seront récupérés le samedi matin à votre arrivée.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 7 : Droits à l'image</h4>
+                      <p>L’exposant accepte que des vues de son stand puissent être prises par l’organisateur ou la Mairie de Chazay d’Azergues et en accepte la diffusion gratuite dans le cadre de la communication liée à la manifestation.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 8 : Responsabilité & Assurance</h4>
+                      <p>Les organisateurs ne sont pas responsables des vols ou dégradations. L’exposant est tenu de souscrire, à ses frais, toutes assurances couvrant les risques que lui-même, son matériel ou ses accompagnateurs encourent ou font courir à des tiers.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 9 : Obligations</h4>
+                      <p>L’exposant s’engage à être conforme à la législation en vigueur et assume l’entière responsabilité de ses ventes et de ses déclarations fiscales.</p>
+                    </div>
+                  </div>
+                </ScrollArea>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -415,7 +459,7 @@ export default function RegisterPage() {
                         <div className="space-y-1 leading-none">
                           <FormLabel className="font-bold text-primary">Règlement du Marché</FormLabel>
                           <FormDescription className="text-xs">
-                            J'ai lu et j'accepte le règlement du Marché de Noël {marketYear} (consultable en haut de cette page).
+                            J'ai lu et j'accepte l'intégralité du règlement du Marché de Noël {marketYear} (consultable en haut de cette page).
                           </FormDescription>
                           <FormMessage />
                         </div>
