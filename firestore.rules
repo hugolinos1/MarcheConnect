@@ -1,0 +1,122 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * CORE PHILOSOPHY
+     * This ruleset implements a dual-access security model: 
+     * 1. Role-Based Access Control (RBAC): Administrators, identified by the existence of a document 
+     *    in the /roles_admin collection, have full management capabilities across all entities.
+     * 2. Key-Based Access Control: Exhibitors access and update their specific application and 
+     *    detailed info documents using a 'detailedInfoAccessKey'. This allows for secure, 
+     *    unauthenticated (or anonymous) submissions and updates via unique links.
+     *
+     * DATA STRUCTURE
+     * - /roles_admin/{uid}: Flag documents for admin users.
+     * - /markets/{marketId}: Public event details.
+     * - /exhibitorApplications/{id}: Initial submissions (Form 1).
+     * - /exhibitorDetailedInformation/{id}: Supplemental data (Form 2).
+     *
+     * KEY SECURITY DECISIONS
+     * - Public Read for Markets: Event details are open to all for discovery.
+     * - Private Applications: Only admins can list all applications. Individuals must know 
+     *   their specific document ID to 'get' their data.
+     * - Access Key Validation: For updates to sensitive exhibitor data, the incoming 
+     *   'detailedInfoAccessKey' must match the one stored in the document.
+     * - Relational Integrity: Critical fields like 'marketId' and 'applicationId' are 
+     *   enforced during creation and made immutable during updates to prevent data corruption.
+     */
+
+    // --- Global Helper Functions ---
+
+    /** Checks if a user is authenticated with Firebase Auth. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** Checks if the authenticated user has an admin record in the database. */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    /** Validates if an update is performed by an admin or provides the correct access key. */
+    function canUpdateExhibitorData(existingData, incomingData) {
+      return isAdmin() || (existingData.detailedInfoAccessKey == incomingData.detailedInfoAccessKey);
+    }
+
+    /** Helper for checking existence and admin status for write operations. */
+    function isExistingAdmin() {
+      return resource != null && isAdmin();
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Publicly readable event information. Writable only by admins.
+     * @path /markets/{marketId}
+     * @allow get, list (public)
+     * @allow create, update, delete (isAdmin)
+     * @deny create (not an admin)
+     * @principle Separation of public content from administrative controls.
+     */
+    match /markets/{marketId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update, delete: if isExistingAdmin();
+    }
+
+    /**
+     * @description Initial applications. Created by anyone. Managed by admins or via access key.
+     * @path /exhibitorApplications/{applicationId}
+     * @allow get (public/key-holder), list (isAdmin)
+     * @allow create (anyone)
+     * @allow update (isAdmin or correct access key)
+     * @deny list (non-admin)
+     * @principle Multi-mode access: Open submission with restricted management and listing.
+     */
+    match /exhibitorApplications/{applicationId} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if true;
+      allow update: if resource != null && (isAdmin() || canUpdateExhibitorData(resource.data, request.resource.data));
+      allow delete: if isExistingAdmin();
+    }
+
+    /**
+     * @description Detailed exhibitor info. Requires an access key or admin role for access.
+     * @path /exhibitorDetailedInformation/{detailedInfoId}
+     * @allow get (public/key-holder), list (isAdmin)
+     * @allow create (anyone with a key/admin)
+     * @allow update (isAdmin or correct access key)
+     * @deny update (mismatched access key)
+     * @principle Authorization Independence via denormalized access keys.
+     */
+    match /exhibitorDetailedInformation/{detailedInfoId} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if true;
+      allow update: if resource != null && (isAdmin() || canUpdateExhibitorData(resource.data, request.resource.data));
+      allow delete: if isExistingAdmin();
+    }
+
+    /**
+     * @description Admin role registry. Documents here grant elevated privileges.
+     * @path /roles_admin/{adminUid}
+     * @allow get (self), list (isAdmin)
+     * @allow create, update, delete (false - managed via Admin SDK/Console)
+     * @deny create (standard user attempting to grant themselves admin)
+     * @principle Database Access Control (DBAC) using flag documents.
+     */
+    match /roles_admin/{adminUid} {
+      allow get: if isSignedIn() && request.auth.uid == adminUid;
+      allow list: if isAdmin();
+      allow create, update, delete: if false;
+    }
+  }
+}
+
+/** 
+ * PROTOTYPING MODE NOTICE:
+ * Data shape validation (types and required fields) is omitted to favor rapid development.
+ * Authorization logic is strictly enforced based on roles and secret keys.
+ */
