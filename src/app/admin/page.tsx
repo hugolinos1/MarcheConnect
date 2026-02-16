@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useEffect, useState } from 'react';
 import { Exhibitor, ApplicationStatus } from '@/lib/types';
@@ -31,6 +30,7 @@ export default function AdminDashboard() {
   const { user, isUserLoading } = useUser();
   
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
@@ -101,16 +101,36 @@ export default function AdminDashboard() {
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
-    try {
-      if (isSignUp) {
-        initiateEmailSignUp(auth, email, password);
-        toast({ title: "Compte créé", description: "Vous pouvez maintenant transmettre votre UID pour obtenir les accès." });
-      } else {
-        initiateEmailSignIn(auth, email, password);
-      }
-    } catch (err: any) {
-      setAuthError("Erreur d'authentification. Vérifiez vos identifiants.");
-    }
+    setIsAuthLoading(true);
+
+    const authPromise = isSignUp 
+      ? initiateEmailSignUp(auth, email, password)
+      : initiateEmailSignIn(auth, email, password);
+
+    authPromise
+      .then(() => {
+        if (isSignUp) {
+          toast({ 
+            title: "Compte créé", 
+            description: "Votre compte est en attente d'autorisation. Transmettez votre UID à l'administrateur." 
+          });
+        }
+      })
+      .catch((err: any) => {
+        console.error("Auth error:", err.code);
+        if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+          setAuthError("Email ou mot de passe incorrect.");
+        } else if (err.code === 'auth/email-already-in-use') {
+          setAuthError("Cet e-mail est déjà utilisé.");
+        } else if (err.code === 'auth/weak-password') {
+          setAuthError("Le mot de passe est trop court.");
+        } else {
+          setAuthError("Une erreur est survenue lors de l'authentification.");
+        }
+      })
+      .finally(() => {
+        setIsAuthLoading(false);
+      });
   };
 
   const handleAddAdmin = () => {
@@ -309,14 +329,14 @@ export default function AdminDashboard() {
                 <label className="text-sm font-bold text-muted-foreground uppercase">Mot de passe</label>
                 <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
               </div>
-              {authError && <p className="text-xs text-destructive font-bold">{authError}</p>}
+              {authError && <p className="text-xs text-destructive font-bold p-2 bg-destructive/10 rounded border border-destructive/20">{authError}</p>}
               
-              <Button type="submit" className="w-full h-12 text-lg font-bold gap-2 bg-primary hover:bg-primary/90 text-white">
-                {isSignUp ? <UserPlus2 className="w-5 h-5" /> : <LogIn className="w-5 h-5" />}
+              <Button type="submit" disabled={isAuthLoading} className="w-full h-12 text-lg font-bold gap-2 bg-primary hover:bg-primary/90 text-white">
+                {isAuthLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : isSignUp ? <UserPlus2 className="w-5 h-5" /> : <LogIn className="w-5 h-5" />}
                 {isSignUp ? "S'enregistrer" : "Se connecter"}
               </Button>
               
-              <Button type="button" variant="ghost" className="w-full text-xs" onClick={() => setIsSignUp(!isSignUp)}>
+              <Button type="button" variant="ghost" className="w-full text-xs" onClick={() => { setIsSignUp(!isSignUp); setAuthError(''); }}>
                 {isSignUp ? "Déjà un compte ? Se connecter" : "Nouveau membre ? S'enregistrer pour obtenir l'UID"}
               </Button>
             </form>
