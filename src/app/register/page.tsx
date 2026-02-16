@@ -310,9 +310,10 @@ export default function RegisterPage() {
                               <FormLabel className="font-normal">
                                 Particulier (L30-2 Code de Commerce)
                               </FormLabel>
-                            </RadioGroup>
-                          </FormControl>
-                        </FormMessage>
+                            </FormItem>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
