@@ -4,7 +4,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * MARCHÉCONNECT SECURITY RULES - PROTOTYPE VERSION
+     * MARCHÉCONNECT SECURITY RULES
      */
 
     // --- Helper Functions ---
@@ -14,34 +14,40 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // In prototype mode, we allow access to all authenticated users
-      // to facilitate easy testing and demonstration of admin features.
-      return isSignedIn();
+      // Accès autorisé si l'utilisateur est l'admin principal ou présent dans roles_admin
+      return isSignedIn() && (
+        request.auth.token.email == "hugues.rabier@gmail.com" ||
+        exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
+      );
     }
 
     // --- Collection Rules ---
 
     match /roles_admin/{adminId} {
-      allow get, list: if isSignedIn();
+      // Seuls les admins peuvent voir et gérer les autres admins
+      allow get, list: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
 
     match /market_configurations/{marketConfigId} {
+      // Lecture publique pour l'affiche et l'année
       allow get, list: if true;
+      // Modification réservée aux admins
       allow create, update, delete: if isAdmin();
     }
 
     match /pre_registrations/{preRegistrationId} {
-      // Anyone can submit a pre-registration
+      // Tout le monde peut créer une candidature (Form 1)
       allow create: if true;
-      // Admins (authenticated users in this prototype) can manage registrations
+      // Seuls les admins peuvent lister et gérer les candidatures
       allow get, list, update, delete: if isAdmin();
     }
 
     match /exhibitor_details/{exhibitorDetailId} {
-      // Anyone can submit or update their details (using Form 2 link)
+      // Les exposants peuvent créer/modifier via leur lien (Form 2)
+      // Dans ce prototype, on autorise la création/MAJ publique pour simplifier le flux par lien
       allow create, update: if true;
-      // Admins (authenticated users in this prototype) can manage details
+      // Consultation réservée aux admins
       allow get, list, delete: if isAdmin();
     }
   }
