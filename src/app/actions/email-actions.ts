@@ -1,3 +1,4 @@
+
 'use server';
 
 import nodemailer from 'nodemailer';
@@ -193,7 +194,7 @@ Lot Tombola : ${details.tombolaLot ? 'Oui - Merci !' : 'Non'}
 
 MONTANT TOTAL À RÉGLER : ${total} €
 
-Pour confirmer définitivement votre réservation, merci de nous faire parvenir votre chèque à l'ordre de "Association Un Jardin pour Félix" par courrier.
+Pour confirmer définitivement votre réservation, merci de nous faire parvenir votre chèque à l'ordre de "Association Un Jardin pour Félix" sous 15 jours par courrier.
 
 Une confirmation finale de réservation vous sera adressée dès réception de votre règlement.
 
