@@ -1,11 +1,9 @@
-
 'use server';
 
 import nodemailer from 'nodemailer';
 
 /**
  * Action serveur pour envoyer une notification par e-mail lors d'une nouvelle candidature.
- * Destinataire mis à jour vers l'adresse Gmail de l'association.
  */
 export async function sendApplicationNotification(exhibitorData: any) {
   const transporter = nodemailer.createTransport({
@@ -59,7 +57,6 @@ Système de gestion MarchéConnect
 
 /**
  * Action serveur pour envoyer l'e-mail d'acceptation avec lien de finalisation.
- * Copie de confirmation mise à jour vers l'adresse Gmail de l'association.
  */
 export async function sendAcceptanceEmail(exhibitor: any, customMessage: string) {
   const transporter = nodemailer.createTransport({
@@ -78,7 +75,7 @@ export async function sendAcceptanceEmail(exhibitor: any, customMessage: string)
   const mailOptions = {
     from: `"Le Marché de Félix" <${process.env.EMAIL_USER}>`,
     to: exhibitor.email,
-    cc: "lemarchedefelix2020@gmail.com", // Copie de confirmation mise à jour
+    cc: "lemarchedefelix2020@gmail.com",
     subject: `Votre candidature pour le Marché de Félix 2026 a été retenue !`,
     text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 
@@ -104,5 +101,51 @@ L'équipe de l'association "Un jardin pour Félix"
   } catch (error) {
     console.error('Erreur envoi mail acceptation:', error);
     return { success: false, error: 'Failed to send acceptance email' };
+  }
+}
+
+/**
+ * Action serveur pour envoyer l'e-mail de refus motivé.
+ * Copie de confirmation envoyée à l'adresse Gmail de l'association.
+ */
+export async function sendRejectionEmail(exhibitor: any, justification: string) {
+  const transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: Number(process.env.EMAIL_PORT),
+    secure: process.env.EMAIL_USE_SSL === 'True',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: `"Le Marché de Félix" <${process.env.EMAIL_USER}>`,
+    to: exhibitor.email,
+    cc: "lemarchedefelix2020@gmail.com",
+    subject: `Votre candidature pour le Marché de Noël 2026`,
+    text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
+
+Nous vous remercions de l'intérêt porté à notre marché solidaire "Un jardin pour Félix".
+
+Après étude de votre dossier par notre comité de sélection, nous avons le regret de vous informer que votre candidature n'a pas pu être retenue pour cette édition 2026.
+
+Motif de notre décision :
+---------------------------
+${justification}
+---------------------------
+
+Nous vous souhaitons une excellente saison de fin d'année et une bonne continuation dans vos activités.
+
+L'équipe de l'association "Un jardin pour Félix"
+`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return { success: true };
+  } catch (error) {
+    console.error('Erreur envoi mail refus:', error);
+    return { success: false, error: 'Failed to send rejection email' };
   }
 }

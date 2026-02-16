@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useEffect, useState } from 'react';
 import { Exhibitor, ApplicationStatus } from '@/lib/types';
@@ -15,7 +14,7 @@ import { generateRejectionJustification } from '@/ai/flows/generate-rejection-ju
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import Image from 'next/image';
-import { sendAcceptanceEmail } from '@/app/actions/email-actions';
+import { sendAcceptanceEmail, sendRejectionEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
 
 export default function AdminDashboard() {
@@ -75,7 +74,41 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleReject = async (exhibitor: Exhibitor, reasons: string[]) => {
+  const handleConfirmReject = async (exhibitor: Exhibitor) => {
+    if (!justification) {
+      toast({
+        variant: "destructive",
+        title: "Justification requise",
+        description: "Veuillez générer ou saisir un motif de refus.",
+      });
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const result = await sendRejectionEmail(exhibitor, justification);
+      if (result.success) {
+        updateStatus(exhibitor.id, 'rejected', { rejectionJustification: justification });
+        toast({
+          title: "Refus envoyé",
+          description: `L'e-mail de refus a été envoyé à ${exhibitor.email}.`,
+        });
+        setJustification('');
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erreur d'envoi",
+          description: "Impossible d'envoyer l'e-mail de refus.",
+        });
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleGenerateRejectIA = async (exhibitor: Exhibitor, reasons: string[]) => {
     setIsGenerating(true);
     try {
       const result = await generateRejectionJustification({
@@ -296,32 +329,37 @@ export default function AdminDashboard() {
                                   <DialogContent>
                                     <DialogHeader>
                                       <DialogTitle>Motif du refus</DialogTitle>
-                                      <DialogDescription>Générer un message poli avec l'IA.</DialogDescription>
+                                      <DialogDescription>Générer un message poli avec l'IA et envoyer l'e-mail.</DialogDescription>
                                     </DialogHeader>
                                     <div className="space-y-4 py-4">
                                       <Button 
-                                        onClick={() => handleReject(exhibitor, ["Trop d'articles similaires", "Non artisanal", "Plus de place disponible"])}
+                                        onClick={() => handleGenerateRejectIA(exhibitor, ["Trop d'articles similaires", "Non artisanal", "Plus de place disponible"])}
                                         disabled={isGenerating}
                                         variant="outline"
                                         className="w-full"
                                       >
-                                        {isGenerating ? "Génération..." : "Générer Justification IA"}
+                                        {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Générer Justification IA"}
                                       </Button>
                                       <Textarea 
+                                        placeholder="Saisissez ici le motif du refus qui sera envoyé au candidat..."
                                         value={justification} 
                                         onChange={(e) => setJustification(e.target.value)} 
                                         className="min-h-[200px]"
                                       />
+                                      <div className="p-3 bg-muted/50 rounded-lg flex items-start gap-2 text-xs">
+                                        <Mail className="w-4 h-4 shrink-0 mt-0.5 text-primary" />
+                                        <p>Une copie de l'e-mail de refus envoyé à <strong>{exhibitor.email}</strong> vous sera adressée en copie (CC).</p>
+                                      </div>
                                     </div>
                                     <DialogFooter>
                                       <Button 
                                         variant="destructive" 
-                                        onClick={() => {
-                                          updateStatus(exhibitor.id, 'rejected', { rejectionJustification: justification });
-                                          setJustification('');
-                                        }}
+                                        disabled={isSending || !justification}
+                                        onClick={() => handleConfirmReject(exhibitor)}
+                                        className="gap-2"
                                       >
-                                        Confirmer Refus
+                                        {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                                        Confirmer et Envoyer le Refus
                                       </Button>
                                     </DialogFooter>
                                   </DialogContent>
