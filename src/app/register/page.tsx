@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { TreePine, ArrowLeft, Send, Info, FileText, Heart, Star, Globe, ShieldCheck } from 'lucide-react';
+import { TreePine, ArrowLeft, Send, Info, FileText, Heart, Star, Globe, ShieldCheck, MapPin } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
@@ -18,10 +18,12 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import Image from 'next/image';
 
 const formSchema = z.object({
-  name: z.string().min(2, "Le nom est requis"),
+  firstName: z.string().min(2, "Le prénom est requis"),
+  lastName: z.string().min(2, "Le nom est requis"),
   email: z.string().email("Email invalide"),
   phone: z.string().min(10, "Numéro de téléphone requis"),
   companyName: z.string().min(2, "Nom de l'enseigne requis"),
+  address: z.string().min(5, "L'adresse complète est requise"),
   productDescription: z.string().min(10, "Veuillez décrire vos produits (nature du stand)"),
   origin: z.string().min(2, "Veuillez préciser votre origine géographique"),
   isRegistered: z.enum(["yes", "no"], { required_error: "Veuillez répondre à cette question" }),
@@ -37,10 +39,12 @@ export default function RegisterPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      firstName: "",
+      lastName: "",
       email: "",
       phone: "",
       companyName: "",
+      address: "",
       productDescription: "",
       origin: "",
       isRegistered: "yes",
@@ -164,12 +168,12 @@ export default function RegisterPage() {
                 <div className="grid md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
-                    name="name"
+                    name="lastName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Votre Nom & Prénom</FormLabel>
+                        <FormLabel>Nom</FormLabel>
                         <FormControl>
-                          <Input placeholder="Jean Dupont" {...field} />
+                          <Input placeholder="Dupont" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -177,18 +181,32 @@ export default function RegisterPage() {
                   />
                   <FormField
                     control={form.control}
-                    name="companyName"
+                    name="firstName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nom de votre Enseigne (Marque)</FormLabel>
+                        <FormLabel>Prénom</FormLabel>
                         <FormControl>
-                          <Input placeholder="Les Artisans de Noël" {...field} />
+                          <Input placeholder="Jean" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="companyName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nom de votre Enseigne (Marque)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Les Artisans de Noël" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <FormField
@@ -219,13 +237,30 @@ export default function RegisterPage() {
                   />
                 </div>
 
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-primary" /> Adresse Postale Complète
+                      </FormLabel>
+                      <FormControl>
+                        <Input placeholder="N°, rue, code postal et ville" {...field} />
+                      </FormControl>
+                      <FormDescription>Utilisez une adresse valide pour la logistique.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <div className="grid md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
                     name="origin"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Origine géographique</FormLabel>
+                        <FormLabel>Origine géographique (Ville/Département)</FormLabel>
                         <FormControl>
                           <Input placeholder="Ex: Chazay, Lyon, Villefranche..." {...field} />
                         </FormControl>

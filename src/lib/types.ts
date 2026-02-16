@@ -2,11 +2,13 @@ export type ApplicationStatus = 'pending' | 'accepted_form1' | 'rejected' | 'sub
 
 export interface Exhibitor {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
   companyName: string;
   productDescription: string;
+  address: string;
   origin: string; // Origine géographique
   isRegistered: boolean; // Déclaré au RC ou association
   websiteUrl?: string; // Adresse site marchand / réseaux

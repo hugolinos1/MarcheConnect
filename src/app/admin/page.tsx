@@ -37,7 +37,7 @@ export default function AdminDashboard() {
     setIsGenerating(true);
     try {
       const result = await generateRejectionJustification({
-        applicantName: exhibitor.name,
+        applicantName: `${exhibitor.firstName} ${exhibitor.lastName}`,
         applicationSummary: exhibitor.productDescription,
         rejectionReasons: reasons,
       });
@@ -51,7 +51,7 @@ export default function AdminDashboard() {
 
   const filteredExhibitors = exhibitors.filter(e => 
     e.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    e.name.toLowerCase().includes(searchTerm.toLowerCase())
+    `${e.firstName} ${e.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const stats = {
@@ -147,7 +147,7 @@ export default function AdminDashboard() {
                 <TableRow key={exhibitor.id} className="hover:bg-muted/30">
                   <TableCell>
                     <div className="font-semibold">{exhibitor.companyName}</div>
-                    <div className="text-xs text-muted-foreground">{exhibitor.name}</div>
+                    <div className="text-xs text-muted-foreground">{exhibitor.firstName} {exhibitor.lastName}</div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1 text-xs">
@@ -185,7 +185,7 @@ export default function AdminDashboard() {
                           <div className="grid grid-cols-2 gap-4">
                             <div className="p-3 bg-muted/50 rounded-lg space-y-2">
                               <h4 className="text-xs font-bold uppercase text-muted-foreground">Profil</h4>
-                              <p className="text-sm"><strong>Contact :</strong> {exhibitor.name}</p>
+                              <p className="text-sm"><strong>Contact :</strong> {exhibitor.firstName} {exhibitor.lastName}</p>
                               <p className="text-sm"><strong>Email :</strong> {exhibitor.email}</p>
                               <p className="text-sm"><strong>Tel :</strong> {exhibitor.phone}</p>
                               <p className="text-sm flex items-center gap-1"><strong>Statut :</strong> {exhibitor.isRegistered ? 'Déclaré' : 'Particulier'}</p>
@@ -205,9 +205,15 @@ export default function AdminDashboard() {
                             </div>
                           </div>
 
-                          <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                            <h4 className="font-bold text-primary mb-2">Description / Nature du stand :</h4>
-                            <p className="text-sm italic">{exhibitor.productDescription}</p>
+                          <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
+                            <div>
+                              <h4 className="font-bold text-primary mb-1 text-sm flex items-center gap-2"><MapPin className="w-4 h-4" /> Adresse :</h4>
+                              <p className="text-sm italic">{exhibitor.address}</p>
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-primary mb-1 text-sm">Description / Nature du stand :</h4>
+                              <p className="text-sm italic">{exhibitor.productDescription}</p>
+                            </div>
                           </div>
 
                           {/* Dossier Final (si reçu) */}
