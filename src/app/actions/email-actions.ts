@@ -5,6 +5,7 @@ import nodemailer from 'nodemailer';
 
 /**
  * Action serveur pour envoyer une notification par e-mail lors d'une nouvelle candidature.
+ * Destinataire mis à jour vers l'adresse Gmail de l'association.
  */
 export async function sendApplicationNotification(exhibitorData: any) {
   const transporter = nodemailer.createTransport({
@@ -18,8 +19,8 @@ export async function sendApplicationNotification(exhibitorData: any) {
   });
 
   const mailOptions = {
-    from: `"Marché de Félix" <${process.env.EMAIL_USER}>`,
-    to: "rabier.hugues@orange.fr",
+    from: `"Le Marché de Félix" <${process.env.EMAIL_USER}>`,
+    to: "lemarchedefelix2020@gmail.com",
     subject: `Nouvelle Candidature : ${exhibitorData.companyName}`,
     text: `Bonjour,
 
@@ -58,6 +59,7 @@ Système de gestion MarchéConnect
 
 /**
  * Action serveur pour envoyer l'e-mail d'acceptation avec lien de finalisation.
+ * Copie de confirmation mise à jour vers l'adresse Gmail de l'association.
  */
 export async function sendAcceptanceEmail(exhibitor: any, customMessage: string) {
   const transporter = nodemailer.createTransport({
@@ -70,15 +72,13 @@ export async function sendAcceptanceEmail(exhibitor: any, customMessage: string)
     },
   });
 
-  // Utilisation de l'origine de la requête pour construire le lien
-  // En production, il faudra configurer NEXT_PUBLIC_BASE_URL
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002';
   const detailsLink = `${baseUrl}/details/${exhibitor.id}`;
 
   const mailOptions = {
-    from: `"Marché de Félix" <${process.env.EMAIL_USER}>`,
+    from: `"Le Marché de Félix" <${process.env.EMAIL_USER}>`,
     to: exhibitor.email,
-    cc: "rabier.hugues@orange.fr", // Copie de confirmation pour l'admin
+    cc: "lemarchedefelix2020@gmail.com", // Copie de confirmation mise à jour
     subject: `Votre candidature pour le Marché de Félix 2026 a été retenue !`,
     text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 
