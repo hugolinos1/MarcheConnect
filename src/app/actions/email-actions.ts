@@ -5,7 +5,7 @@ import nodemailer from 'nodemailer';
 /**
  * Action serveur pour envoyer une notification par e-mail lors d'une nouvelle candidature.
  */
-export async function sendApplicationNotification(exhibitorData: any) {
+export async function sendApplicationNotification(exhibitorData: any, marketConfig: any) {
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: Number(process.env.EMAIL_PORT),
@@ -16,13 +16,15 @@ export async function sendApplicationNotification(exhibitorData: any) {
     },
   });
 
+  const year = marketConfig?.marketYear || '2026';
+
   const mailOptions = {
     from: `"Le Marché de Félix" <${process.env.EMAIL_USER}>`,
     to: "lemarchedefelix2020@gmail.com",
     subject: `Nouvelle Candidature : ${exhibitorData.companyName}`,
     text: `Bonjour,
 
-Une nouvelle candidature vient d'être déposée pour le Marché de Noël 2026.
+Une nouvelle candidature vient d'être déposée pour le Marché de Noël ${year}.
 
 Détails de l'exposant :
 -----------------------
@@ -58,7 +60,7 @@ Système de gestion MarchéConnect
 /**
  * Action serveur pour envoyer l'e-mail d'acceptation avec lien de finalisation.
  */
-export async function sendAcceptanceEmail(exhibitor: any, customMessage: string) {
+export async function sendAcceptanceEmail(exhibitor: any, customMessage: string, marketConfig: any) {
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: Number(process.env.EMAIL_PORT),
@@ -69,6 +71,8 @@ export async function sendAcceptanceEmail(exhibitor: any, customMessage: string)
     },
   });
 
+  const year = marketConfig?.marketYear || '2026';
+  const edition = marketConfig?.editionNumber || '6ème';
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002';
   const detailsLink = `${baseUrl}/details/${exhibitor.id}`;
 
@@ -76,10 +80,10 @@ export async function sendAcceptanceEmail(exhibitor: any, customMessage: string)
     from: `"Le Marché de Félix" <${process.env.EMAIL_USER}>`,
     to: exhibitor.email,
     cc: "lemarchedefelix2020@gmail.com",
-    subject: `Votre candidature pour le Marché de Félix 2026 a été retenue !`,
+    subject: `Votre candidature pour le Marché de Félix ${year} a été retenue !`,
     text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 
-Nous avons le plaisir de vous informer que votre candidature pour le Marché de Noël 2026 "Un jardin pour Félix" a été acceptée par notre comité !
+Nous avons le plaisir de vous informer que votre candidature pour le Marché de Noël ${year} "Un jardin pour Félix" (${edition} édition) a été acceptée par notre comité !
 
 ${customMessage ? `Message de l'organisateur :\n---------------------------\n${customMessage}\n---------------------------\n` : ''}
 
@@ -107,7 +111,7 @@ L'équipe de l'association "Un jardin pour Félix"
 /**
  * Action serveur pour envoyer l'e-mail de refus motivé.
  */
-export async function sendRejectionEmail(exhibitor: any, justification: string) {
+export async function sendRejectionEmail(exhibitor: any, justification: string, marketConfig: any) {
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: Number(process.env.EMAIL_PORT),
@@ -118,16 +122,18 @@ export async function sendRejectionEmail(exhibitor: any, justification: string) 
     },
   });
 
+  const year = marketConfig?.marketYear || '2026';
+
   const mailOptions = {
     from: `"Le Marché de Félix" <${process.env.EMAIL_USER}>`,
     to: exhibitor.email,
     cc: "lemarchedefelix2020@gmail.com",
-    subject: `Votre candidature pour le Marché de Noël 2026`,
+    subject: `Votre candidature pour le Marché de Noël ${year}`,
     text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 
 Nous vous remercions de l'intérêt porté à notre marché solidaire "Un jardin pour Félix".
 
-Après étude de votre dossier par notre comité de sélection, nous avons le regret de vous informer que votre candidature n'a pas pu être retenue pour cette édition 2026.
+Après étude de votre dossier par notre comité de sélection, nous avons le regret de vous informer que votre candidature n'a pas pu être retenue pour cette édition ${year}.
 
 Motif de notre décision :
 ---------------------------
@@ -152,7 +158,7 @@ L'équipe de l'association "Un jardin pour Félix"
 /**
  * Action serveur pour confirmer la réception du dossier technique final.
  */
-export async function sendFinalConfirmationEmail(exhibitor: any, details: any) {
+export async function sendFinalConfirmationEmail(exhibitor: any, details: any, marketConfig: any) {
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: Number(process.env.EMAIL_PORT),
@@ -163,6 +169,7 @@ export async function sendFinalConfirmationEmail(exhibitor: any, details: any) {
     },
   });
 
+  const year = marketConfig?.marketYear || '2026';
   const standPrice = exhibitor.requestedTables === '1' ? 40 : 60;
   const mealsPrice = details.sundayLunchCount * 8;
   const total = standPrice + mealsPrice;
@@ -174,7 +181,7 @@ export async function sendFinalConfirmationEmail(exhibitor: any, details: any) {
     subject: `Confirmation de réception de votre dossier technique - ${exhibitor.companyName}`,
     text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 
-Nous avons bien reçu votre dossier technique et de finalisation pour le Marché de Noël 2026 "Un jardin pour Félix".
+Nous avons bien reçu votre dossier technique et de finalisation pour le Marché de Noël ${year} "Un jardin pour Félix".
 
 Récapitulatif de vos options :
 ---------------------------

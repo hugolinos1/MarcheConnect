@@ -16,6 +16,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { sendFinalConfirmationEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 const formSchema = z.object({
   needsElectricity: z.boolean().default(false),
@@ -33,10 +35,17 @@ export default function DetailsPage() {
   const { id } = useParams();
   const router = useRouter();
   const { toast } = useToast();
+  const db = useFirestore();
   const [exhibitor, setExhibitor] = useState<Exhibitor | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
+
+  // Market Config fetching
+  const marketConfigRef = useMemoFirebase(() => collection(db, 'market_configurations'), [db]);
+  const { data: configs } = useCollection(marketConfigRef);
+  const currentConfig = configs?.find(c => c.currentMarket) || configs?.[0];
+  const currentYear = currentConfig?.marketYear || 2026;
 
   useEffect(() => {
     const data = JSON.parse(localStorage.getItem('exhibitors') || '[]');
@@ -86,7 +95,7 @@ export default function DetailsPage() {
     
     try {
       // Envoi de l'email de confirmation
-      const emailResult = await sendFinalConfirmationEmail(exhibitor, values);
+      const emailResult = await sendFinalConfirmationEmail(exhibitor, values, currentConfig);
       
       if (!emailResult.success) {
         toast({
@@ -137,7 +146,7 @@ export default function DetailsPage() {
               <h1 className="text-3xl font-headline font-bold">Dossier de Finalisation</h1>
               <div className="flex flex-col gap-1">
                 <p className="text-lg font-medium text-accent">Exposant : {exhibitor.companyName}</p>
-                <p className="text-xs opacity-80 uppercase tracking-widest">Marché de Noël Solidaire 2026</p>
+                <p className="text-xs opacity-80 uppercase tracking-widest">Marché de Noël Solidaire {currentYear}</p>
               </div>
             </div>
             <div className="relative w-20 h-20 rounded-full border-4 border-white/20 overflow-hidden shadow-lg bg-white">
@@ -327,7 +336,7 @@ export default function DetailsPage() {
                         <div className="space-y-1 leading-none">
                           <FormLabel className="font-bold text-sm text-primary">Acceptation définitive du Règlement</FormLabel>
                           <FormDescription className="text-xs text-primary/70">
-                            Je confirme avoir lu et accepté l'intégralité du règlement intérieur 2026.
+                            Je confirme avoir lu et accepté l'intégralité du règlement intérieur {currentYear}.
                           </FormDescription>
                           <FormMessage />
                         </div>

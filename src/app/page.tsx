@@ -1,13 +1,25 @@
+"use client"
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
 import { Gift, TreePine, Star, ChevronRight, Info, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 export default function Home() {
+  const db = useFirestore();
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
-  const posterUrl = "https://i.ibb.co/3y3KRNW4/Affiche-March.jpg";
+  
+  // Market Config fetching
+  const marketConfigRef = useMemoFirebase(() => collection(db, 'market_configurations'), [db]);
+  const { data: configs } = useCollection(marketConfigRef);
+  const currentConfig = configs?.find(c => c.currentMarket) || configs?.[0];
+
+  const posterUrl = currentConfig?.posterImageUrl || "https://i.ibb.co/3y3KRNW4/Affiche-March.jpg";
+  const marketYear = currentConfig?.marketYear || 2026;
+  const editionNumber = currentConfig?.editionNumber || "6ème";
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -48,7 +60,7 @@ export default function Home() {
               <div className="flex-1 space-y-6 text-center lg:text-left">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/20 border border-accent/30 text-accent text-xs font-semibold uppercase tracking-wider">
                   <Star className="w-3 h-3 fill-accent" />
-                  Edition Noël 2026
+                  Edition Noël {marketYear}
                 </div>
                 <h1 className="text-5xl lg:text-7xl font-headline font-bold leading-tight">
                   Rejoignez la Magie de notre Marché Solidaire
@@ -68,7 +80,7 @@ export default function Home() {
                 <div className="relative aspect-[3/4] max-w-[400px] mx-auto rounded-2xl overflow-hidden shadow-2xl ring-8 ring-white/10 bg-white">
                   <Image 
                     src={posterUrl}
-                    alt="Affiche Marché de Noël 2026"
+                    alt={`Affiche Marché de Noël ${marketYear}`}
                     fill
                     className="object-contain"
                     data-ai-hint="christmas poster"
@@ -81,7 +93,7 @@ export default function Home() {
                     <Gift className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="font-bold text-sm">6ème Édition</p>
+                    <p className="font-bold text-sm">{editionNumber} Édition</p>
                     <p className="text-[10px] uppercase font-bold opacity-70">Solidarité</p>
                   </div>
                 </div>
@@ -231,7 +243,7 @@ export default function Home() {
             </div>
             <span className="font-headline font-bold text-lg">Le Marché de Félix</span>
           </div>
-          <p className="text-sm opacity-80">© 2026 Association "Un jardin pour Félix"</p>
+          <p className="text-sm opacity-80">© {marketYear} Association "Un jardin pour Félix"</p>
           <div className="flex gap-4">
             <Link href="https://www.unjardinpourfelix.org/" target="_blank" className="text-sm hover:underline">Blog de Félix</Link>
             <Link href="https://www.facebook.com/unjardinpourfelix" target="_blank" className="text-sm hover:underline">Facebook</Link>

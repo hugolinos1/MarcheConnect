@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, Settings, Save } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -16,22 +16,72 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { sendAcceptanceEmail, sendRejectionEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { collection, doc, setDoc } from 'firebase/firestore';
 
 export default function AdminDashboard() {
   const { toast } = useToast();
+  const db = useFirestore();
   const [exhibitors, setExhibitors] = useState<Exhibitor[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [justification, setJustification] = useState('');
   const [acceptanceMessage, setAcceptanceMessage] = useState('');
   const [selectedExhibitor, setSelectedExhibitor] = useState<Exhibitor | null>(null);
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
 
+  // Market Config fetching
+  const marketConfigRef = useMemoFirebase(() => collection(db, 'market_configurations'), [db]);
+  const { data: configs } = useCollection(marketConfigRef);
+  const currentConfig = configs?.find(c => c.currentMarket) || configs?.[0];
+
+  const [configForm, setConfigForm] = useState({
+    marketYear: 2026,
+    editionNumber: "6ème",
+    posterImageUrl: "https://i.ibb.co/3y3KRNW4/Affiche-March.jpg"
+  });
+
+  useEffect(() => {
+    if (currentConfig) {
+      setConfigForm({
+        marketYear: currentConfig.marketYear,
+        editionNumber: currentConfig.editionNumber,
+        posterImageUrl: currentConfig.posterImageUrl
+      });
+    }
+  }, [currentConfig]);
+
   useEffect(() => {
     const data = JSON.parse(localStorage.getItem('exhibitors') || '[]');
     setExhibitors(data);
   }, []);
+
+  const handleSaveConfig = async () => {
+    setIsSavingConfig(true);
+    try {
+      const configId = currentConfig?.id || 'default-config';
+      await setDoc(doc(db, 'market_configurations', configId), {
+        ...configForm,
+        id: configId,
+        currentMarket: true
+      }, { merge: true });
+      toast({
+        title: "Paramètres enregistrés",
+        description: "Les informations du marché ont été mises à jour.",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible d'enregistrer les paramètres.",
+      });
+    } finally {
+      setIsSavingConfig(false);
+    }
+  };
 
   const updateStatus = (id: string, status: ApplicationStatus, additionalData = {}) => {
     const updated = exhibitors.map(e => e.id === id ? { ...e, status, ...additionalData } : e);
@@ -52,7 +102,7 @@ export default function AdminDashboard() {
   const handleAcceptAndSend = async (exhibitor: Exhibitor) => {
     setIsSending(true);
     try {
-      const result = await sendAcceptanceEmail(exhibitor, acceptanceMessage);
+      const result = await sendAcceptanceEmail(exhibitor, acceptanceMessage, currentConfig);
       if (result.success) {
         updateStatus(exhibitor.id, 'accepted_form1');
         toast({
@@ -86,7 +136,7 @@ export default function AdminDashboard() {
 
     setIsSending(true);
     try {
-      const result = await sendRejectionEmail(exhibitor, justification);
+      const result = await sendRejectionEmail(exhibitor, justification, currentConfig);
       if (result.success) {
         updateStatus(exhibitor.id, 'rejected', { rejectionJustification: justification });
         toast({
@@ -152,7 +202,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <h1 className="text-xl font-headline font-bold">Admin : Le Marché de Félix</h1>
-              <p className="text-xs opacity-80">Gestion des candidatures 2026</p>
+              <p className="text-xs opacity-80">Gestion des candidatures {configForm.marketYear}</p>
             </div>
           </div>
           <div className="flex gap-4">
@@ -164,6 +214,50 @@ export default function AdminDashboard() {
       </div>
 
       <main className="container mx-auto px-4 py-10 relative z-10 space-y-8">
+        
+        {/* Market Settings Section */}
+        <Card className="bg-white/95 backdrop-blur border-l-4 border-l-accent shadow-lg">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-2">
+              <Settings className="w-5 h-5 text-accent" />
+              <CardTitle className="text-lg">Paramètres du Marché</CardTitle>
+            </div>
+            <CardDescription>Configurez l'année, l'édition et l'affiche pour l'ensemble du site.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-4 gap-4 items-end">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase text-muted-foreground">Année</label>
+                <Input 
+                  type="number" 
+                  value={configForm.marketYear} 
+                  onChange={(e) => setConfigForm({...configForm, marketYear: parseInt(e.target.value)})}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase text-muted-foreground">Édition (ex: 6ème)</label>
+                <Input 
+                  value={configForm.editionNumber} 
+                  onChange={(e) => setConfigForm({...configForm, editionNumber: e.target.value})}
+                />
+              </div>
+              <div className="md:col-span-2 space-y-2">
+                <label className="text-xs font-bold uppercase text-muted-foreground">Lien de l'affiche (URL)</label>
+                <div className="flex gap-2">
+                  <Input 
+                    value={configForm.posterImageUrl} 
+                    onChange={(e) => setConfigForm({...configForm, posterImageUrl: e.target.value})}
+                    placeholder="https://..."
+                  />
+                  <Button onClick={handleSaveConfig} disabled={isSavingConfig} className="bg-accent text-accent-foreground hover:bg-accent/90">
+                    {isSavingConfig ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="grid md:grid-cols-3 gap-6">
           <Card className="bg-white/80 backdrop-blur border-t-4 border-t-primary">
             <CardHeader className="flex flex-row items-center justify-between pb-2">

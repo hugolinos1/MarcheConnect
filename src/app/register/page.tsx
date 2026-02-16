@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -17,6 +16,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { sendApplicationNotification } from '@/app/actions/email-actions';
+import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 const formSchema = z.object({
   firstName: z.string().min(2, "Le prénom est requis"),
@@ -37,8 +38,15 @@ const formSchema = z.object({
 
 export default function RegisterPage() {
   const router = useRouter();
+  const db = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // Market Config fetching
+  const marketConfigRef = useMemoFirebase(() => collection(db, 'market_configurations'), [db]);
+  const { data: configs } = useCollection(marketConfigRef);
+  const currentConfig = configs?.find(c => c.currentMarket) || configs?.[0];
+  const marketYear = currentConfig?.marketYear || 2026;
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -76,7 +84,7 @@ export default function RegisterPage() {
       localStorage.setItem('exhibitors', JSON.stringify([...existing, newExhibitor]));
       
       // Envoi de la notification par email (Action Serveur)
-      await sendApplicationNotification(newExhibitor);
+      await sendApplicationNotification(newExhibitor, currentConfig);
       
       router.push('/register/success');
     } catch (error) {
@@ -99,17 +107,17 @@ export default function RegisterPage() {
             <AccordionItem value="reglement" className="border-none">
               <AccordionTrigger className="px-6 hover:no-underline hover:bg-muted/50 text-left">
                 <span className="flex items-center gap-2 font-bold text-primary">
-                  <FileText className="w-5 h-5" /> Règlement du Marché 2026
+                  <FileText className="w-5 h-5" /> Règlement du Marché {marketYear}
                 </span>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6 text-xs text-muted-foreground space-y-4 max-h-96 overflow-y-auto">
                 <div>
                   <h4 className="font-bold text-foreground">Article 1 : Dates & Lieu</h4>
-                  <p>Samedi 5/12/2026 (14h-19h) et Dimanche 6/12/2026 (10h-17h30). Salle Maurice Baquet, Chazay d’Azergues.</p>
+                  <p>Samedi et Dimanche de début Décembre {marketYear}. Salle Maurice Baquet, Chazay d’Azergues.</p>
                 </div>
                 <div>
                   <h4 className="font-bold text-foreground">Article 3 : Sélection</h4>
-                  <p>Réponse sous 15 semaines. Nous privilégions le fait-main. Pas de revente. Tables de 1m75 fournies. Installation le samedi entre 11h et 13h.</p>
+                  <p>Réponse sous 15 semaines. Nous privilégions le fait-main. Pas de revente. Tables de 1m75 fournies. Installation le samedi matin.</p>
                 </div>
                 <div>
                   <h4 className="font-bold text-foreground">Article 5 : Tarifs & Restauration</h4>
@@ -148,7 +156,7 @@ export default function RegisterPage() {
             </div>
             <div>
               <CardTitle className="text-3xl font-headline font-bold text-primary">Dépôt de Candidature</CardTitle>
-              <CardDescription className="text-lg">Étape 1 : Étude de votre demande par le comité</CardDescription>
+              <CardDescription className="text-lg">Étape 1 : Étude de votre demande par le comité {marketYear}</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
@@ -387,7 +395,7 @@ export default function RegisterPage() {
                         <div className="space-y-1 leading-none">
                           <FormLabel className="font-bold text-primary">Consentement RGPD</FormLabel>
                           <FormDescription className="text-xs">
-                            J'accepte que les informations saisies soient utilisées par l'association pour l'organisation du marché de Noël 2026. Je dispose d'un droit d'accès et de suppression en contactant l'organisateur.
+                            J'accepte que les informations saisies soient utilisées par l'association pour l'organisation du marché de Noël {marketYear}. Je dispose d'un droit d'accès et de suppression en contactant l'organisateur.
                           </FormDescription>
                           <FormMessage />
                         </div>
@@ -406,7 +414,7 @@ export default function RegisterPage() {
                         <div className="space-y-1 leading-none">
                           <FormLabel className="font-bold text-primary">Règlement du Marché</FormLabel>
                           <FormDescription className="text-xs">
-                            J'ai lu et j'accepte le règlement du Marché de Noël 2026 (consultable en haut de cette page).
+                            J'ai lu et j'accepte le règlement du Marché de Noël {marketYear} (consultable en haut de cette page).
                           </FormDescription>
                           <FormMessage />
                         </div>
