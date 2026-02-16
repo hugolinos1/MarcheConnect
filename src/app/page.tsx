@@ -200,9 +200,6 @@ export default function Home() {
                   L’association « Un jardin pour Félix » a été créé en 2014 par les parents de Félix. Il est atteint d’une maladie génétique rare le syndrome POTOCKI LUPSKI et d’un trouble autistique très envahissant. 
                   L’association permet de financer des intervenants à domicile pour le stimuler et le faire progresser au quotidien.
                 </p>
-                <p className="font-semibold text-foreground italic border-l-2 border-accent pl-4 py-1">
-                  "C’est notre 6ème édition, notre marché commence à avoir une belle réputation autour de Lyon ouest, c’est pourquoi nous devenons plus sélectives sur le choix des exposants. Nous privilégions l'artisanat et le fait-main."
-                </p>
                 <div className="pt-4 flex flex-wrap justify-center md:justify-start gap-6">
                   <Button asChild variant="link" className="text-secondary p-0 h-auto font-bold">
                     <a href="https://www.unjardinpourfelix.org/" target="_blank" className="flex items-center gap-2">
