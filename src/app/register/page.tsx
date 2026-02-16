@@ -1,5 +1,6 @@
+
 "use client"
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -9,13 +10,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { TreePine, ArrowLeft, Send, Info, FileText, Heart, Star, Globe, ShieldCheck, MapPin } from 'lucide-react';
+import { TreePine, ArrowLeft, Send, Info, FileText, Heart, Star, Globe, ShieldCheck, MapPin, Loader2 } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import Image from 'next/image';
+import { sendApplicationNotification } from '@/app/actions/email-actions';
 
 const formSchema = z.object({
   firstName: z.string().min(2, "Le prénom est requis"),
@@ -36,6 +37,7 @@ const formSchema = z.object({
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -57,19 +59,31 @@ export default function RegisterPage() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    const newExhibitor = {
-      ...values,
-      isRegistered: values.isRegistered === "yes",
-      id: Math.random().toString(36).substr(2, 9),
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsSubmitting(true);
     
-    const existing = JSON.parse(localStorage.getItem('exhibitors') || '[]');
-    localStorage.setItem('exhibitors', JSON.stringify([...existing, newExhibitor]));
-    
-    router.push('/register/success');
+    try {
+      const newExhibitor = {
+        ...values,
+        isRegistered: values.isRegistered === "yes",
+        id: Math.random().toString(36).substr(2, 9),
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      };
+      
+      // Stockage local temporaire (avant migration Firestore)
+      const existing = JSON.parse(localStorage.getItem('exhibitors') || '[]');
+      localStorage.setItem('exhibitors', JSON.stringify([...existing, newExhibitor]));
+      
+      // Envoi de la notification par email (Action Serveur)
+      await sendApplicationNotification(newExhibitor);
+      
+      router.push('/register/success');
+    } catch (error) {
+      console.error("Erreur lors de la soumission :", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -401,8 +415,20 @@ export default function RegisterPage() {
                   />
                 </div>
 
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-white gold-glow h-12 text-lg font-semibold gap-2">
-                  <Send className="w-5 h-5" /> Envoyer ma candidature pour étude
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="w-full bg-primary hover:bg-primary/90 text-white gold-glow h-12 text-lg font-semibold gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" /> Envoi en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-5 h-5" /> Envoyer ma candidature pour étude
+                    </>
+                  )}
                 </Button>
                 
                 <p className="text-[10px] text-center text-muted-foreground uppercase tracking-wider font-bold">
