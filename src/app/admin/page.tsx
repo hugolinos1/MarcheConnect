@@ -136,7 +136,7 @@ export default function AdminDashboard() {
             <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead>Exposant / Enseigne</TableHead>
-                <TableHead>Origine</TableHead>
+                <TableHead>Localisation</TableHead>
                 <TableHead>Tables</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead className="text-right">Détails</TableHead>
@@ -152,7 +152,7 @@ export default function AdminDashboard() {
                   <TableCell>
                     <div className="flex items-center gap-1 text-xs">
                       <MapPin className="w-3 h-3 text-muted-foreground" />
-                      {exhibitor.origin}
+                      {exhibitor.city} ({exhibitor.postalCode})
                     </div>
                   </TableCell>
                   <TableCell>
@@ -181,7 +181,6 @@ export default function AdminDashboard() {
                         </DialogHeader>
                         
                         <div className="space-y-6 py-4">
-                          {/* Étude Initiale */}
                           <div className="grid grid-cols-2 gap-4">
                             <div className="p-3 bg-muted/50 rounded-lg space-y-2">
                               <h4 className="text-xs font-bold uppercase text-muted-foreground">Profil</h4>
@@ -193,7 +192,8 @@ export default function AdminDashboard() {
                             <div className="p-3 bg-muted/50 rounded-lg space-y-2">
                               <h4 className="text-xs font-bold uppercase text-muted-foreground">Logistique Demandée</h4>
                               <p className="text-sm"><strong>Tables :</strong> {exhibitor.requestedTables}</p>
-                              <p className="text-sm"><strong>Origine :</strong> {exhibitor.origin}</p>
+                              <p className="text-sm"><strong>Ville :</strong> {exhibitor.city}</p>
+                              <p className="text-sm"><strong>CP :</strong> {exhibitor.postalCode}</p>
                               {exhibitor.websiteUrl && (
                                 <p className="text-sm flex items-center gap-1">
                                   <strong>Web :</strong> 
@@ -207,8 +207,8 @@ export default function AdminDashboard() {
 
                           <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
                             <div>
-                              <h4 className="font-bold text-primary mb-1 text-sm flex items-center gap-2"><MapPin className="w-4 h-4" /> Adresse :</h4>
-                              <p className="text-sm italic">{exhibitor.address}</p>
+                              <h4 className="font-bold text-primary mb-1 text-sm flex items-center gap-2"><MapPin className="w-4 h-4" /> Adresse complète :</h4>
+                              <p className="text-sm italic">{exhibitor.address}, {exhibitor.postalCode} {exhibitor.city}</p>
                             </div>
                             <div>
                               <h4 className="font-bold text-primary mb-1 text-sm">Description / Nature du stand :</h4>
@@ -216,7 +216,6 @@ export default function AdminDashboard() {
                             </div>
                           </div>
 
-                          {/* Dossier Final (si reçu) */}
                           {exhibitor.detailedInfo && (
                             <div className="p-4 border-2 border-secondary/20 rounded-lg space-y-4">
                               <h4 className="font-bold text-secondary flex items-center gap-2">
@@ -317,7 +316,6 @@ export default function AdminDashboard() {
           </Table>
         </Card>
 
-        {/* Footer info solidatité */}
         <div className="text-center py-6">
           <p className="flex items-center justify-center gap-2 text-secondary font-bold text-sm uppercase tracking-wider">
             <Heart className="w-4 h-4 fill-secondary" /> Soutien à l'association "Un jardin pour Félix"

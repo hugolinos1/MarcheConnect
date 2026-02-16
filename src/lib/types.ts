@@ -9,7 +9,8 @@ export interface Exhibitor {
   companyName: string;
   productDescription: string;
   address: string;
-  origin: string; // Origine géographique
+  city: string; // Ville
+  postalCode: string; // Code Postal
   isRegistered: boolean; // Déclaré au RC ou association
   websiteUrl?: string; // Adresse site marchand / réseaux
   requestedTables: '1' | '2'; // 1 ou 2 tables

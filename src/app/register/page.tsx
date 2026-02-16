@@ -23,9 +23,10 @@ const formSchema = z.object({
   email: z.string().email("Email invalide"),
   phone: z.string().min(10, "Numéro de téléphone requis"),
   companyName: z.string().min(2, "Nom de l'enseigne requis"),
-  address: z.string().min(5, "L'adresse complète est requise"),
+  address: z.string().min(5, "L'adresse est requise"),
+  city: z.string().min(2, "La ville est requise"),
+  postalCode: z.string().regex(/^[0-9]{5}$/, "Le code postal doit contenir 5 chiffres"),
   productDescription: z.string().min(10, "Veuillez décrire vos produits (nature du stand)"),
-  origin: z.string().min(2, "Veuillez préciser votre origine géographique"),
   isRegistered: z.enum(["yes", "no"], { required_error: "Veuillez répondre à cette question" }),
   websiteUrl: z.string().optional(),
   requestedTables: z.enum(["1", "2"]),
@@ -45,8 +46,9 @@ export default function RegisterPage() {
       phone: "",
       companyName: "",
       address: "",
+      city: "",
+      postalCode: "",
       productDescription: "",
-      origin: "",
       isRegistered: "yes",
       websiteUrl: "",
       requestedTables: "1",
@@ -77,7 +79,6 @@ export default function RegisterPage() {
           <ArrowLeft className="w-4 h-4" /> Retour à l'accueil
         </Link>
         
-        {/* Présentation Association */}
         <Card className="mb-8 border-l-4 border-l-secondary shadow-lg overflow-hidden">
           <div className="bg-secondary/5 p-6 border-b flex flex-col md:flex-row items-center gap-6">
             <div className="relative w-28 h-28 shrink-0 overflow-hidden rounded-full border-4 border-white shadow-md">
@@ -104,7 +105,6 @@ export default function RegisterPage() {
           </CardContent>
         </Card>
 
-        {/* Règlement et RGPD */}
         <div className="grid gap-4 mb-8">
           <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border overflow-hidden">
             <AccordionItem value="reglement" className="border-none">
@@ -243,12 +243,11 @@ export default function RegisterPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-primary" /> Adresse Postale Complète
+                        <MapPin className="w-4 h-4 text-primary" /> Adresse (N°, rue)
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="N°, rue, code postal et ville" {...field} />
+                        <Input placeholder="12 rue de la Paix" {...field} />
                       </FormControl>
-                      <FormDescription>Utilisez une adresse valide pour la logistique.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -257,12 +256,12 @@ export default function RegisterPage() {
                 <div className="grid md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
-                    name="origin"
+                    name="city"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Origine géographique (Ville/Département)</FormLabel>
+                        <FormLabel>Ville</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ex: Chazay, Lyon, Villefranche..." {...field} />
+                          <Input placeholder="Chazay d'Azergues" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -270,18 +269,32 @@ export default function RegisterPage() {
                   />
                   <FormField
                     control={form.control}
-                    name="websiteUrl"
+                    name="postalCode"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Lien Boutique ou Réseaux (Insta, FB, Etsy...)</FormLabel>
+                        <FormLabel>Code Postal</FormLabel>
                         <FormControl>
-                          <Input placeholder="https://..." {...field} />
+                          <Input placeholder="69380" maxLength={5} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="websiteUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Lien Boutique ou Réseaux (Insta, FB, Etsy...)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <div className="grid md:grid-cols-2 gap-6 p-4 bg-muted/30 rounded-lg">
                   <FormField
@@ -373,7 +386,6 @@ export default function RegisterPage() {
                   )}
                 />
 
-                {/* Consentement RGPD */}
                 <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
                   <FormField
                     control={form.control}
