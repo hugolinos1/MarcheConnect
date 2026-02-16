@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,21 +20,6 @@ import { useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase
 import { collection, doc } from 'firebase/firestore';
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
-const formSchema = z.object({
-  siret: z.string().optional(),
-  idCardPhoto: z.string().min(1, "La photo de la pièce d'identité est requise"),
-  needsElectricity: z.boolean().default(false),
-  needsGrid: z.boolean().default(false),
-  sundayLunchCount: z.coerce.number().min(0, "Minimum 0").max(6, "Maximum 6 par stand"),
-  tombolaLot: z.boolean().default(false),
-  tombolaLotDescription: z.string().optional(),
-  insuranceCompany: z.string().min(2, "Nom de l'assurance requis"),
-  insurancePolicyNumber: z.string().min(5, "N° de police requis"),
-  agreedToImageRights: z.boolean().refine(val => val === true, "L'acceptation est requise"),
-  agreedToTerms: z.boolean().refine(val => val === true, "L'acceptation est requise"),
-  additionalComments: z.string().optional(),
-});
-
 export default function DetailsPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -53,6 +38,27 @@ export default function DetailsPage() {
   // Exhibitor fetching from Firestore
   const exhibitorRef = useMemoFirebase(() => id ? doc(db, 'pre_registrations', id as string) : null, [db, id]);
   const { data: exhibitor, isLoading: isExhibitorLoading } = useDoc<Exhibitor>(exhibitorRef);
+
+  // Dynamic schema based on exhibitor status
+  const formSchema = useMemo(() => {
+    const isPro = exhibitor?.isRegistered === true;
+    return z.object({
+      siret: isPro 
+        ? z.string().min(9, "Le SIRET est obligatoire pour les professionnels (9 à 14 chiffres)")
+        : z.string().optional(),
+      idCardPhoto: z.string().min(1, "La photo de la pièce d'identité est requise"),
+      needsElectricity: z.boolean().default(false),
+      needsGrid: z.boolean().default(false),
+      sundayLunchCount: z.coerce.number().min(0, "Minimum 0").max(6, "Maximum 6 par stand"),
+      tombolaLot: z.boolean().default(false),
+      tombolaLotDescription: z.string().optional(),
+      insuranceCompany: z.string().min(2, "Nom de l'assurance requis"),
+      insurancePolicyNumber: z.string().min(5, "N° de police requis"),
+      agreedToImageRights: z.boolean().refine(val => val === true, "L'acceptation est requise"),
+      agreedToTerms: z.boolean().refine(val => val === true, "L'acceptation est requise"),
+      additionalComments: z.string().optional(),
+    });
+  }, [exhibitor?.isRegistered]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -253,7 +259,6 @@ export default function DetailsPage() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
                 
-                {/* Nouveau paragraphe Administratif */}
                 <div className="space-y-6">
                   <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3">
                     <FileText className="w-5 h-5 text-secondary" /> Administratif
@@ -265,7 +270,7 @@ export default function DetailsPage() {
                       name="siret"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm font-bold">Numéro de SIRET</FormLabel>
+                          <FormLabel className="text-sm font-bold">Numéro de SIRET <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
                             <Input placeholder="14 chiffres" {...field} className="h-11 border-primary/10" />
                           </FormControl>
@@ -280,7 +285,7 @@ export default function DetailsPage() {
                     name="idCardPhoto"
                     render={() => (
                       <FormItem className="space-y-4">
-                        <FormLabel className="text-sm font-bold">Photo de votre pièce d'identité (Recto)</FormLabel>
+                        <FormLabel className="text-sm font-bold">Photo de votre pièce d'identité (Recto) <span className="text-destructive">*</span></FormLabel>
                         <FormDescription className="text-xs">
                           Obligatoire pour l'organisation et le registre de la manifestation.
                         </FormDescription>
