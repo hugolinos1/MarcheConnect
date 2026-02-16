@@ -1,4 +1,3 @@
-
 export type ApplicationStatus = 'pending' | 'accepted_form1' | 'rejected' | 'submitted_form2' | 'validated';
 
 export interface Exhibitor {
@@ -16,6 +15,7 @@ export interface Exhibitor {
   rejectionReason?: string;
   rejectionJustification?: string;
   createdAt: string;
+  agreedToGdpr: boolean; // Consentement RGPD initial
   detailedInfo?: DetailedExhibitorInfo;
 }
 

@@ -9,9 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { TreePine, ArrowLeft, Send, Info, FileText, Heart, Star, Globe } from 'lucide-react';
+import { TreePine, ArrowLeft, Send, Info, FileText, Heart, Star, Globe, ShieldCheck } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -27,6 +27,7 @@ const formSchema = z.object({
   isRegistered: z.enum(["yes", "no"], { required_error: "Veuillez répondre à cette question" }),
   websiteUrl: z.string().optional(),
   requestedTables: z.enum(["1", "2"]),
+  agreedToGdpr: z.boolean().refine(val => val === true, "L'acceptation de la politique de protection des données est requise"),
 });
 
 export default function RegisterPage() {
@@ -45,6 +46,7 @@ export default function RegisterPage() {
       isRegistered: "yes",
       websiteUrl: "",
       requestedTables: "1",
+      agreedToGdpr: false,
     },
   });
 
@@ -95,49 +97,56 @@ export default function RegisterPage() {
             <p className="font-semibold text-foreground italic border-l-2 border-accent pl-4 py-1">
               "C’est notre 6ème édition, notre marché commence à avoir une belle réputation autour de Lyon ouest, c’est pourquoi nous devenons plus sélectives sur le choix des exposants. Nous privilégions l'artisanat et le fait-main."
             </p>
-            <div className="flex flex-wrap gap-4 pt-2">
-              <Button asChild variant="outline" size="sm" className="gap-2">
-                <a href="https://www.unjardinpourfelix.org/" target="_blank">
-                  <Globe className="w-3 h-3" /> Blog de Félix
-                </a>
-              </Button>
-              <Button asChild variant="outline" size="sm" className="gap-2">
-                <a href="https://www.lemarchedefelix.com" target="_blank">
-                  <Heart className="w-3 h-3 text-primary" /> Boutique solidaire
-                </a>
-              </Button>
-            </div>
           </CardContent>
         </Card>
 
-        {/* Règlement */}
-        <Accordion type="single" collapsible className="mb-8 bg-white rounded-lg shadow-sm border overflow-hidden">
-          <AccordionItem value="reglement" className="border-none">
-            <AccordionTrigger className="px-6 hover:no-underline hover:bg-muted/50">
-              <span className="flex items-center gap-2 font-bold text-primary">
-                <FileText className="w-5 h-5" /> Règlement du Marché 2026 (Consulter avant inscription)
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="px-6 pb-6 text-xs text-muted-foreground space-y-4 max-h-96 overflow-y-auto">
-              <div>
-                <h4 className="font-bold text-foreground">Article 1 : Dates & Lieu</h4>
-                <p>Samedi 5/12/2026 (14h-19h) et Dimanche 6/12/2026 (10h-17h30). Salle Maurice Baquet, Chazay d’Azergues.</p>
-              </div>
-              <div>
-                <h4 className="font-bold text-foreground">Article 3 : Sélection</h4>
-                <p>Réponse sous 15 semaines. Nous privilégions le fait-main. Pas de revente. Tables de 1m75 fournies. Installation le samedi entre 11h et 13h.</p>
-              </div>
-              <div>
-                <h4 className="font-bold text-foreground">Article 5 : Tarifs & Restauration</h4>
-                <p>40€ pour 1 table (1m75), 60€ pour 2 tables (3m50). Repas du dimanche midi : 8€/personne.</p>
-              </div>
-              <div>
-                <h4 className="font-bold text-foreground">Article 7 & 8 : Engagement & Assurance</h4>
-                <p>Présence obligatoire sur les 2 jours. Droit à l'image consenti pour la communication. Assurance RC obligatoire.</p>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+        {/* Règlement et RGPD */}
+        <div className="grid gap-4 mb-8">
+          <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border overflow-hidden">
+            <AccordionItem value="reglement" className="border-none">
+              <AccordionTrigger className="px-6 hover:no-underline hover:bg-muted/50 text-left">
+                <span className="flex items-center gap-2 font-bold text-primary">
+                  <FileText className="w-5 h-5" /> Règlement du Marché 2026
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-6 text-xs text-muted-foreground space-y-4 max-h-96 overflow-y-auto">
+                <div>
+                  <h4 className="font-bold text-foreground">Article 1 : Dates & Lieu</h4>
+                  <p>Samedi 5/12/2026 (14h-19h) et Dimanche 6/12/2026 (10h-17h30). Salle Maurice Baquet, Chazay d’Azergues.</p>
+                </div>
+                <div>
+                  <h4 className="font-bold text-foreground">Article 3 : Sélection</h4>
+                  <p>Réponse sous 15 semaines. Nous privilégions le fait-main. Pas de revente. Tables de 1m75 fournies. Installation le samedi entre 11h et 13h.</p>
+                </div>
+                <div>
+                  <h4 className="font-bold text-foreground">Article 5 : Tarifs & Restauration</h4>
+                  <p>40€ pour 1 table (1m75), 60€ pour 2 tables (3m50). Repas du dimanche midi : 8€/personne.</p>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border overflow-hidden">
+            <AccordionItem value="rgpd" className="border-none">
+              <AccordionTrigger className="px-6 hover:no-underline hover:bg-muted/50 text-left">
+                <span className="flex items-center gap-2 font-bold text-primary">
+                  <ShieldCheck className="w-5 h-5" /> Protection de vos données (RGPD)
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-6 text-xs text-muted-foreground space-y-4">
+                <p>
+                  Les informations recueillies sur ce formulaire sont enregistrées dans un fichier informatisé par <strong>l'Association Les Amis d'un Jardin pour Félix</strong> pour la gestion des candidatures et de l'organisation du marché de Noël.
+                </p>
+                <p>
+                  Elles sont conservées pendant une durée de <strong>2 ans</strong> et sont destinées exclusivement aux membres du bureau en charge de l'organisation.
+                </p>
+                <p>
+                  Conformément à la loi « informatique et libertés », vous pouvez exercer votre droit d'accès aux données vous concernant et les faire rectifier ou supprimer en contactant : <span className="font-semibold">unjardinpourfelix@gmail.com</span>.
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
         
         <Card className="border-t-4 border-t-primary shadow-xl">
           <CardHeader className="text-center space-y-4">
@@ -301,10 +310,9 @@ export default function RegisterPage() {
                               <FormLabel className="font-normal">
                                 Particulier (L30-2 Code de Commerce)
                               </FormLabel>
-                            </FormItem>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
+                            </RadioGroup>
+                          </FormControl>
+                        </FormMessage>
                       </FormItem>
                     )}
                   />
@@ -328,6 +336,28 @@ export default function RegisterPage() {
                     </FormItem>
                   )}
                 />
+
+                {/* Consentement RGPD */}
+                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                  <FormField
+                    control={form.control}
+                    name="agreedToGdpr"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="font-bold text-primary">Consentement RGPD</FormLabel>
+                          <FormDescription className="text-xs">
+                            J'accepte que les informations saisies soient utilisées par l'association pour l'organisation du marché de Noël 2026. Je dispose d'un droit d'accès et de suppression en contactant l'organisateur.
+                          </FormDescription>
+                          <FormMessage />
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-white gold-glow h-12 text-lg font-semibold gap-2">
                   <Send className="w-5 h-5" /> Envoyer ma candidature pour étude
