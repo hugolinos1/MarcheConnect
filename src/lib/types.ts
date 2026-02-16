@@ -19,6 +19,7 @@ export interface Exhibitor {
   rejectionJustification?: string;
   createdAt: string;
   agreedToGdpr: boolean; // Consentement RGPD initial
+  agreedToTerms: boolean; // Acceptation règlement initial
   detailedInfo?: DetailedExhibitorInfo;
 }
 

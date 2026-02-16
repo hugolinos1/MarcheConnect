@@ -31,6 +31,7 @@ const formSchema = z.object({
   websiteUrl: z.string().optional(),
   requestedTables: z.enum(["1", "2"]),
   agreedToGdpr: z.boolean().refine(val => val === true, "L'acceptation de la politique de protection des données est requise"),
+  agreedToTerms: z.boolean().refine(val => val === true, "L'acceptation du règlement est requise"),
 });
 
 export default function RegisterPage() {
@@ -52,6 +53,7 @@ export default function RegisterPage() {
       websiteUrl: "",
       requestedTables: "1",
       agreedToGdpr: false,
+      agreedToTerms: false,
     },
   });
 
@@ -359,7 +361,7 @@ export default function RegisterPage() {
                   )}
                 />
 
-                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                <div className="space-y-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
                   <FormField
                     control={form.control}
                     name="agreedToGdpr"
@@ -372,6 +374,25 @@ export default function RegisterPage() {
                           <FormLabel className="font-bold text-primary">Consentement RGPD</FormLabel>
                           <FormDescription className="text-xs">
                             J'accepte que les informations saisies soient utilisées par l'association pour l'organisation du marché de Noël 2026. Je dispose d'un droit d'accès et de suppression en contactant l'organisateur.
+                          </FormDescription>
+                          <FormMessage />
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="agreedToTerms"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 border-t pt-4">
+                        <FormControl>
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="font-bold text-primary">Règlement du Marché</FormLabel>
+                          <FormDescription className="text-xs">
+                            J'ai lu et j'accepte le règlement du Marché de Noël 2026 (consultable en haut de cette page).
                           </FormDescription>
                           <FormMessage />
                         </div>
