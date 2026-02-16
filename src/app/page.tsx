@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
 import { Gift, TreePine, Star, ChevronRight, Info } from 'lucide-react';
 import Image from 'next/image';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function Home() {
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
@@ -10,7 +11,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background relative">
-      <ChristmasSnow />
+      < ChristmasSnow />
       
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-40">
@@ -176,32 +177,41 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Info Section */}
+        {/* Association Info Section */}
         <section className="py-20">
           <div className="container mx-auto px-4 max-w-4xl">
-            <div className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border flex flex-col md:flex-row items-center gap-10">
-              <div className="w-32 h-32 relative shrink-0 overflow-hidden rounded-full border-4 border-primary/5">
-                <Image 
-                  src={logoUrl}
-                  alt="Logo Un Jardin pour Félix"
-                  fill
-                  className="object-cover"
-                />
+            <Card className="border-l-4 border-l-secondary shadow-lg overflow-hidden">
+              <div className="bg-secondary/5 p-6 border-b flex flex-col md:flex-row items-center gap-6">
+                <div className="relative w-28 h-28 shrink-0 overflow-hidden rounded-full border-4 border-white shadow-md">
+                  <Image 
+                    src={logoUrl}
+                    alt="Logo Un Jardin pour Félix"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div className="text-center md:text-left">
+                  <CardTitle className="text-2xl text-secondary font-headline mb-1">Un Jardin pour Félix</CardTitle>
+                  <CardDescription className="text-base font-medium">Marché de Noël Solidaire - Chazay d'Azergues</CardDescription>
+                </div>
               </div>
-              <div className="space-y-4 text-center md:text-left">
-                <h3 className="text-2xl font-headline font-bold text-primary">L'association "Un Jardin pour Félix"</h3>
-                <p className="text-muted-foreground italic">
-                  "L’association permet de financer des intervenants à domicile pour stimuler Félix, atteint d’une maladie génétique rare, et le faire progresser au quotidien."
+              <CardContent className="pt-6 text-sm space-y-4 text-muted-foreground leading-relaxed">
+                <p>
+                  L’association « Un jardin pour Félix » a été créé en 2014 par les parents de Félix. Il est atteint d’une maladie génétique rare le syndrome POTOCKI LUPSKI et d’un trouble autistique très envahissant. 
+                  L’association permet de financer des intervenants à domicile pour le stimuler et le faire progresser au quotidien.
                 </p>
-                <div className="pt-2">
+                <p className="font-semibold text-foreground italic border-l-2 border-accent pl-4 py-1">
+                  "C’est notre 6ème édition, notre marché commence à avoir une belle réputation autour de Lyon ouest, c’est pourquoi nous devenons plus sélectives sur le choix des exposants. Nous privilégions l'artisanat et le fait-main."
+                </p>
+                <div className="pt-4 flex justify-center md:justify-start">
                   <Button asChild variant="link" className="text-secondary p-0 h-auto font-bold">
                     <a href="https://www.unjardinpourfelix.org/" target="_blank" className="flex items-center gap-2">
                       <Info className="w-4 h-4" /> En savoir plus sur le blog de Félix
                     </a>
                   </Button>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </section>
       </main>
