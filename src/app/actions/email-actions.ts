@@ -5,12 +5,14 @@ import nodemailer from 'nodemailer';
 import { headers } from 'next/headers';
 
 /**
- * Récupère la base URL de manière dynamique.
+ * Récupère la base URL de manière dynamique et robuste.
  */
 async function getBaseUrl() {
   const headersList = await headers();
-  const host = headersList.get('host');
-  const protocol = host?.includes('localhost') ? 'http' : 'https';
+  // Utilisation des headers de proxy si disponibles (App Hosting / Vercel / Cloud Run)
+  const host = headersList.get('x-forwarded-host') || headersList.get('host');
+  const protocol = headersList.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
+  
   return `${protocol}://${host}`;
 }
 
@@ -216,7 +218,7 @@ Lot Tombola : ${details.tombolaLot ? 'Oui - Merci !' : 'Non'}
 
 MONTANT TOTAL À RÉGLER PAR CHÈQUE : ${total} €
 
-Pour confirmer définitivement votre réservation, merci de nous faire parvenir votre chèque à l'ordre de "Association Un Jardin pour Félix" sous 15 jours par courrier.
+Pour confirmer définitivement votre réservation, merci de nous faire parvenir votre chèque à l'ordre de "Association Un Jardin pour Félix" et à envoyer sous 15 jours par courrier.
 
 Une confirmation finale de réservation vous sera adressée dès réception de votre règlement.
 

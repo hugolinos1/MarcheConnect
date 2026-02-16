@@ -41,15 +41,17 @@ service cloud.firestore {
     match /pre_registrations/{preRegistrationId} {
       // Tout le monde peut créer une candidature (Form 1)
       allow create: if true;
-      // Seuls les admins peuvent lister et gérer les candidatures
-      allow get, list, update, delete: if isAdmin();
+      // Permettre la lecture individuelle pour le formulaire de finalisation (Form 2) via le lien direct
+      allow get: if true;
+      // Seuls les admins peuvent lister et gérer massivement les candidatures
+      allow list, update, delete: if isAdmin();
     }
 
     match /exhibitor_details/{exhibitorDetailId} {
-      // Les exposants peuvent créer/modifier via leur lien (Form 2)
-      allow create, update: if true;
-      // Consultation réservée aux admins
-      allow get, list, delete: if isAdmin();
+      // Les exposants peuvent créer/modifier et lire leur propre dossier via leur lien (Form 2)
+      allow create, update, get: if true;
+      // Consultation de liste et suppression réservée aux admins
+      allow list, delete: if isAdmin();
     }
   }
 }
