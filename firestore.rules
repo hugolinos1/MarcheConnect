@@ -4,111 +4,47 @@ service cloud.firestore {
 
     /**
      * MARCHÉCONNECT SECURITY RULES - PROTOTYPE VERSION
-     * 
-     * Core Philosophy:
-     * This ruleset implements a robust Role-Based Access Control (RBAC) model focused on 
-     * administrative oversight and secure public participation. It prioritizes administrative 
-     * control for annual market configurations while allowing anonymous submissions for 
-     * potential exhibitors.
-     * 
-     * Data Structure:
-     * - /roles_admin: A registry of administrative UIDs (Existence-based authorization).
-     * - /market_configurations: Global settings for yearly market editions (Public read, Admin write).
-     * - /pre_registrations: Initial exhibitor applications (Anonymous create, Admin read/write).
-     * - /exhibitor_details: Extended exhibitor data (Admin-restricted, Cloud Function mediated).
-     * 
-     * Key Security Decisions:
-     * 1. DBAC (Database-Based Access Control): Administrative privileges are determined by the 
-     *    existence of a user's UID within the 'roles_admin' collection.
-     * 2. Public Visibility: Market configurations (dates, posters, edition numbers) are 
-     *    publicly readable to facilitate the frontend display.
-     * 3. Anonymous Participation: Pre-registration is open to all users (anonymous or signed-in) 
-     *    to lower the barrier for entry for new exhibitors.
-     * 4. Relational Integrity: On creation, documents must include valid links to their 
-     *    respective market configurations to ensure data consistency without complex rule-side joins.
-     * 5. Administrative Shielding: Sensitive exhibitor data and the configuration of the 
-     *    market itself are strictly guarded by admin checks.
      */
 
     // --- Helper Functions ---
 
-    /**
-     * @description Checks if the user is authenticated with Firebase Auth.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * @description Checks if the authenticated user's UID exists in the admin roles collection.
-     * This follows the 'Existence over Content' principle for DBAC.
-     */
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
-    /**
-     * @description Combined check for admin status and document existence for destructive operations.
-     */
     function isExistingAdmin() {
       return isAdmin() && resource != null;
     }
 
     // --- Collection Rules ---
 
-    /**
-     * @description Admin Roles: A registry of UIDs that have administrative access to the platform.
-     * @path /roles_admin/{adminId}
-     * @allow (get) If the user is an admin.
-     * @deny (all) If the user is not a verified admin.
-     * @principle Role-Based Access Control (RBAC) via document existence.
-     */
     match /roles_admin/{adminId} {
-      allow get: if isAdmin();
-      allow list: if isAdmin();
+      allow get, list: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
 
-    /**
-     * @description Market Configurations: Yearly settings including dates, edition numbers, and poster URLs.
-     * @path /market_configurations/{marketConfigId}
-     * @allow (get, list) For all users (public) to view market details.
-     * @allow (create, update) For admins to manage market parameters.
-     * @deny (write) For non-admin users.
-     * @principle Publicly readable content with restricted administrative writes.
-     */
     match /market_configurations/{marketConfigId} {
       allow get, list: if true;
-      allow create: if isAdmin();
-      allow update, delete: if isExistingAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
-    /**
-     * @description Pre-Registrations: Initial exhibitor applications (Form 1).
-     * @path /pre_registrations/{preRegistrationId}
-     * @allow (create) For any user (anonymous/signed-in) to submit an application.
-     * @allow (get, list, update, delete) For admins to manage applications.
-     * @deny (read/update) For standard or anonymous users once submitted.
-     * @principle Open creation for public submissions with full administrative oversight.
-     */
     match /pre_registrations/{preRegistrationId} {
-      allow create: if request.resource.data.marketConfigurationId != null;
-      allow get, list: if isAdmin();
-      allow update, delete: if isExistingAdmin();
+      // Allow anyone to create a registration
+      allow create: if true;
+      // Only admins can see the full list or manage them
+      allow get, list, update, delete: if isAdmin();
     }
 
-    /**
-     * @description Exhibitor Details: Comprehensive data (Form 2) for accepted exhibitors.
-     * @path /exhibitor_details/{exhibitorDetailId}
-     * @allow (all) Restricted to admins.
-     * @note Updates for exhibitors are mediated via secure Cloud Functions using hashes, 
-     * keeping the Firestore rules strictly admin-only for direct client access.
-     * @principle Administrative lockdown of sensitive business information.
-     */
     match /exhibitor_details/{exhibitorDetailId} {
-      allow get, list: if isAdmin();
-      allow create: if isAdmin();
-      allow update, delete: if isExistingAdmin();
+      // Allow anyone to create/update their details (Form 2)
+      // In a real app, we'd use a unique token or auth, but for the prototype 
+      // we allow writes if they know the ID (link from email)
+      allow create, update: if true;
+      allow get, list, delete: if isAdmin();
     }
   }
 }

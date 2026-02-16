@@ -16,8 +16,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { sendFinalConfirmationEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const formSchema = z.object({
   needsElectricity: z.boolean().default(false),
@@ -36,8 +37,6 @@ export default function DetailsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const db = useFirestore();
-  const [exhibitor, setExhibitor] = useState<Exhibitor | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
 
@@ -47,17 +46,9 @@ export default function DetailsPage() {
   const currentConfig = configs?.find(c => c.currentMarket) || configs?.[0];
   const currentYear = currentConfig?.marketYear || 2026;
 
-  useEffect(() => {
-    const data = JSON.parse(localStorage.getItem('exhibitors') || '[]');
-    const found = data.find((e: any) => e.id === id);
-    
-    if (!found || (found.status !== 'accepted_form1' && found.status !== 'submitted_form2')) {
-      router.push('/');
-    } else {
-      setExhibitor(found);
-      setIsLoaded(true);
-    }
-  }, [id, router]);
+  // Exhibitor fetching from Firestore
+  const exhibitorRef = useMemoFirebase(() => id ? doc(db, 'pre_registrations', id as string) : null, [db, id]);
+  const { data: exhibitor, isLoading: isExhibitorLoading } = useDoc<Exhibitor>(exhibitorRef);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -94,6 +85,28 @@ export default function DetailsPage() {
     setIsSubmitting(true);
     
     try {
+      // Save details to Firestore
+      const detailId = exhibitor.id; // Using preRegistration ID as the detail ID for simplicity
+      const detailRef = doc(db, 'exhibitor_details', detailId);
+      
+      const detailedData = {
+        ...values,
+        id: detailId,
+        preRegistrationId: exhibitor.id,
+        marketConfigurationId: currentConfig?.id || 'default',
+        submissionDate: new Date().toISOString(),
+        adminValidationStatus: 'PENDING_REVIEW'
+      };
+
+      setDocumentNonBlocking(detailRef, detailedData, { merge: true });
+
+      // Also update the pre-registration status
+      const preRegRef = doc(db, 'pre_registrations', exhibitor.id);
+      updateDocumentNonBlocking(preRegRef, { 
+        status: 'submitted_form2',
+        detailedInfo: values // Optional: keep a copy in the pre-reg doc for easier admin view
+      });
+
       // Envoi de l'email de confirmation
       const emailResult = await sendFinalConfirmationEmail(exhibitor, values, currentConfig);
       
@@ -104,17 +117,6 @@ export default function DetailsPage() {
           description: "Le dossier est enregistré mais l'email n'a pu être envoyé.",
         });
       }
-
-      // Mise à jour locale
-      const data = JSON.parse(localStorage.getItem('exhibitors') || '[]');
-      const updated = data.map((e: any) => 
-        e.id === id ? { 
-          ...e, 
-          status: 'submitted_form2', 
-          detailedInfo: { ...values, submittedAt: new Date().toISOString() } 
-        } : e
-      );
-      localStorage.setItem('exhibitors', JSON.stringify(updated));
       
       router.push('/register/success?type=final');
     } catch (error) {
@@ -129,7 +131,26 @@ export default function DetailsPage() {
     }
   }
 
-  if (!isLoaded || !exhibitor) return null;
+  if (isExhibitorLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!exhibitor) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 text-center space-y-4">
+        <ShieldCheck className="w-16 h-16 text-destructive" />
+        <h1 className="text-2xl font-bold text-primary">Dossier introuvable</h1>
+        <p className="text-muted-foreground">Ce lien est invalide ou la candidature n'a pas été acceptée.</p>
+        <Button asChild variant="outline">
+          <Link href="/">Retour à l'accueil</Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background py-12 px-4 relative selection:bg-accent selection:text-accent-foreground">

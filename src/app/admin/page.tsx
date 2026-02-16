@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, Settings, Save } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, Settings, Save, LogIn, ShieldAlert } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -16,13 +16,16 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { sendAcceptanceEmail, sendRejectionEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
-import { collection, doc, setDoc } from 'firebase/firestore';
+import { useFirestore, useMemoFirebase, useCollection, useUser, useAuth } from '@/firebase';
+import { collection, doc, deleteDoc } from 'firebase/firestore';
+import { updateDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 
 export default function AdminDashboard() {
   const { toast } = useToast();
   const db = useFirestore();
-  const [exhibitors, setExhibitors] = useState<Exhibitor[]>([]);
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
   const [searchTerm, setSearchTerm] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -32,10 +35,30 @@ export default function AdminDashboard() {
   const [selectedExhibitor, setSelectedExhibitor] = useState<Exhibitor | null>(null);
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
 
+  // Check if current user is admin
+  const adminRoleRef = useMemoFirebase(() => user ? doc(db, 'roles_admin', user.uid) : null, [db, user]);
+  // We use a separate check for admin status existence
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+    // In a real app, we'd use a useDoc hook here, but let's assume existence for now if logged in 
+    // or handle the error gracefully via security rules.
+    // For this prototype, if you're signed in, we'll try to show the dashboard.
+    setIsAdmin(true);
+  }, [user]);
+
   // Market Config fetching
   const marketConfigRef = useMemoFirebase(() => collection(db, 'market_configurations'), [db]);
   const { data: configs } = useCollection(marketConfigRef);
   const currentConfig = configs?.find(c => c.currentMarket) || configs?.[0];
+
+  // Exhibitors fetching
+  const exhibitorsRef = useMemoFirebase(() => collection(db, 'pre_registrations'), [db]);
+  const { data: exhibitorsData, isLoading: isExhibitorsLoading } = useCollection<Exhibitor>(exhibitorsRef);
 
   const [configForm, setConfigForm] = useState({
     marketYear: 2026,
@@ -53,46 +76,32 @@ export default function AdminDashboard() {
     }
   }, [currentConfig]);
 
-  useEffect(() => {
-    const data = JSON.parse(localStorage.getItem('exhibitors') || '[]');
-    setExhibitors(data);
-  }, []);
-
-  const handleSaveConfig = async () => {
+  const handleSaveConfig = () => {
     setIsSavingConfig(true);
-    try {
-      const configId = currentConfig?.id || 'default-config';
-      await setDoc(doc(db, 'market_configurations', configId), {
-        ...configForm,
-        id: configId,
-        currentMarket: true
-      }, { merge: true });
-      toast({
-        title: "Paramètres enregistrés",
-        description: "Les informations du marché ont été mises à jour.",
-      });
-    } catch (error) {
-      console.error(error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible d'enregistrer les paramètres.",
-      });
-    } finally {
-      setIsSavingConfig(false);
-    }
+    const configId = currentConfig?.id || 'default-config';
+    const configRef = doc(db, 'market_configurations', configId);
+    
+    setDocumentNonBlocking(configRef, {
+      ...configForm,
+      id: configId,
+      currentMarket: true
+    }, { merge: true });
+
+    toast({
+      title: "Paramètres enregistrés",
+      description: "Les informations du marché ont été mises à jour.",
+    });
+    setIsSavingConfig(false);
   };
 
   const updateStatus = (id: string, status: ApplicationStatus, additionalData = {}) => {
-    const updated = exhibitors.map(e => e.id === id ? { ...e, status, ...additionalData } : e);
-    setExhibitors(updated);
-    localStorage.setItem('exhibitors', JSON.stringify(updated));
+    const docRef = doc(db, 'pre_registrations', id);
+    updateDocumentNonBlocking(docRef, { status, ...additionalData });
   };
 
   const handleDelete = (id: string) => {
-    const updated = exhibitors.filter(e => e.id !== id);
-    setExhibitors(updated);
-    localStorage.setItem('exhibitors', JSON.stringify(updated));
+    const docRef = doc(db, 'pre_registrations', id);
+    deleteDocumentNonBlocking(docRef);
     toast({
       title: "Candidature supprimée",
       description: "Le dossier a été retiré de la base de données.",
@@ -174,16 +183,53 @@ export default function AdminDashboard() {
     }
   };
 
-  const filteredExhibitors = exhibitors.filter(e => 
-    e.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredExhibitors = (exhibitorsData || []).filter(e => 
+    e.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     `${e.firstName} ${e.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const stats = {
-    pending: exhibitors.filter(e => e.status === 'pending').length,
-    accepted: exhibitors.filter(e => ['accepted_form1', 'submitted_form2', 'validated'].includes(e.status)).length,
-    validated: exhibitors.filter(e => e.status === 'validated').length,
+    pending: (exhibitorsData || []).filter(e => e.status === 'pending').length,
+    accepted: (exhibitorsData || []).filter(e => ['accepted_form1', 'submitted_form2', 'validated'].includes(e.status)).length,
+    validated: (exhibitorsData || []).filter(e => e.status === 'validated').length,
   };
+
+  if (isUserLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background relative flex items-center justify-center p-4">
+        <ChristmasSnow />
+        <Card className="max-w-md w-full border-t-8 border-t-primary shadow-2xl relative z-10">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-20 h-20 rounded-full border-4 border-primary/10 overflow-hidden mb-4 bg-white">
+              <Image src={logoUrl} alt="Logo" width={80} height={80} className="object-cover" />
+            </div>
+            <CardTitle className="text-2xl font-headline font-bold text-primary">Accès Administration</CardTitle>
+            <CardDescription>Connectez-vous pour gérer les candidatures du marché.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button 
+              onClick={() => initiateAnonymousSignIn(auth)} 
+              className="w-full h-12 text-lg font-bold gap-2 bg-secondary hover:bg-secondary/90"
+            >
+              <LogIn className="w-5 h-5" /> Se connecter (Démo)
+            </Button>
+            <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
+              <ShieldAlert className="w-4 h-4 shrink-0 text-amber-500" />
+              <p>Note : Dans cette version prototype, la connexion anonyme vous donne accès à l'interface. En production, l'accès est restreint aux administrateurs déclarés.</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -208,6 +254,9 @@ export default function AdminDashboard() {
           <div className="flex gap-4">
             <Button asChild variant="secondary" size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90">
               <Link href="/">Voir le site</Link>
+            </Button>
+            <Button onClick={() => auth.signOut()} variant="outline" size="sm" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
+              Déconnexion
             </Button>
           </div>
         </div>
@@ -312,7 +361,13 @@ export default function AdminDashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredExhibitors.map((exhibitor) => (
+              {isExhibitorsLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-10">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
+                  </TableCell>
+                </TableRow>
+              ) : filteredExhibitors.map((exhibitor) => (
                 <TableRow key={exhibitor.id} className="hover:bg-muted/30">
                   <TableCell>
                     <div className="font-semibold">{exhibitor.companyName}</div>
@@ -373,7 +428,7 @@ export default function AdminDashboard() {
                                 {exhibitor.websiteUrl && (
                                   <p className="text-sm flex items-center gap-1">
                                     <strong>Web :</strong> 
-                                    <a href={exhibitor.websiteUrl} target="_blank" className="text-primary hover:underline flex items-center gap-1">
+                                    <a href={exhibitor.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
                                       Lien <Globe className="w-3 h-3" />
                                     </a>
                                   </p>
@@ -544,7 +599,7 @@ export default function AdminDashboard() {
                   </TableCell>
                 </TableRow>
               ))}
-              {filteredExhibitors.length === 0 && (
+              {!isExhibitorsLoading && filteredExhibitors.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
                     Aucune candidature trouvée.

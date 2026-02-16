@@ -17,7 +17,8 @@ import { useRouter } from 'next/navigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { sendApplicationNotification } from '@/app/actions/email-actions';
 import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const formSchema = z.object({
   firstName: z.string().min(2, "Le prénom est requis"),
@@ -74,14 +75,14 @@ export default function RegisterPage() {
       const newExhibitor = {
         ...values,
         isRegistered: values.isRegistered === "yes",
-        id: Math.random().toString(36).substr(2, 9),
         status: 'pending',
+        marketConfigurationId: currentConfig?.id || 'default',
         createdAt: new Date().toISOString(),
       };
       
-      // Stockage local temporaire (avant migration Firestore)
-      const existing = JSON.parse(localStorage.getItem('exhibitors') || '[]');
-      localStorage.setItem('exhibitors', JSON.stringify([...existing, newExhibitor]));
+      // Save to Firestore instead of localStorage
+      const colRef = collection(db, 'pre_registrations');
+      await addDocumentNonBlocking(colRef, newExhibitor);
       
       // Envoi de la notification par email (Action Serveur)
       await sendApplicationNotification(newExhibitor, currentConfig);
