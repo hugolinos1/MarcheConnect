@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, Settings, Save, LogIn, ShieldAlert } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, Settings, Save, LogIn, ShieldAlert, Calendar, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -18,9 +18,10 @@ import Image from 'next/image';
 import { sendAcceptanceEmail, sendRejectionEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useMemoFirebase, useCollection, useUser, useAuth } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query, where, orderBy } from 'firebase/firestore';
 import { updateDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -34,20 +35,31 @@ export default function AdminDashboard() {
   const [justification, setJustification] = useState('');
   const [acceptanceMessage, setAcceptanceMessage] = useState('');
   const [selectedExhibitor, setSelectedExhibitor] = useState<Exhibitor | null>(null);
+  const [selectedConfigId, setSelectedConfigId] = useState<string>('');
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
 
-  // Market Config fetching - Publicly readable
-  const marketConfigRef = useMemoFirebase(() => collection(db, 'market_configurations'), [db]);
-  const { data: configs } = useCollection(marketConfigRef);
-  const currentConfig = configs?.find(c => c.currentMarket) || configs?.[0];
-
-  // Exhibitors fetching - ONLY if user is authenticated and loading is finished
-  const exhibitorsRef = useMemoFirebase(() => {
-    if (isUserLoading || !user) return null;
-    return collection(db, 'pre_registrations');
-  }, [db, user, isUserLoading]);
+  // Market Configs fetching
+  const marketConfigsQuery = useMemoFirebase(() => query(collection(db, 'market_configurations'), orderBy('marketYear', 'desc')), [db]);
+  const { data: configs, isLoading: isConfigsLoading } = useCollection(marketConfigsQuery);
   
-  const { data: exhibitorsData, isLoading: isExhibitorsLoading } = useCollection<Exhibitor>(exhibitorsRef);
+  const currentConfig = configs?.find(c => c.id === selectedConfigId) || configs?.find(c => c.currentMarket) || configs?.[0];
+
+  useEffect(() => {
+    if (currentConfig && !selectedConfigId) {
+      setSelectedConfigId(currentConfig.id);
+    }
+  }, [currentConfig, selectedConfigId]);
+
+  // Exhibitors fetching - filtered by selected market configuration
+  const exhibitorsQuery = useMemoFirebase(() => {
+    if (isUserLoading || !user || !selectedConfigId) return null;
+    return query(
+      collection(db, 'pre_registrations'), 
+      where('marketConfigurationId', '==', selectedConfigId)
+    );
+  }, [db, user, isUserLoading, selectedConfigId]);
+  
+  const { data: exhibitorsData, isLoading: isExhibitorsLoading } = useCollection<Exhibitor>(exhibitorsQuery);
 
   const [configForm, setConfigForm] = useState({
     marketYear: 2026,
@@ -67,9 +79,11 @@ export default function AdminDashboard() {
 
   const handleSaveConfig = () => {
     setIsSavingConfig(true);
-    const configId = currentConfig?.id || 'default-config';
+    const configId = selectedConfigId || `config-${configForm.marketYear}`;
     const configRef = doc(db, 'market_configurations', configId);
     
+    // Si on marque celle-ci comme actuelle, il faudrait techniquement décocher les autres, 
+    // mais pour le prototype on simplifie la logique de mise à jour.
     setDocumentNonBlocking(configRef, {
       ...configForm,
       id: configId,
@@ -78,9 +92,29 @@ export default function AdminDashboard() {
 
     toast({
       title: "Paramètres enregistrés",
-      description: "Les informations du marché ont été mises à jour.",
+      description: `L'édition ${configForm.marketYear} a été mise à jour.`,
     });
     setIsSavingConfig(false);
+  };
+
+  const handleCreateNewEdition = () => {
+    const nextYear = (configs && configs.length > 0) ? Math.max(...configs.map(c => c.marketYear)) + 1 : new Date().getFullYear() + 1;
+    const newId = `config-${nextYear}`;
+    const newConfigRef = doc(db, 'market_configurations', newId);
+    
+    setDocumentNonBlocking(newConfigRef, {
+      id: newId,
+      marketYear: nextYear,
+      editionNumber: "Nouvelle édition",
+      posterImageUrl: "https://i.ibb.co/3y3KRNW4/Affiche-March.jpg",
+      currentMarket: false
+    }, { merge: true });
+
+    setSelectedConfigId(newId);
+    toast({
+      title: "Nouvelle édition créée",
+      description: `Vous pouvez maintenant configurer l'année ${nextYear}.`,
+    });
   };
 
   const updateStatus = (id: string, status: ApplicationStatus, additionalData = {}) => {
@@ -183,7 +217,7 @@ export default function AdminDashboard() {
     validated: (exhibitorsData || []).filter(e => e.status === 'validated').length,
   };
 
-  if (isUserLoading) {
+  if (isUserLoading || isConfigsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
@@ -237,7 +271,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <h1 className="text-xl font-headline font-bold">Admin : Le Marché de Félix</h1>
-              <p className="text-xs opacity-80">Gestion des candidatures {configForm.marketYear}</p>
+              <p className="text-xs opacity-80">Gestion des candidatures historisées</p>
             </div>
           </div>
           <div className="flex gap-4">
@@ -253,48 +287,81 @@ export default function AdminDashboard() {
 
       <main className="container mx-auto px-4 py-10 relative z-10 space-y-8">
         
-        {/* Market Settings Section */}
-        <Card className="bg-white/95 backdrop-blur border-l-4 border-l-accent shadow-lg">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-2">
-              <Settings className="w-5 h-5 text-accent" />
-              <CardTitle className="text-lg">Paramètres du Marché</CardTitle>
-            </div>
-            <CardDescription>Configurez l'année, l'édition et l'affiche pour l'ensemble du site.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-4 gap-4 items-end">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-muted-foreground">Année</label>
-                <Input 
-                  type="number" 
-                  value={configForm.marketYear} 
-                  onChange={(e) => setConfigForm({...configForm, marketYear: parseInt(e.target.value)})}
-                />
+        {/* Edition Selector & Market Settings */}
+        <div className="grid md:grid-cols-3 gap-6 items-start">
+          <Card className="md:col-span-1 bg-white/95 backdrop-blur border-l-4 border-l-primary shadow-lg">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-primary" />
+                  <CardTitle className="text-lg">Édition à gérer</CardTitle>
+                </div>
+                <Button variant="ghost" size="icon" onClick={handleCreateNewEdition} title="Ajouter une année">
+                  <Plus className="w-4 h-4 text-primary" />
+                </Button>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-muted-foreground">Édition (ex: 6ème)</label>
-                <Input 
-                  value={configForm.editionNumber} 
-                  onChange={(e) => setConfigForm({...configForm, editionNumber: e.target.value})}
-                />
+              <CardDescription>Sélectionnez l'année du marché pour afficher les candidats correspondants.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Select value={selectedConfigId} onValueChange={setSelectedConfigId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Choisir une édition" />
+                </SelectTrigger>
+                <SelectContent>
+                  {configs?.map((config) => (
+                    <SelectItem key={config.id} value={config.id}>
+                      Marché {config.marketYear} {config.currentMarket && "(Actuel)"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+
+          <Card className="md:col-span-2 bg-white/95 backdrop-blur border-l-4 border-l-accent shadow-lg">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-2">
+                <Settings className="w-5 h-5 text-accent" />
+                <CardTitle className="text-lg">Paramètres de l'édition {configForm.marketYear}</CardTitle>
               </div>
-              <div className="md:col-span-2 space-y-2">
-                <label className="text-xs font-bold uppercase text-muted-foreground">Lien de l'affiche (URL)</label>
-                <div className="flex gap-2">
+              <CardDescription>Modifiez les informations publiques pour l'année sélectionnée.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-3 gap-4 items-end">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase text-muted-foreground">Année</label>
+                  <Input 
+                    type="number" 
+                    value={configForm.marketYear} 
+                    onChange={(e) => setConfigForm({...configForm, marketYear: parseInt(e.target.value)})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase text-muted-foreground">Édition (ex: 6ème)</label>
+                  <Input 
+                    value={configForm.editionNumber} 
+                    onChange={(e) => setConfigForm({...configForm, editionNumber: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase text-muted-foreground">Action</label>
+                  <Button onClick={handleSaveConfig} disabled={isSavingConfig} className="w-full bg-accent text-accent-foreground hover:bg-accent/90 gap-2">
+                    {isSavingConfig ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    Enregistrer
+                  </Button>
+                </div>
+                <div className="md:col-span-3 space-y-2">
+                  <label className="text-xs font-bold uppercase text-muted-foreground">Lien de l'affiche (URL)</label>
                   <Input 
                     value={configForm.posterImageUrl} 
                     onChange={(e) => setConfigForm({...configForm, posterImageUrl: e.target.value})}
                     placeholder="https://..."
                   />
-                  <Button onClick={handleSaveConfig} disabled={isSavingConfig} className="bg-accent text-accent-foreground hover:bg-accent/90">
-                    {isSavingConfig ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  </Button>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
 
         <div className="grid md:grid-cols-3 gap-6">
           <Card className="bg-white/80 backdrop-blur border-t-4 border-t-primary">
@@ -573,7 +640,7 @@ export default function AdminDashboard() {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Supprimer cette candidature ?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Cette action est irréversible. Toutes les données liées à l'exposant <strong>{exhibitor.companyName}</strong> seront définitivement supprimées.
+                              Cette action est irréversible. Toutes les données liées à l'exposant <strong>{exhibitor.companyName}</strong> seront définitivement supprimées de l'édition {currentConfig?.marketYear}.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -591,7 +658,7 @@ export default function AdminDashboard() {
               {!isExhibitorsLoading && filteredExhibitors.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
-                    Aucune candidature trouvée.
+                    Aucune candidature trouvée pour l'édition {currentConfig?.marketYear}.
                   </TableCell>
                 </TableRow>
               )}
@@ -608,3 +675,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
