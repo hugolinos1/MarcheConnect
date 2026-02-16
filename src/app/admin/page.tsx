@@ -313,8 +313,8 @@ export default function AdminDashboard() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right space-x-2">
-                          <Button variant="ghost" size="sm" onClick={() => setViewingExhibitor(exhibitor)} title="Voir détails">
-                            <Info className="w-4 h-4" />
+                          <Button variant="ghost" size="sm" onClick={() => setViewingExhibitor(exhibitor)} title="Voir détails" className="hover:bg-primary/10">
+                            <Eye className="w-5 h-5 text-primary" />
                           </Button>
                           
                           {exhibitor.status === 'pending' && (
@@ -475,4 +475,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
