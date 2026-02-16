@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useEffect, useState } from 'react';
 import { Exhibitor, ApplicationStatus } from '@/lib/types';
@@ -6,19 +7,24 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import Image from 'next/image';
+import { sendAcceptanceEmail } from '@/app/actions/email-actions';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AdminDashboard() {
+  const { toast } = useToast();
   const [exhibitors, setExhibitors] = useState<Exhibitor[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [justification, setJustification] = useState('');
+  const [acceptanceMessage, setAcceptanceMessage] = useState('');
   const [selectedExhibitor, setSelectedExhibitor] = useState<Exhibitor | null>(null);
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
 
@@ -31,6 +37,31 @@ export default function AdminDashboard() {
     const updated = exhibitors.map(e => e.id === id ? { ...e, status, ...additionalData } : e);
     setExhibitors(updated);
     localStorage.setItem('exhibitors', JSON.stringify(updated));
+  };
+
+  const handleAcceptAndSend = async (exhibitor: Exhibitor) => {
+    setIsSending(true);
+    try {
+      const result = await sendAcceptanceEmail(exhibitor, acceptanceMessage);
+      if (result.success) {
+        updateStatus(exhibitor.id, 'accepted_form1');
+        toast({
+          title: "Candidature acceptée",
+          description: `L'e-mail a été envoyé à ${exhibitor.email}.`,
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erreur d'envoi",
+          description: "Impossible d'envoyer l'e-mail d'acceptation.",
+        });
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSending(false);
+      setAcceptanceMessage('');
+    }
   };
 
   const handleReject = async (exhibitor: Exhibitor, reasons: string[]) => {
@@ -283,12 +314,47 @@ export default function AdminDashboard() {
                                   </DialogFooter>
                                 </DialogContent>
                               </Dialog>
-                              <Button 
-                                className="bg-secondary hover:bg-secondary/90 text-white gap-2 border-none"
-                                onClick={() => updateStatus(exhibitor.id, 'accepted_form1')}
-                              >
-                                <CheckCircle className="w-4 h-4" /> Accepter & Envoyer Form. 2
-                              </Button>
+
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button className="bg-secondary hover:bg-secondary/90 text-white gap-2 border-none">
+                                    <CheckCircle className="w-4 h-4" /> Accepter & Envoyer Form. 2
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Validation de la candidature</DialogTitle>
+                                    <DialogDescription>
+                                      Le candidat recevra un e-mail avec son lien unique pour le dossier technique.
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="space-y-4 py-4">
+                                    <div className="space-y-2">
+                                      <h4 className="text-sm font-bold">Message personnalisé (optionnel) :</h4>
+                                      <Textarea 
+                                        placeholder="Ex: Nous avons particulièrement aimé vos créations en bois. Merci de noter que l'emplacement sera situé près de l'entrée..."
+                                        value={acceptanceMessage}
+                                        onChange={(e) => setAcceptanceMessage(e.target.value)}
+                                        className="min-h-[120px]"
+                                      />
+                                    </div>
+                                    <div className="p-3 bg-muted/50 rounded-lg flex items-start gap-2 text-xs">
+                                      <Mail className="w-4 h-4 shrink-0 mt-0.5 text-primary" />
+                                      <p>Une copie de l'e-mail envoyé à <strong>{exhibitor.email}</strong> vous sera adressée en copie conforme (CC).</p>
+                                    </div>
+                                  </div>
+                                  <DialogFooter>
+                                    <Button 
+                                      disabled={isSending}
+                                      onClick={() => handleAcceptAndSend(exhibitor)}
+                                      className="bg-secondary hover:bg-secondary/90 text-white gap-2"
+                                    >
+                                      {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                                      Confirmer et Envoyer l'E-mail
+                                    </Button>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
                             </>
                           )}
                           {exhibitor.status === 'submitted_form2' && (
