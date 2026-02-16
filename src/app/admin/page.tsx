@@ -355,14 +355,14 @@ export default function AdminDashboard() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right space-x-2">
-                          <Button variant="ghost" size="sm" onClick={() => setViewingExhibitor(exhibitor)} title="Voir détails" className="hover:bg-primary/10">
+                          <Button variant="ghost" size="sm" onClick={() => setViewingExhibitor(exhibitor)} title="Voir détails" className="bg-muted/50 hover:bg-primary/10 transition-colors">
                             <Eye className="w-5 h-5 text-primary" />
                           </Button>
                           
                           {exhibitor.status === 'pending' && (
                             <>
                               <Dialog>
-                                <DialogTrigger asChild><Button size="sm" className="bg-green-600 hover:bg-green-700"><CheckCircle className="w-4 h-4" /></Button></DialogTrigger>
+                                <DialogTrigger asChild><Button size="sm" className="bg-green-600 hover:bg-green-700 shadow-sm"><CheckCircle className="w-4 h-4" /></Button></DialogTrigger>
                                 <DialogContent>
                                   <DialogHeader><DialogTitle>Accepter la candidature</DialogTitle></DialogHeader>
                                   <Textarea placeholder="Message personnalisé (optionnel)..." value={acceptanceMessage} onChange={(e) => setAcceptanceMessage(e.target.value)} />
@@ -371,7 +371,7 @@ export default function AdminDashboard() {
                               </Dialog>
                               
                               <Dialog>
-                                <DialogTrigger asChild><Button variant="destructive" size="sm"><XCircle className="w-4 h-4" /></Button></DialogTrigger>
+                                <DialogTrigger asChild><Button variant="destructive" size="sm" className="shadow-sm"><XCircle className="w-4 h-4" /></Button></DialogTrigger>
                                 <DialogContent>
                                   <DialogHeader><DialogTitle>Refuser la candidature</DialogTitle></DialogHeader>
                                   <div className="space-y-4">
@@ -387,12 +387,12 @@ export default function AdminDashboard() {
                             </>
                           )}
 
-                          <Button asChild variant="ghost" size="sm" title="Voir page dossier">
+                          <Button asChild variant="ghost" size="sm" title="Voir page dossier" className="bg-muted/50 hover:bg-muted transition-colors">
                             <Link href={`/details/${exhibitor.id}`} target="_blank"><ExternalLink className="w-4 h-4" /></Link>
                           </Button>
                           
                           <AlertDialog>
-                            <AlertDialogTrigger asChild><Button variant="ghost" size="sm" className="text-destructive"><Trash2 className="w-4 h-4" /></Button></AlertDialogTrigger>
+                            <AlertDialogTrigger asChild><Button variant="ghost" size="sm" className="bg-muted/50 text-destructive hover:bg-destructive/10 transition-colors"><Trash2 className="w-4 h-4" /></Button></AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader><AlertDialogTitle>Supprimer ?</AlertDialogTitle></AlertDialogHeader>
                               <AlertDialogFooter><AlertDialogCancel>Annuler</AlertDialogCancel><AlertDialogAction onClick={() => deleteDocumentNonBlocking(doc(db, 'pre_registrations', exhibitor.id))}>Supprimer</AlertDialogAction></AlertDialogFooter>
@@ -439,7 +439,7 @@ export default function AdminDashboard() {
                           <TableRow key={admin.uid}>
                             <TableCell>{admin.email}</TableCell>
                             <TableCell className="text-right">
-                              {admin.email !== "hugues.rabier@gmail.com" && <Button variant="ghost" onClick={() => handleRemoveAdmin(admin.uid)}><Trash2 className="w-4 h-4" /></Button>}
+                              {admin.email !== "hugues.rabier@gmail.com" && <Button variant="ghost" onClick={() => handleRemoveAdmin(admin.uid)} className="bg-muted/50 hover:bg-destructive/10 text-destructive"><Trash2 className="w-4 h-4" /></Button>}
                             </TableCell>
                           </TableRow>
                         ))}
