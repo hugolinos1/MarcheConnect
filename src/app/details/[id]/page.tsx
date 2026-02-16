@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -12,7 +11,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { ShieldCheck, Zap, Utensils, Ticket, Camera, Info, ArrowLeft, Heart, CheckCircle2, Calculator, Mail, Loader2, LayoutGrid } from 'lucide-react';
+import { ShieldCheck, Zap, Utensils, Ticket, Camera, Info, ArrowLeft, Heart, CheckCircle2, Calculator, Mail, Loader2, LayoutGrid, FileText, X } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { sendFinalConfirmationEmail } from '@/app/actions/email-actions';
@@ -22,6 +21,8 @@ import { collection, doc } from 'firebase/firestore';
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const formSchema = z.object({
+  siret: z.string().optional(),
+  idCardPhoto: z.string().min(1, "La photo de la pièce d'identité est requise"),
   needsElectricity: z.boolean().default(false),
   needsGrid: z.boolean().default(false),
   sundayLunchCount: z.coerce.number().min(0, "Minimum 0").max(6, "Maximum 6 par stand"),
@@ -40,6 +41,7 @@ export default function DetailsPage() {
   const { toast } = useToast();
   const db = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
 
   // Market Config fetching
@@ -55,6 +57,8 @@ export default function DetailsPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      siret: "",
+      idCardPhoto: "",
       needsElectricity: false,
       needsGrid: false,
       sundayLunchCount: 0,
@@ -71,6 +75,7 @@ export default function DetailsPage() {
   const watchLunchCount = form.watch("sundayLunchCount") || 0;
   const watchElectricity = form.watch("needsElectricity");
   const watchGrid = form.watch("needsGrid");
+  const idCardPhoto = form.watch("idCardPhoto");
   
   const standPrice = exhibitor?.requestedTables === '1' ? 40 : 60;
   const mealsPrice = watchLunchCount * 8;
@@ -84,13 +89,65 @@ export default function DetailsPage() {
     }
   }, [exhibitor, form]);
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsProcessingImage(true);
+    const file = files[0];
+
+    const compressImage = (file: File): Promise<string> => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new (window as any).Image();
+          img.src = event.target?.result;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 1200;
+            const MAX_HEIGHT = 1200;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', 0.6));
+          };
+        };
+      });
+    };
+
+    try {
+      const compressed = await compressImage(file);
+      form.setValue('idCardPhoto', compressed);
+    } catch (err) {
+      console.error("Compression error:", err);
+    } finally {
+      setIsProcessingImage(false);
+      e.target.value = '';
+    }
+  };
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!exhibitor) return;
     setIsSubmitting(true);
     
     try {
-      // Save details to Firestore
-      const detailId = exhibitor.id; // Using preRegistration ID as the detail ID for simplicity
+      const detailId = exhibitor.id;
       const detailRef = doc(db, 'exhibitor_details', detailId);
       
       const detailedData = {
@@ -104,14 +161,12 @@ export default function DetailsPage() {
 
       setDocumentNonBlocking(detailRef, detailedData, { merge: true });
 
-      // Also update the pre-registration status
       const preRegRef = doc(db, 'pre_registrations', exhibitor.id);
       updateDocumentNonBlocking(preRegRef, { 
         status: 'submitted_form2',
-        detailedInfo: values // Optional: keep a copy in the pre-reg doc for easier admin view
+        detailedInfo: values
       });
 
-      // Envoi de l'email de confirmation
       const emailResult = await sendFinalConfirmationEmail(exhibitor, values, currentConfig);
       
       if (!emailResult.success) {
@@ -198,6 +253,73 @@ export default function DetailsPage() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
                 
+                {/* Nouveau paragraphe Administratif */}
+                <div className="space-y-6">
+                  <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3">
+                    <FileText className="w-5 h-5 text-secondary" /> Administratif
+                  </h3>
+                  
+                  {exhibitor.isRegistered && (
+                    <FormField
+                      control={form.control}
+                      name="siret"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-bold">Numéro de SIRET</FormLabel>
+                          <FormControl>
+                            <Input placeholder="14 chiffres" {...field} className="h-11 border-primary/10" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  <FormField
+                    control={form.control}
+                    name="idCardPhoto"
+                    render={() => (
+                      <FormItem className="space-y-4">
+                        <FormLabel className="text-sm font-bold">Photo de votre pièce d'identité (Recto)</FormLabel>
+                        <FormDescription className="text-xs">
+                          Obligatoire pour l'organisation et le registre de la manifestation.
+                        </FormDescription>
+                        <FormControl>
+                          <div className="flex flex-col gap-4">
+                            {idCardPhoto ? (
+                              <div className="relative aspect-video max-w-sm rounded-lg overflow-hidden border shadow-sm group">
+                                <Image src={idCardPhoto} alt="Pièce d'identité" fill className="object-contain bg-muted" />
+                                <Button 
+                                  type="button" 
+                                  variant="destructive" 
+                                  size="icon" 
+                                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => form.setValue('idCardPhoto', '')}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <label className="flex flex-col items-center justify-center aspect-video max-w-sm rounded-lg border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 cursor-pointer transition-all">
+                                {isProcessingImage ? (
+                                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                                ) : (
+                                  <>
+                                    <Camera className="w-10 h-10 text-primary mb-2" />
+                                    <span className="text-sm font-bold text-primary">Prendre en photo / Charger</span>
+                                  </>
+                                )}
+                                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={isProcessingImage} />
+                              </label>
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <div className="space-y-6">
                   <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3">
                     <Zap className="w-5 h-5 text-secondary" /> Logistique & Énergie

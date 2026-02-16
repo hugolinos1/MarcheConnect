@@ -26,6 +26,8 @@ export interface Exhibitor {
 
 export interface DetailedExhibitorInfo {
   boothSize: string; // Gardé pour compatibilité mais supplanté par requestedTables
+  siret?: string; // SIRET pour les pros
+  idCardPhoto?: string; // Photo pièce d'identité
   needsElectricity: boolean;
   needsGrid: boolean; // Besoin d'une grille d'exposition
   sundayLunchCount: number; // Nombre de plateaux repas

@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useEffect, useState } from 'react';
 import { Exhibitor, ApplicationStatus } from '@/lib/types';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, EyeOff, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck, UserPlus2, Clock, Lock, Info, ExternalLink, Sparkles, Download, Camera, LayoutGrid } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, EyeOff, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck, UserPlus2, Clock, Lock, Info, ExternalLink, Sparkles, Download, Camera, LayoutGrid, Fingerprint } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -43,20 +42,17 @@ export default function AdminDashboard() {
   const [showPassword, setShowPassword] = useState(false);
   const [viewingExhibitor, setViewingExhibitor] = useState<Exhibitor | null>(null);
   
-  // Login/Signup states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [authError, setAuthError] = useState('');
 
-  // Admin Access management states
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminUid, setNewAdminUid] = useState('');
   const [isAddingAdmin, setIsAddingAdmin] = useState(false);
 
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
 
-  // Check if current user has admin document
   const userRoleRef = useMemoFirebase(() => {
     if (!user || !user.uid) return null;
     return doc(db, 'roles_admin', user.uid);
@@ -66,7 +62,6 @@ export default function AdminDashboard() {
   const isSuperAdmin = user?.email === "hugues.rabier@gmail.com";
   const isAuthorized = isSuperAdmin || !!userRoleDoc;
 
-  // Market Configs fetching
   const marketConfigsQuery = useMemoFirebase(() => query(collection(db, 'market_configurations'), orderBy('marketYear', 'desc')), [db]);
   const { data: configs, isLoading: isConfigsLoading } = useCollection(marketConfigsQuery);
   
@@ -78,14 +73,12 @@ export default function AdminDashboard() {
     }
   }, [currentConfig, selectedConfigId]);
 
-  // Admins fetching
   const adminsQuery = useMemoFirebase(() => {
     if (!isAuthorized) return null;
     return query(collection(db, 'roles_admin'));
   }, [db, isAuthorized]);
   const { data: adminUsers, isLoading: isAdminsLoading } = useCollection(adminsQuery);
 
-  // Exhibitors fetching
   const exhibitorsQuery = useMemoFirebase(() => {
     if (!isAuthorized || !selectedConfigId) return null;
     return query(
@@ -209,6 +202,7 @@ export default function AdminDashboard() {
       "Ville": e.city,
       "Code Postal": e.postalCode,
       "Déclaré": e.isRegistered ? "Oui" : "Non",
+      "SIRET": e.detailedInfo?.siret || "",
       "Site Web": e.websiteUrl || "",
       "Description": e.productDescription,
       "Electricité": e.detailedInfo?.needsElectricity ? "Oui" : "Non",
@@ -517,6 +511,28 @@ export default function AdminDashboard() {
                   <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Téléphone</p><p className="text-sm">{viewingExhibitor.phone}</p></div>
                   <div className="col-span-2"><p className="text-[10px] font-bold uppercase text-muted-foreground">Adresse</p><p className="text-sm">{viewingExhibitor.address}, {viewingExhibitor.postalCode} {viewingExhibitor.city}</p></div>
                 </section>
+
+                {/* Displaying Administratif (Form 2) */}
+                {viewingExhibitor.detailedInfo && (
+                  <section className="space-y-2">
+                    <h4 className="text-sm font-bold border-b pb-1 text-primary flex items-center gap-2">
+                      <Fingerprint className="w-4 h-4" /> Administratif (Form. 2)
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 bg-primary/5 p-4 rounded-lg border">
+                      {viewingExhibitor.isRegistered && (
+                        <div className="col-span-2"><p className="text-[10px] font-bold uppercase text-muted-foreground">SIRET</p><p className="font-bold">{viewingExhibitor.detailedInfo.siret || "Non renseigné"}</p></div>
+                      )}
+                      {viewingExhibitor.detailedInfo.idCardPhoto && (
+                        <div className="col-span-2 space-y-2">
+                          <p className="text-[10px] font-bold uppercase text-muted-foreground">Pièce d'identité</p>
+                          <div className="relative aspect-video w-full rounded-md overflow-hidden border">
+                            <Image src={viewingExhibitor.detailedInfo.idCardPhoto} alt="ID Card" fill className="object-contain bg-white" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                )}
 
                 {/* Displaying Product Images */}
                 {viewingExhibitor.productImages && viewingExhibitor.productImages.length > 0 && (
