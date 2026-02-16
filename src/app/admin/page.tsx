@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
@@ -37,6 +38,16 @@ export default function AdminDashboard() {
     const updated = exhibitors.map(e => e.id === id ? { ...e, status, ...additionalData } : e);
     setExhibitors(updated);
     localStorage.setItem('exhibitors', JSON.stringify(updated));
+  };
+
+  const handleDelete = (id: string) => {
+    const updated = exhibitors.filter(e => e.id !== id);
+    setExhibitors(updated);
+    localStorage.setItem('exhibitors', JSON.stringify(updated));
+    toast({
+      title: "Candidature supprimée",
+      description: "Le dossier a été retiré de la base de données.",
+    });
   };
 
   const handleAcceptAndSend = async (exhibitor: Exhibitor) => {
@@ -170,7 +181,7 @@ export default function AdminDashboard() {
                 <TableHead>Localisation</TableHead>
                 <TableHead>Tables</TableHead>
                 <TableHead>Statut</TableHead>
-                <TableHead className="text-right">Détails</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -197,177 +208,201 @@ export default function AdminDashboard() {
                     {exhibitor.status === 'rejected' && <Badge variant="destructive">Refusé</Badge>}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" onClick={() => setSelectedExhibitor(exhibitor)}>
-                          <FileText className="w-4 h-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-3xl overflow-y-auto max-h-[90vh]">
-                        <DialogHeader>
-                          <DialogTitle>Dossier Candidature - {exhibitor.companyName}</DialogTitle>
-                          <DialogDescription>
-                            Déposé le {new Date(exhibitor.createdAt).toLocaleDateString()}
-                          </DialogDescription>
-                        </DialogHeader>
-                        
-                        <div className="space-y-6 py-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="p-3 bg-muted/50 rounded-lg space-y-2">
-                              <h4 className="text-xs font-bold uppercase text-muted-foreground">Profil</h4>
-                              <p className="text-sm"><strong>Contact :</strong> {exhibitor.firstName} {exhibitor.lastName}</p>
-                              <p className="text-sm"><strong>Email :</strong> {exhibitor.email}</p>
-                              <p className="text-sm"><strong>Tel :</strong> {exhibitor.phone}</p>
-                              <p className="text-sm flex items-center gap-1"><strong>Statut :</strong> {exhibitor.isRegistered ? 'Déclaré' : 'Particulier'}</p>
-                            </div>
-                            <div className="p-3 bg-muted/50 rounded-lg space-y-2">
-                              <h4 className="text-xs font-bold uppercase text-muted-foreground">Logistique Demandée</h4>
-                              <p className="text-sm"><strong>Tables :</strong> {exhibitor.requestedTables}</p>
-                              <p className="text-sm"><strong>Ville :</strong> {exhibitor.city}</p>
-                              <p className="text-sm"><strong>CP :</strong> {exhibitor.postalCode}</p>
-                              {exhibitor.websiteUrl && (
-                                <p className="text-sm flex items-center gap-1">
-                                  <strong>Web :</strong> 
-                                  <a href={exhibitor.websiteUrl} target="_blank" className="text-primary hover:underline flex items-center gap-1">
-                                    Lien <Globe className="w-3 h-3" />
-                                  </a>
-                                </p>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
-                            <div>
-                              <h4 className="font-bold text-primary mb-1 text-sm flex items-center gap-2"><MapPin className="w-4 h-4" /> Adresse complète :</h4>
-                              <p className="text-sm italic">{exhibitor.address}, {exhibitor.postalCode} {exhibitor.city}</p>
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-primary mb-1 text-sm">Description / Nature du stand :</h4>
-                              <p className="text-sm italic">{exhibitor.productDescription}</p>
-                            </div>
-                          </div>
-
-                          {exhibitor.detailedInfo && (
-                            <div className="p-4 border-2 border-secondary/20 rounded-lg space-y-4">
-                              <h4 className="font-bold text-secondary flex items-center gap-2">
-                                <CheckCircle className="w-4 h-4" /> Dossier Finalisé
-                              </h4>
-                              <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div className="space-y-1">
-                                  <p className="flex items-center gap-2"><Zap className="w-3 h-3" /> Électricité : {exhibitor.detailedInfo.needsElectricity ? "OUI" : "NON"}</p>
-                                  <p className="flex items-center gap-2"><Utensils className="w-3 h-3" /> Repas Dimanche : {exhibitor.detailedInfo.sundayLunchCount}</p>
-                                </div>
-                                <div className="space-y-1">
-                                  <p className="flex items-center gap-2"><Ticket className="w-3 h-3" /> Lot Tombola : {exhibitor.detailedInfo.tombolaLot ? "OUI" : "NON"}</p>
-                                  {exhibitor.detailedInfo.tombolaLotDescription && (
-                                    <p className="text-xs text-muted-foreground ml-5">{exhibitor.detailedInfo.tombolaLotDescription}</p>
-                                  )}
-                                </div>
+                    <div className="flex justify-end gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" onClick={() => setSelectedExhibitor(exhibitor)}>
+                            <FileText className="w-4 h-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-3xl overflow-y-auto max-h-[90vh]">
+                          <DialogHeader>
+                            <DialogTitle>Dossier Candidature - {exhibitor.companyName}</DialogTitle>
+                            <DialogDescription>
+                              Déposé le {new Date(exhibitor.createdAt).toLocaleDateString()}
+                            </DialogDescription>
+                          </DialogHeader>
+                          
+                          <div className="space-y-6 py-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="p-3 bg-muted/50 rounded-lg space-y-2">
+                                <h4 className="text-xs font-bold uppercase text-muted-foreground">Profil</h4>
+                                <p className="text-sm"><strong>Contact :</strong> {exhibitor.firstName} {exhibitor.lastName}</p>
+                                <p className="text-sm"><strong>Email :</strong> {exhibitor.email}</p>
+                                <p className="text-sm"><strong>Tel :</strong> {exhibitor.phone}</p>
+                                <p className="text-sm flex items-center gap-1"><strong>Statut :</strong> {exhibitor.isRegistered ? 'Déclaré' : 'Particulier'}</p>
                               </div>
-                              <div className="text-xs pt-2 border-t space-y-1">
-                                <p><strong>Assurance :</strong> {exhibitor.detailedInfo.insuranceCompany} ({exhibitor.detailedInfo.insurancePolicyNumber})</p>
-                                <p><strong>Accords :</strong> Droit image : {exhibitor.detailedInfo.agreedToImageRights ? "OK" : "-"} | Règlement : {exhibitor.detailedInfo.agreedToTerms ? "OK" : "-"}</p>
+                              <div className="p-3 bg-muted/50 rounded-lg space-y-2">
+                                <h4 className="text-xs font-bold uppercase text-muted-foreground">Logistique Demandée</h4>
+                                <p className="text-sm"><strong>Tables :</strong> {exhibitor.requestedTables}</p>
+                                <p className="text-sm"><strong>Ville :</strong> {exhibitor.city}</p>
+                                <p className="text-sm"><strong>CP :</strong> {exhibitor.postalCode}</p>
+                                {exhibitor.websiteUrl && (
+                                  <p className="text-sm flex items-center gap-1">
+                                    <strong>Web :</strong> 
+                                    <a href={exhibitor.websiteUrl} target="_blank" className="text-primary hover:underline flex items-center gap-1">
+                                      Lien <Globe className="w-3 h-3" />
+                                    </a>
+                                  </p>
+                                )}
                               </div>
                             </div>
-                          )}
-                        </div>
 
-                        <DialogFooter className="gap-2">
-                          {exhibitor.status === 'pending' && (
-                            <>
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="destructive" className="gap-2">
-                                    <XCircle className="w-4 h-4" /> Refuser
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Motif du refus</DialogTitle>
-                                    <DialogDescription>Générer un message poli avec l'IA.</DialogDescription>
-                                  </DialogHeader>
-                                  <div className="space-y-4 py-4">
-                                    <Button 
-                                      onClick={() => handleReject(exhibitor, ["Trop d'articles similaires", "Non artisanal", "Plus de place disponible"])}
-                                      disabled={isGenerating}
-                                      variant="outline"
-                                      className="w-full"
-                                    >
-                                      {isGenerating ? "Génération..." : "Générer Justification IA"}
-                                    </Button>
-                                    <Textarea 
-                                      value={justification} 
-                                      onChange={(e) => setJustification(e.target.value)} 
-                                      className="min-h-[200px]"
-                                    />
+                            <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
+                              <div>
+                                <h4 className="font-bold text-primary mb-1 text-sm flex items-center gap-2"><MapPin className="w-4 h-4" /> Adresse complète :</h4>
+                                <p className="text-sm italic">{exhibitor.address}, {exhibitor.postalCode} {exhibitor.city}</p>
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-primary mb-1 text-sm">Description / Nature du stand :</h4>
+                                <p className="text-sm italic">{exhibitor.productDescription}</p>
+                              </div>
+                            </div>
+
+                            {exhibitor.detailedInfo && (
+                              <div className="p-4 border-2 border-secondary/20 rounded-lg space-y-4">
+                                <h4 className="font-bold text-secondary flex items-center gap-2">
+                                  <CheckCircle className="w-4 h-4" /> Dossier Finalisé
+                                </h4>
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                  <div className="space-y-1">
+                                    <p className="flex items-center gap-2"><Zap className="w-3 h-3" /> Électricité : {exhibitor.detailedInfo.needsElectricity ? "OUI" : "NON"}</p>
+                                    <p className="flex items-center gap-2"><Utensils className="w-3 h-3" /> Repas Dimanche : {exhibitor.detailedInfo.sundayLunchCount}</p>
                                   </div>
-                                  <DialogFooter>
-                                    <Button 
-                                      variant="destructive" 
-                                      onClick={() => {
-                                        updateStatus(exhibitor.id, 'rejected', { rejectionJustification: justification });
-                                        setJustification('');
-                                      }}
-                                    >
-                                      Confirmer Refus
-                                    </Button>
-                                  </DialogFooter>
-                                </DialogContent>
-                              </Dialog>
+                                  <div className="space-y-1">
+                                    <p className="flex items-center gap-2"><Ticket className="w-3 h-3" /> Lot Tombola : {exhibitor.detailedInfo.tombolaLot ? "OUI" : "NON"}</p>
+                                    {exhibitor.detailedInfo.tombolaLotDescription && (
+                                      <p className="text-xs text-muted-foreground ml-5">{exhibitor.detailedInfo.tombolaLotDescription}</p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-xs pt-2 border-t space-y-1">
+                                  <p><strong>Assurance :</strong> {exhibitor.detailedInfo.insuranceCompany} ({exhibitor.detailedInfo.insurancePolicyNumber})</p>
+                                  <p><strong>Accords :</strong> Droit image : {exhibitor.detailedInfo.agreedToImageRights ? "OK" : "-"} | Règlement : {exhibitor.detailedInfo.agreedToTerms ? "OK" : "-"}</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
 
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button className="bg-secondary hover:bg-secondary/90 text-white gap-2 border-none">
-                                    <CheckCircle className="w-4 h-4" /> Accepter & Envoyer Form. 2
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Validation de la candidature</DialogTitle>
-                                    <DialogDescription>
-                                      Le candidat recevra un e-mail avec son lien unique pour le dossier technique.
-                                    </DialogDescription>
-                                  </DialogHeader>
-                                  <div className="space-y-4 py-4">
-                                    <div className="space-y-2">
-                                      <h4 className="text-sm font-bold">Message personnalisé (optionnel) :</h4>
+                          <DialogFooter className="gap-2">
+                            {exhibitor.status === 'pending' && (
+                              <>
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button variant="destructive" className="gap-2">
+                                      <XCircle className="w-4 h-4" /> Refuser
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Motif du refus</DialogTitle>
+                                      <DialogDescription>Générer un message poli avec l'IA.</DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4 py-4">
+                                      <Button 
+                                        onClick={() => handleReject(exhibitor, ["Trop d'articles similaires", "Non artisanal", "Plus de place disponible"])}
+                                        disabled={isGenerating}
+                                        variant="outline"
+                                        className="w-full"
+                                      >
+                                        {isGenerating ? "Génération..." : "Générer Justification IA"}
+                                      </Button>
                                       <Textarea 
-                                        placeholder="Ex: Nous avons particulièrement aimé vos créations en bois. Merci de noter que l'emplacement sera situé près de l'entrée..."
-                                        value={acceptanceMessage}
-                                        onChange={(e) => setAcceptanceMessage(e.target.value)}
-                                        className="min-h-[120px]"
+                                        value={justification} 
+                                        onChange={(e) => setJustification(e.target.value)} 
+                                        className="min-h-[200px]"
                                       />
                                     </div>
-                                    <div className="p-3 bg-muted/50 rounded-lg flex items-start gap-2 text-xs">
-                                      <Mail className="w-4 h-4 shrink-0 mt-0.5 text-primary" />
-                                      <p>Une copie de l'e-mail envoyé à <strong>{exhibitor.email}</strong> vous sera adressée en copie conforme (CC).</p>
-                                    </div>
-                                  </div>
-                                  <DialogFooter>
-                                    <Button 
-                                      disabled={isSending}
-                                      onClick={() => handleAcceptAndSend(exhibitor)}
-                                      className="bg-secondary hover:bg-secondary/90 text-white gap-2"
-                                    >
-                                      {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
-                                      Confirmer et Envoyer l'E-mail
+                                    <DialogFooter>
+                                      <Button 
+                                        variant="destructive" 
+                                        onClick={() => {
+                                          updateStatus(exhibitor.id, 'rejected', { rejectionJustification: justification });
+                                          setJustification('');
+                                        }}
+                                      >
+                                        Confirmer Refus
+                                      </Button>
+                                    </DialogFooter>
+                                  </DialogContent>
+                                </Dialog>
+
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button className="bg-secondary hover:bg-secondary/90 text-white gap-2 border-none">
+                                      <CheckCircle className="w-4 h-4" /> Accepter & Envoyer Form. 2
                                     </Button>
-                                  </DialogFooter>
-                                </DialogContent>
-                              </Dialog>
-                            </>
-                          )}
-                          {exhibitor.status === 'submitted_form2' && (
-                            <Button 
-                              className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2 border-none"
-                              onClick={() => updateStatus(exhibitor.id, 'validated')}
-                            >
-                              <UserCheck className="w-4 h-4" /> Valider Inscription Finale
-                            </Button>
-                          )}
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Validation de la candidature</DialogTitle>
+                                      <DialogDescription>
+                                        Le candidat recevra un e-mail avec son lien unique pour le dossier technique.
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4 py-4">
+                                      <div className="space-y-2">
+                                        <h4 className="text-sm font-bold">Message personnalisé (optionnel) :</h4>
+                                        <Textarea 
+                                          placeholder="Ex: Nous avons particulièrement aimé vos créations en bois. Merci de noter que l'emplacement sera situé près de l'entrée..."
+                                          value={acceptanceMessage}
+                                          onChange={(e) => setAcceptanceMessage(e.target.value)}
+                                          className="min-h-[120px]"
+                                        />
+                                      </div>
+                                      <div className="p-3 bg-muted/50 rounded-lg flex items-start gap-2 text-xs">
+                                        <Mail className="w-4 h-4 shrink-0 mt-0.5 text-primary" />
+                                        <p>Une copie de l'e-mail envoyé à <strong>{exhibitor.email}</strong> vous sera adressée en copie conforme (CC).</p>
+                                      </div>
+                                    </div>
+                                    <DialogFooter>
+                                      <Button 
+                                        disabled={isSending}
+                                        onClick={() => handleAcceptAndSend(exhibitor)}
+                                        className="bg-secondary hover:bg-secondary/90 text-white gap-2"
+                                      >
+                                        {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                                        Confirmer et Envoyer l'E-mail
+                                      </Button>
+                                    </DialogFooter>
+                                  </DialogContent>
+                                </Dialog>
+                              </>
+                            )}
+                            {exhibitor.status === 'submitted_form2' && (
+                              <Button 
+                                className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2 border-none"
+                                onClick={() => updateStatus(exhibitor.id, 'validated')}
+                              >
+                                <UserCheck className="w-4 h-4" /> Valider Inscription Finale
+                              </Button>
+                            )}
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive hover:text-white border-destructive/20">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Supprimer cette candidature ?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Cette action est irréversible. Toutes les données liées à l'exposant <strong>{exhibitor.companyName}</strong> seront définitivement supprimées.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Annuler</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(exhibitor.id)} className="bg-destructive hover:bg-destructive/90 text-white">
+                              Supprimer définitivement
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
