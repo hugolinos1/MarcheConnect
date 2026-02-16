@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, EyeOff, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck, UserPlus2, Clock, Lock, Info, ExternalLink, Sparkles } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, EyeOff, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck, UserPlus2, Clock, Lock, Info, ExternalLink, Sparkles, Download } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -24,6 +24,7 @@ import { initiateEmailSignIn, initiateEmailSignUp } from '@/firebase/non-blockin
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import * as XLSX from 'xlsx';
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -190,6 +191,44 @@ export default function AdminDashboard() {
     setIsGenerating(false);
   };
 
+  const handleExportExcel = () => {
+    if (!exhibitorsData || exhibitorsData.length === 0) {
+      toast({ title: "Aucune donnée à exporter", variant: "destructive" });
+      return;
+    }
+
+    const exportData = filteredExhibitors.map(e => ({
+      "Enseigne": e.companyName,
+      "Nom": e.lastName,
+      "Prénom": e.firstName,
+      "Email": e.email,
+      "Téléphone": e.phone,
+      "Tables": e.requestedTables,
+      "Statut": e.status,
+      "Adresse": e.address,
+      "Ville": e.city,
+      "Code Postal": e.postalCode,
+      "Déclaré": e.isRegistered ? "Oui" : "Non",
+      "Site Web": e.websiteUrl || "",
+      "Description": e.productDescription,
+      "Electricité": e.detailedInfo?.needsElectricity ? "Oui" : "Non",
+      "Repas Dimanche": e.detailedInfo?.sundayLunchCount || 0,
+      "Assurance": e.detailedInfo?.insuranceCompany || "",
+      "N° Police": e.detailedInfo?.insurancePolicyNumber || "",
+      "Lot Tombola": e.detailedInfo?.tombolaLot ? "Oui" : "Non",
+      "Description Lot": e.detailedInfo?.tombolaLotDescription || ""
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Exposants");
+    
+    const fileName = `Exposants_Marche_${currentConfig?.marketYear || 'Export'}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+    
+    toast({ title: "Exportation réussie" });
+  };
+
   const filteredExhibitors = (exhibitorsData || []).filter(e => 
     e.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     `${e.firstName} ${e.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
@@ -288,11 +327,14 @@ export default function AdminDashboard() {
               <Card><CardHeader className="p-4 pb-0"><CardTitle className="text-xs text-muted-foreground uppercase">Validés</CardTitle></CardHeader><CardContent className="p-4 text-2xl font-bold text-accent">{stats.validated}</CardContent></Card>
             </div>
 
-            <div className="flex gap-4">
-              <div className="relative flex-1">
+            <div className="flex flex-col md:flex-row gap-4 items-center">
+              <div className="relative flex-1 w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input placeholder="Rechercher un exposant..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
               </div>
+              <Button onClick={handleExportExcel} variant="outline" className="gap-2 w-full md:w-auto">
+                <Download className="w-4 h-4" /> Exporter Excel
+              </Button>
             </div>
 
             <Card className="overflow-hidden">
