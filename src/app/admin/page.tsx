@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck, UserPlus2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useMemoFirebase, useCollection, useUser, useAuth } from '@/firebase';
 import { collection, doc, query, where, orderBy, getDoc } from 'firebase/firestore';
 import { updateDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
+import { initiateEmailSignIn, initiateEmailSignUp } from '@/firebase/non-blocking-login';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -39,10 +39,11 @@ export default function AdminDashboard() {
   const [selectedExhibitor, setSelectedExhibitor] = useState<Exhibitor | null>(null);
   const [selectedConfigId, setSelectedConfigId] = useState<string>('');
   
-  // Login states
+  // Login/Signup states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [authError, setAuthError] = useState('');
 
   // Admin Access management states
   const [newAdminEmail, setNewAdminEmail] = useState('');
@@ -57,19 +58,22 @@ export default function AdminDashboard() {
   
   const currentConfig = configs?.find(c => c.id === selectedConfigId) || configs?.find(c => c.currentMarket) || configs?.[0];
 
-  // Admins fetching
-  const adminsQuery = useMemoFirebase(() => query(collection(db, 'roles_admin')), [db]);
-  const { data: adminUsers, isLoading: isAdminsLoading } = useCollection(adminsQuery);
-
   useEffect(() => {
     if (currentConfig && !selectedConfigId) {
       setSelectedConfigId(currentConfig.id);
     }
   }, [currentConfig, selectedConfigId]);
 
+  // Admins fetching - Strictly conditional to prevent permission errors
+  const adminsQuery = useMemoFirebase(() => {
+    if (isUserLoading || !user || !user.email) return null;
+    return query(collection(db, 'roles_admin'));
+  }, [db, user, isUserLoading]);
+  const { data: adminUsers, isLoading: isAdminsLoading } = useCollection(adminsQuery);
+
   // Exhibitors fetching - filtered by selected market configuration
   const exhibitorsQuery = useMemoFirebase(() => {
-    if (isUserLoading || !user || !selectedConfigId) return null;
+    if (isUserLoading || !user || !user.email || !selectedConfigId) return null;
     return query(
       collection(db, 'pre_registrations'), 
       where('marketConfigurationId', '==', selectedConfigId)
@@ -94,13 +98,18 @@ export default function AdminDashboard() {
     }
   }, [currentConfig]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoginError('');
+    setAuthError('');
     try {
-      initiateEmailSignIn(auth, email, password);
+      if (isSignUp) {
+        initiateEmailSignUp(auth, email, password);
+        toast({ title: "Compte créé", description: "Vous pouvez maintenant transmettre votre UID pour obtenir les accès." });
+      } else {
+        initiateEmailSignIn(auth, email, password);
+      }
     } catch (err: any) {
-      setLoginError("Erreur de connexion. Vérifiez vos identifiants.");
+      setAuthError("Erreur d'authentification. Vérifiez vos identifiants.");
     }
   };
 
@@ -267,7 +276,7 @@ export default function AdminDashboard() {
     validated: (exhibitorsData || []).filter(e => e.status === 'validated').length,
   };
 
-  if (isUserLoading || isConfigsLoading) {
+  if (isUserLoading || (user && isConfigsLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
@@ -275,7 +284,8 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!user) {
+  // Show login if not logged in OR if logged in but no email (legacy anonymous session)
+  if (!user || !user.email) {
     return (
       <div className="min-h-screen bg-background relative flex items-center justify-center p-4">
         <ChristmasSnow />
@@ -284,11 +294,13 @@ export default function AdminDashboard() {
             <div className="mx-auto w-20 h-20 rounded-full border-4 border-primary/10 overflow-hidden mb-4 bg-white">
               <Image src={logoUrl} alt="Logo" width={80} height={80} className="object-cover" />
             </div>
-            <CardTitle className="text-2xl font-headline font-bold text-primary">Accès Administration</CardTitle>
+            <CardTitle className="text-2xl font-headline font-bold text-primary">
+              {isSignUp ? "Créer un accès" : "Accès Administration"}
+            </CardTitle>
             <CardDescription>Portail réservé aux organisateurs.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleAuth} className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-bold text-muted-foreground uppercase">E-mail</label>
                 <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
@@ -297,11 +309,26 @@ export default function AdminDashboard() {
                 <label className="text-sm font-bold text-muted-foreground uppercase">Mot de passe</label>
                 <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
               </div>
-              {loginError && <p className="text-xs text-destructive font-bold">{loginError}</p>}
+              {authError && <p className="text-xs text-destructive font-bold">{authError}</p>}
+              
               <Button type="submit" className="w-full h-12 text-lg font-bold gap-2 bg-primary hover:bg-primary/90 text-white">
-                <LogIn className="w-5 h-5" /> Se connecter
+                {isSignUp ? <UserPlus2 className="w-5 h-5" /> : <LogIn className="w-5 h-5" />}
+                {isSignUp ? "S'enregistrer" : "Se connecter"}
+              </Button>
+              
+              <Button type="button" variant="ghost" className="w-full text-xs" onClick={() => setIsSignUp(!isSignUp)}>
+                {isSignUp ? "Déjà un compte ? Se connecter" : "Nouveau membre ? S'enregistrer pour obtenir l'UID"}
               </Button>
             </form>
+
+            {user && !user.email && (
+              <div className="mt-4 p-3 bg-blue-50 text-blue-800 rounded-lg text-xs border border-blue-200">
+                <p className="font-bold mb-1">Session anonyme détectée :</p>
+                <p>Veuillez vous connecter avec votre e-mail pour accéder aux données administratives.</p>
+                <p className="mt-2 font-mono">UID : {user.uid}</p>
+              </div>
+            )}
+
             <div className="mt-6 flex items-start gap-2 text-[10px] text-muted-foreground bg-muted/50 p-3 rounded-lg border">
               <ShieldAlert className="w-4 h-4 shrink-0 text-amber-500" />
               <p>L'accès est limité aux e-mails autorisés (ex: hugues.rabier@gmail.com).</p>
@@ -430,7 +457,6 @@ export default function AdminDashboard() {
                         <Button asChild variant="outline" size="sm" title="Voir Form. 2">
                           <Link href={`/details/${exhibitor.id}`}><Eye className="w-4 h-4" /></Link>
                         </Button>
-                        {/* Dossier detailed view logic here (Dialog reuse) */}
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="outline" size="sm" className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
@@ -446,6 +472,9 @@ export default function AdminDashboard() {
                       </TableCell>
                     </TableRow>
                   ))}
+                  {filteredExhibitors.length === 0 && !isExhibitorsLoading && (
+                    <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground">Aucune candidature pour cette édition.</TableCell></TableRow>
+                  )}
                 </TableBody>
               </Table>
             </Card>
@@ -497,7 +526,10 @@ export default function AdminDashboard() {
                   <Button onClick={handleAddAdmin} disabled={isAddingAdmin} className="w-full bg-secondary hover:bg-secondary/90 text-white gap-2">
                     {isAddingAdmin ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />} Autoriser l'accès
                   </Button>
-                  <p className="text-[10px] text-muted-foreground italic">L'utilisateur doit d'abord créer son compte via le formulaire de connexion pour obtenir son UID.</p>
+                  <div className="p-3 bg-muted/50 rounded-lg text-[10px] text-muted-foreground italic border">
+                    <p className="font-bold mb-1">Comment obtenir l'UID ?</p>
+                    L'utilisateur doit d'abord s'enregistrer via le formulaire (bouton "Nouveau membre") puis vous transmettre l'UID qui s'affichera sur son écran de connexion.
+                  </div>
                 </CardContent>
               </Card>
 
