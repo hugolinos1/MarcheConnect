@@ -189,8 +189,8 @@ export default function RegisterPage() {
                 </span>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6">
-                <ScrollArea className="h-96 pr-4 text-xs text-muted-foreground space-y-4">
-                  <div className="space-y-4">
+                <ScrollArea className="h-96 pr-4 text-xs text-muted-foreground">
+                  <div className="space-y-4 pb-12">
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 1 :</h4>
                       <p>Le marché aura lieu le samedi 05/12/{marketYear} de 14h à 19h et le dimanche 06/12/{marketYear} de 10h à 17h30 à la salle Maurice Baquet, rue Pierre Coubertin (à droite de l’entrée du stade de foot) à Chazay d’Azergues (69380).</p>
@@ -214,7 +214,7 @@ export default function RegisterPage() {
                       <h4 className="font-bold text-foreground underline mb-1">Article 4 :</h4>
                       <p>L’installation des exposants (artisans/créateurs exclusivement) aura lieu le samedi entre 11h et 13h. Les emplacements seront attribués à l’arrivée de chaque exposant. Grilles, tables et chaises sont fournies et installées préalablement, en fonction des besoins exprimés.</p>
                       <p className="mt-2">Nous pourrons fournir en électricité 8 à 10 stands maximum, merci d’en faire la demande lors de l’inscription. Nous ne garantirons pas de pouvoir répondre à toutes les demandes, priorité sera donnée aux produits alimentaires. Les rallonges sont à prévoir par l'exposant.</p>
-                      <p className="mt-2">Nous vous préviendrons début novembre de l’attribution du point électrique. Le jour du marché, nous vous indiquerons l’emplacement avec l’électricité pour un supplément de 1€.</p>
+                      <p className="mt-2">Nous vous préviendrons début novembre de l’attribution du point électrique. Le jour du marché, nous vous indiquerons l’emplacement avec l’électricité pour un supplément de 1€. </p>
                       <p className="mt-2">Il est essentiel de respecter les horaires d’installation pour ne pas retarder l’ouverture du marché de Noël. Si vous pensez avoir du retard ou avez un empêchement de dernière minute à la suite d’une contrainte familiale ou médicale, merci de me prévenir au 06 81 14 77 76 (Cécile Rabier).</p>
                       <p className="mt-2">Merci de prendre en compte le temps d’installation de votre stand pour qu’il soit prêt à l’ouverture au public. Le démontage du stand ne pourra se faire que le dimanche après la fermeture du marché soit 17h30.</p>
                       <p className="mt-2">Nous ne prévoyons pas de bénévoles pour vous aider à ranger, nos bénévoles sont là pour l’organisation du marché en priorité.</p>
