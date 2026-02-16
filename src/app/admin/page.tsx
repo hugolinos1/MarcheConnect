@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, EyeOff, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck, UserPlus2, Clock, Lock } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, EyeOff, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck, UserPlus2, Clock, Lock, Info, ExternalLink, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -23,6 +23,7 @@ import { updateDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlo
 import { initiateEmailSignIn, initiateEmailSignUp } from '@/firebase/non-blocking-login';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -39,6 +40,7 @@ export default function AdminDashboard() {
   const [acceptanceMessage, setAcceptanceMessage] = useState('');
   const [selectedConfigId, setSelectedConfigId] = useState<string>('');
   const [showPassword, setShowPassword] = useState(false);
+  const [viewingExhibitor, setViewingExhibitor] = useState<Exhibitor | null>(null);
   
   // Login/Signup states
   const [email, setEmail] = useState('');
@@ -75,14 +77,14 @@ export default function AdminDashboard() {
     }
   }, [currentConfig, selectedConfigId]);
 
-  // Admins fetching - Only if authorized to avoid permission errors
+  // Admins fetching
   const adminsQuery = useMemoFirebase(() => {
     if (!isAuthorized) return null;
     return query(collection(db, 'roles_admin'));
   }, [db, isAuthorized]);
   const { data: adminUsers, isLoading: isAdminsLoading } = useCollection(adminsQuery);
 
-  // Exhibitors fetching - Only if authorized and config selected
+  // Exhibitors fetching
   const exhibitorsQuery = useMemoFirebase(() => {
     if (!isAuthorized || !selectedConfigId) return null;
     return query(
@@ -119,181 +121,73 @@ export default function AdminDashboard() {
       : initiateEmailSignIn(auth, email, password);
 
     authPromise
-      .then(() => {
-        if (isSignUp) {
-          toast({ 
-            title: "Compte créé", 
-            description: "Votre compte est en attente d'autorisation. Transmettez votre UID à l'administrateur." 
-          });
-        }
-      })
       .catch((err: any) => {
-        console.error("Auth error:", err.code);
-        if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
-          setAuthError("Email ou mot de passe incorrect.");
-        } else if (err.code === 'auth/email-already-in-use') {
-          setAuthError("Cet e-mail est déjà utilisé.");
-        } else if (err.code === 'auth/weak-password') {
-          setAuthError("Le mot de passe est trop court.");
-        } else {
-          setAuthError("Une erreur est survenue lors de l'authentification.");
-        }
+        if (err.code === 'auth/invalid-credential') setAuthError("Email ou mot de passe incorrect.");
+        else setAuthError("Une erreur est survenue.");
       })
-      .finally(() => {
-        setIsAuthLoading(false);
-      });
+      .finally(() => setIsAuthLoading(false));
   };
 
   const handleAddAdmin = () => {
-    if (!newAdminEmail || !newAdminUid) {
-      toast({ variant: "destructive", title: "Champs requis", description: "Veuillez saisir l'e-mail et l'UID." });
-      return;
-    }
+    if (!newAdminEmail || !newAdminUid) return;
     setIsAddingAdmin(true);
     const adminRef = doc(db, 'roles_admin', newAdminUid);
-    setDocumentNonBlocking(adminRef, {
-      email: newAdminEmail,
-      uid: newAdminUid,
-      addedAt: new Date().toISOString()
-    }, { merge: true });
-
+    setDocumentNonBlocking(adminRef, { email: newAdminEmail, uid: newAdminUid, addedAt: new Date().toISOString() }, { merge: true });
     setNewAdminEmail('');
     setNewAdminUid('');
     setIsAddingAdmin(false);
-    toast({ title: "Accès ajouté", description: `${newAdminEmail} est désormais administrateur.` });
+    toast({ title: "Accès ajouté" });
   };
 
   const handleRemoveAdmin = (uid: string) => {
-    const adminRef = doc(db, 'roles_admin', uid);
-    deleteDocumentNonBlocking(adminRef);
-    toast({ title: "Accès retiré", description: "L'utilisateur n'est plus administrateur." });
+    deleteDocumentNonBlocking(doc(db, 'roles_admin', uid));
+    toast({ title: "Accès retiré" });
   };
 
   const handleSaveConfig = () => {
     setIsSavingConfig(true);
     const configId = selectedConfigId || `config-${configForm.marketYear}`;
-    const configRef = doc(db, 'market_configurations', configId);
-    
-    setDocumentNonBlocking(configRef, {
-      ...configForm,
-      id: configId,
-      currentMarket: true
-    }, { merge: true });
-
-    toast({
-      title: "Paramètres enregistrés",
-      description: `L'édition ${configForm.marketYear} a été mise à jour.`,
-    });
+    setDocumentNonBlocking(doc(db, 'market_configurations', configId), { ...configForm, id: configId, currentMarket: true }, { merge: true });
+    toast({ title: "Paramètres enregistrés" });
     setIsSavingConfig(false);
   };
 
-  const handleCreateNewEdition = () => {
-    const nextYear = (configs && configs.length > 0) ? Math.max(...configs.map(c => c.marketYear)) + 1 : new Date().getFullYear() + 1;
-    const newId = `config-${nextYear}`;
-    const newConfigRef = doc(db, 'market_configurations', newId);
-    
-    setDocumentNonBlocking(newConfigRef, {
-      id: newId,
-      marketYear: nextYear,
-      editionNumber: "Nouvelle édition",
-      posterImageUrl: "https://i.ibb.co/3y3KRNW4/Affiche-March.jpg",
-      currentMarket: false
-    }, { merge: true });
-
-    setSelectedConfigId(newId);
-    toast({
-      title: "Nouvelle édition créée",
-      description: `Vous pouvez maintenant configurer l'année ${nextYear}.`,
-    });
-  };
-
   const updateStatus = (id: string, status: ApplicationStatus, additionalData = {}) => {
-    const docRef = doc(db, 'pre_registrations', id);
-    updateDocumentNonBlocking(docRef, { status, ...additionalData });
-  };
-
-  const handleDelete = (id: string) => {
-    const docRef = doc(db, 'pre_registrations', id);
-    deleteDocumentNonBlocking(docRef);
-    toast({
-      title: "Candidature supprimée",
-      description: "Le dossier a été retiré de la base de données.",
-    });
+    updateDocumentNonBlocking(doc(db, 'pre_registrations', id), { status, ...additionalData });
   };
 
   const handleAcceptAndSend = async (exhibitor: Exhibitor) => {
     setIsSending(true);
-    try {
-      const result = await sendAcceptanceEmail(exhibitor, acceptanceMessage, currentConfig);
-      if (result.success) {
-        updateStatus(exhibitor.id, 'accepted_form1');
-        toast({
-          title: "Candidature acceptée",
-          description: `L'e-mail a été envoyé à ${exhibitor.email}.`,
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Erreur d'envoi",
-          description: "Impossible d'envoyer l'e-mail d'acceptation.",
-        });
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsSending(false);
-      setAcceptanceMessage('');
+    const result = await sendAcceptanceEmail(exhibitor, acceptanceMessage, currentConfig);
+    if (result.success) {
+      updateStatus(exhibitor.id, 'accepted_form1');
+      toast({ title: "Candidature acceptée et email envoyé" });
     }
+    setIsSending(false);
+    setAcceptanceMessage('');
   };
 
   const handleConfirmReject = async (exhibitor: Exhibitor) => {
-    if (!justification) {
-      toast({
-        variant: "destructive",
-        title: "Justification requise",
-        description: "Veuillez générer ou saisir un motif de refus.",
-      });
-      return;
-    }
-
+    if (!justification) return;
     setIsSending(true);
-    try {
-      const result = await sendRejectionEmail(exhibitor, justification, currentConfig);
-      if (result.success) {
-        updateStatus(exhibitor.id, 'rejected', { rejectionJustification: justification });
-        toast({
-          title: "Refus envoyé",
-          description: `L'e-mail de refus a été envoyé à ${exhibitor.email}.`,
-        });
-        setJustification('');
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Erreur d'envoi",
-          description: "Impossible d'envoyer l'e-mail de refus.",
-        });
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsSending(false);
+    const result = await sendRejectionEmail(exhibitor, justification, currentConfig);
+    if (result.success) {
+      updateStatus(exhibitor.id, 'rejected', { rejectionJustification: justification });
+      toast({ title: "Refus envoyé" });
     }
+    setIsSending(false);
+    setJustification('');
   };
 
   const handleGenerateRejectIA = async (exhibitor: Exhibitor, reasons: string[]) => {
     setIsGenerating(true);
-    try {
-      const result = await generateRejectionJustification({
-        applicantName: `${exhibitor.firstName} ${exhibitor.lastName}`,
-        applicationSummary: exhibitor.productDescription,
-        rejectionReasons: reasons,
-      });
-      setJustification(result.justificationMessage);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsGenerating(false);
-    }
+    const result = await generateRejectionJustification({
+      applicantName: `${exhibitor.firstName} ${exhibitor.lastName}`,
+      applicationSummary: exhibitor.productDescription,
+      rejectionReasons: reasons,
+    });
+    setJustification(result.justificationMessage);
+    setIsGenerating(false);
   };
 
   const filteredExhibitors = (exhibitorsData || []).filter(e => 
@@ -307,102 +201,46 @@ export default function AdminDashboard() {
     validated: (exhibitorsData || []).filter(e => e.status === 'validated').length,
   };
 
-  if (isUserLoading || isRoleLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (isUserLoading || isRoleLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
-  // Login/Signup screen
   if (!user || !user.email) {
     return (
-      <div className="min-h-screen bg-background relative flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <ChristmasSnow />
-        <Card className="max-w-md w-full border-t-8 border-t-primary shadow-2xl relative z-10">
+        <Card className="max-w-md w-full border-t-8 border-t-primary shadow-2xl z-10">
           <CardHeader className="text-center">
-            <div className="mx-auto w-20 h-20 rounded-full border-4 border-primary/10 overflow-hidden mb-4 bg-white">
-              <Image src={logoUrl} alt="Logo" width={80} height={80} className="object-cover" />
-            </div>
-            <CardTitle className="text-2xl font-headline font-bold text-primary">
-              {isSignUp ? "Créer un accès" : "Accès Administration"}
-            </CardTitle>
-            <CardDescription>Portail réservé aux organisateurs.</CardDescription>
+            <CardTitle className="text-2xl font-bold text-primary">Accès Administration</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleAuth} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-muted-foreground uppercase">E-mail</label>
-                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <div className="relative">
+                <Input type={showPassword ? "text" : "password"} placeholder="Mot de passe" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2" onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-muted-foreground uppercase">Mot de passe</label>
-                <div className="relative">
-                  <Input 
-                    type={showPassword ? "text" : "password"} 
-                    value={password} 
-                    onChange={(e) => setPassword(e.target.value)} 
-                    required 
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-              {authError && <p className="text-xs text-destructive font-bold p-2 bg-destructive/10 rounded border border-destructive/20">{authError}</p>}
-              
-              <Button type="submit" disabled={isAuthLoading} className="w-full h-12 text-lg font-bold gap-2 bg-primary hover:bg-primary/90 text-white">
-                {isAuthLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : isSignUp ? <UserPlus2 className="w-5 h-5" /> : <LogIn className="w-5 h-5" />}
-                {isSignUp ? "S'enregistrer" : "Se connecter"}
+              <Button type="submit" disabled={isAuthLoading} className="w-full">
+                {isAuthLoading ? <Loader2 className="animate-spin" /> : isSignUp ? "S'enregistrer" : "Se connecter"}
               </Button>
-              
-              <Button type="button" variant="ghost" className="w-full text-xs" onClick={() => { setIsSignUp(!isSignUp); setAuthError(''); }}>
-                {isSignUp ? "Déjà un compte ? Se connecter" : "Nouveau membre ? S'enregistrer"}
+              <Button type="button" variant="ghost" className="w-full text-xs" onClick={() => setIsSignUp(!isSignUp)}>
+                {isSignUp ? "Déjà un compte ? Se connecter" : "Nouveau ? S'enregistrer"}
               </Button>
             </form>
-
-            <div className="mt-6 flex items-start gap-2 text-[10px] text-muted-foreground bg-muted/50 p-3 rounded-lg border">
-              <ShieldAlert className="w-4 h-4 shrink-0 text-amber-500" />
-              <p>L'accès est limité aux e-mails autorisés par l'administrateur principal.</p>
-            </div>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  // Pending Authorization screen
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen bg-background relative flex items-center justify-center p-4">
-        <ChristmasSnow />
-        <Card className="max-w-md w-full border-t-8 border-t-amber-500 shadow-2xl relative z-10">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 mb-4">
-              <Clock className="w-8 h-8" />
-            </div>
-            <CardTitle className="text-2xl font-headline font-bold text-amber-700">Accès en attente</CardTitle>
-            <CardDescription>Votre compte est créé, mais n'a pas encore été autorisé par l'administrateur.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="p-4 bg-muted rounded-lg space-y-2">
-              <p className="text-xs font-bold text-muted-foreground uppercase text-center">Votre UID à transmettre :</p>
-              <p className="font-mono text-sm bg-white p-2 border rounded text-center select-all">{user.uid}</p>
-              <p className="text-[10px] text-center text-muted-foreground">Envoyez ce code à hugues.rabier@gmail.com</p>
-            </div>
-            <div className="space-y-3">
-              <Button variant="outline" className="w-full gap-2" asChild>
-                <Link href={`mailto:hugues.rabier@gmail.com?subject=Demande d'accès Admin MarchéConnect&body=Bonjour, pouvez-vous autoriser mon compte ? %0D%0AEmail: ${user.email} %0D%0AUID: ${user.uid}`}><Mail className="w-4 h-4" /> Demander l'accès par mail</Link>
-              </Button>
-              <Button onClick={() => auth.signOut()} variant="ghost" className="w-full text-xs">Se déconnecter</Button>
-            </div>
-          </CardContent>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full text-center p-6 space-y-4">
+          <Clock className="w-12 h-12 mx-auto text-amber-500" />
+          <h2 className="text-xl font-bold">Accès en attente</h2>
+          <p className="text-sm text-muted-foreground">Votre UID : <code className="bg-muted p-1 rounded">{user.uid}</code></p>
+          <Button onClick={() => auth.signOut()} variant="outline">Déconnexion</Button>
         </Card>
       </div>
     );
@@ -411,235 +249,230 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <ChristmasSnow />
-      
-      <div className="bg-primary text-white py-4 shadow-lg relative z-10">
+      <div className="bg-primary text-white py-4 shadow-lg sticky top-0 z-50">
         <div className="container mx-auto px-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <div className="relative w-14 h-14 overflow-hidden rounded-full border-2 border-white/20">
-              <Image src={logoUrl} alt="Logo" fill className="object-cover" />
-            </div>
-            <div>
-              <h1 className="text-xl font-headline font-bold">Admin : Le Marché de Félix</h1>
-              <p className="text-xs opacity-80 uppercase tracking-widest">{user.email}</p>
-            </div>
+          <div className="flex items-center gap-3">
+            <Image src={logoUrl} alt="Logo" width={40} height={40} className="rounded-full" />
+            <h1 className="text-lg font-bold hidden md:block">Admin : Le Marché de Félix</h1>
           </div>
-          <div className="flex gap-4">
-            <Button asChild variant="secondary" size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90">
-              <Link href="/">Voir le site</Link>
-            </Button>
-            <Button onClick={() => auth.signOut()} variant="outline" size="sm" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
-              Déconnexion
-            </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="secondary" size="sm"><Link href="/">Voir le site</Link></Button>
+            <Button onClick={() => auth.signOut()} variant="outline" size="sm">Déconnexion</Button>
           </div>
         </div>
       </div>
 
-      <main className="container mx-auto px-4 py-10 relative z-10 space-y-8">
-        
-        <Tabs defaultValue="exhibitors" className="space-y-8">
-          <TabsList className="bg-white/50 backdrop-blur border">
-            <TabsTrigger value="exhibitors" className="gap-2"><FileText className="w-4 h-4" /> Candidatures</TabsTrigger>
-            <TabsTrigger value="settings" className="gap-2"><Settings className="w-4 h-4" /> Paramètres Marché</TabsTrigger>
-            <TabsTrigger value="access" className="gap-2"><Users className="w-4 h-4" /> Gestion Accès</TabsTrigger>
+      <main className="container mx-auto px-4 py-8 space-y-8">
+        <Tabs defaultValue="exhibitors">
+          <TabsList className="mb-6">
+            <TabsTrigger value="exhibitors">Candidatures</TabsTrigger>
+            <TabsTrigger value="settings">Paramètres Marché</TabsTrigger>
+            <TabsTrigger value="access">Gestion Accès</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="exhibitors" className="space-y-8">
-            <div className="grid md:grid-cols-3 gap-6 items-start">
-              <Card className="md:col-span-1 bg-white/95 backdrop-blur border-l-4 border-l-primary shadow-lg">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Calendar className="w-5 h-5 text-primary" /> Édition
-                    </CardTitle>
-                    <Button variant="ghost" size="icon" onClick={handleCreateNewEdition} title="Ajouter une année">
-                      <Plus className="w-4 h-4 text-primary" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
+          <TabsContent value="exhibitors" className="space-y-6">
+            <div className="grid md:grid-cols-4 gap-4">
+              <Card className="col-span-1">
+                <CardHeader className="p-4 pb-2"><CardTitle className="text-sm">Édition</CardTitle></CardHeader>
+                <CardContent className="p-4 pt-0">
                   <Select value={selectedConfigId} onValueChange={setSelectedConfigId}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Choisir une édition" />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {configs?.map((config) => (
-                        <SelectItem key={config.id} value={config.id}>
-                          Marché {config.marketYear} {config.currentMarket && "(Actuel)"}
-                        </SelectItem>
-                      ))}
+                      {configs?.map(c => <SelectItem key={c.id} value={c.id}>Marché {c.marketYear}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </CardContent>
               </Card>
+              <Card><CardHeader className="p-4 pb-0"><CardTitle className="text-xs text-muted-foreground uppercase">À Étudier</CardTitle></CardHeader><CardContent className="p-4 text-2xl font-bold text-primary">{stats.pending}</CardContent></Card>
+              <Card><CardHeader className="p-4 pb-0"><CardTitle className="text-xs text-muted-foreground uppercase">En cours</CardTitle></CardHeader><CardContent className="p-4 text-2xl font-bold text-secondary">{stats.accepted}</CardContent></Card>
+              <Card><CardHeader className="p-4 pb-0"><CardTitle className="text-xs text-muted-foreground uppercase">Validés</CardTitle></CardHeader><CardContent className="p-4 text-2xl font-bold text-accent">{stats.validated}</CardContent></Card>
+            </div>
 
-              <div className="md:col-span-2 grid grid-cols-3 gap-4">
-                <Card className="bg-white/80 backdrop-blur border-t-4 border-t-primary">
-                  <CardHeader className="pb-2"><CardTitle className="text-xs uppercase text-muted-foreground">À Étudier</CardTitle></CardHeader>
-                  <CardContent><div className="text-2xl font-bold text-primary">{stats.pending}</div></CardContent>
-                </Card>
-                <Card className="bg-white/80 backdrop-blur border-t-4 border-t-secondary">
-                  <CardHeader className="pb-2"><CardTitle className="text-xs uppercase text-muted-foreground">En cours</CardTitle></CardHeader>
-                  <CardContent><div className="text-2xl font-bold text-secondary">{stats.accepted}</div></CardContent>
-                </Card>
-                <Card className="bg-white/80 backdrop-blur border-t-4 border-t-accent">
-                  <CardHeader className="pb-2"><CardTitle className="text-xs uppercase text-muted-foreground">Validés</CardTitle></CardHeader>
-                  <CardContent><div className="text-2xl font-bold text-accent">{stats.validated}</div></CardContent>
-                </Card>
+            <div className="flex gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input placeholder="Rechercher un exposant..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
               </div>
             </div>
 
-            <div className="relative w-full md:w-96">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Rechercher..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-            </div>
-
-            <Card className="overflow-hidden border-none shadow-xl">
+            <Card className="overflow-hidden">
               <Table>
-                <TableHeader className="bg-muted/50">
-                  <TableRow>
-                    <TableHead>Exposant</TableHead>
-                    <TableHead>Localisation</TableHead>
-                    <TableHead>Tables</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
+                <TableHeader><TableRow><TableHead>Exposant</TableHead><TableHead>Tables</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {isExhibitorsLoading ? (
-                    <TableRow><TableCell colSpan={5} className="text-center py-10"><Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" /></TableCell></TableRow>
-                  ) : filteredExhibitors.map((exhibitor) => (
-                    <TableRow key={exhibitor.id} className="hover:bg-muted/30">
-                      <TableCell>
-                        <div className="font-semibold">{exhibitor.companyName}</div>
-                        <div className="text-xs text-muted-foreground">{exhibitor.firstName} {exhibitor.lastName}</div>
-                      </TableCell>
-                      <TableCell><div className="text-xs">{exhibitor.city} ({exhibitor.postalCode})</div></TableCell>
-                      <TableCell><Badge variant="outline">{exhibitor.requestedTables}</Badge></TableCell>
-                      <TableCell>
-                        {exhibitor.status === 'pending' && <Badge variant="secondary">À étudier</Badge>}
-                        {exhibitor.status === 'accepted_form1' && <Badge className="bg-blue-100 text-blue-800">Mail 2 envoyé</Badge>}
-                        {exhibitor.status === 'submitted_form2' && <Badge className="bg-orange-100 text-orange-800">Dossier reçu</Badge>}
-                        {exhibitor.status === 'validated' && <Badge className="bg-green-100 text-green-800">Validé</Badge>}
-                        {exhibitor.status === 'rejected' && <Badge variant="destructive">Refusé</Badge>}
-                      </TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button asChild variant="outline" size="sm" title="Voir Form. 2">
-                          <Link href={`/details/${exhibitor.id}`}><Eye className="w-4 h-4" /></Link>
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader><AlertDialogTitle>Supprimer ?</AlertDialogTitle></AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Annuler</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(exhibitor.id)}>Supprimer</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {filteredExhibitors.length === 0 && !isExhibitorsLoading && (
-                    <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground">Aucune candidature pour cette édition.</TableCell></TableRow>
-                  )}
+                  {isExhibitorsLoading ? <TableRow><TableCell colSpan={4} className="text-center py-8"><Loader2 className="animate-spin mx-auto" /></TableCell></TableRow> :
+                    filteredExhibitors.map(exhibitor => (
+                      <TableRow key={exhibitor.id}>
+                        <TableCell>
+                          <div className="font-bold">{exhibitor.companyName}</div>
+                          <div className="text-xs text-muted-foreground">{exhibitor.firstName} {exhibitor.lastName}</div>
+                        </TableCell>
+                        <TableCell><Badge variant="outline">{exhibitor.requestedTables}</Badge></TableCell>
+                        <TableCell>
+                          <Badge variant={exhibitor.status === 'pending' ? 'secondary' : exhibitor.status === 'rejected' ? 'destructive' : 'default'}>
+                            {exhibitor.status === 'pending' ? 'À étudier' : exhibitor.status === 'accepted_form1' ? 'Accepté (F1)' : exhibitor.status === 'submitted_form2' ? 'Dossier reçu' : exhibitor.status === 'validated' ? 'Validé' : 'Refusé'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right space-x-2">
+                          <Button variant="ghost" size="sm" onClick={() => setViewingExhibitor(exhibitor)} title="Voir détails">
+                            <Info className="w-4 h-4" />
+                          </Button>
+                          
+                          {exhibitor.status === 'pending' && (
+                            <>
+                              <Dialog>
+                                <DialogTrigger asChild><Button size="sm" className="bg-green-600 hover:bg-green-700"><CheckCircle className="w-4 h-4" /></Button></DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader><DialogTitle>Accepter la candidature</DialogTitle></DialogHeader>
+                                  <Textarea placeholder="Message personnalisé (optionnel)..." value={acceptanceMessage} onChange={(e) => setAcceptanceMessage(e.target.value)} />
+                                  <DialogFooter><Button onClick={() => handleAcceptAndSend(exhibitor)} disabled={isSending}>Confirmer et Envoyer l'email</Button></DialogFooter>
+                                </DialogContent>
+                              </Dialog>
+                              
+                              <Dialog>
+                                <DialogTrigger asChild><Button variant="destructive" size="sm"><XCircle className="w-4 h-4" /></Button></DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader><DialogTitle>Refuser la candidature</DialogTitle></DialogHeader>
+                                  <div className="space-y-4">
+                                    <div className="flex gap-2">
+                                      <Button variant="outline" onClick={() => handleGenerateRejectIA(exhibitor, ["Manque de place"])} disabled={isGenerating}>IA: Manque de place</Button>
+                                      <Button variant="outline" onClick={() => handleGenerateRejectIA(exhibitor, ["Produits non artisanaux"])} disabled={isGenerating}>IA: Non artisanal</Button>
+                                    </div>
+                                    <Textarea value={justification} onChange={(e) => setJustification(e.target.value)} placeholder="Motif du refus..." rows={6} />
+                                  </div>
+                                  <DialogFooter><Button variant="destructive" onClick={() => handleConfirmReject(exhibitor)} disabled={isSending}>Envoyer le refus</Button></DialogFooter>
+                                </DialogContent>
+                              </Dialog>
+                            </>
+                          )}
+
+                          <Button asChild variant="ghost" size="sm" title="Voir page dossier">
+                            <Link href={`/details/${exhibitor.id}`} target="_blank"><ExternalLink className="w-4 h-4" /></Link>
+                          </Button>
+                          
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild><Button variant="ghost" size="sm" className="text-destructive"><Trash2 className="w-4 h-4" /></Button></AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader><AlertDialogTitle>Supprimer ?</AlertDialogTitle></AlertDialogHeader>
+                              <AlertDialogFooter><AlertDialogCancel>Annuler</AlertDialogCancel><AlertDialogAction onClick={() => deleteDocumentNonBlocking(doc(db, 'pre_registrations', exhibitor.id))}>Supprimer</AlertDialogAction></AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                 </TableBody>
               </Table>
             </Card>
           </TabsContent>
 
-          <TabsContent value="settings" className="space-y-6">
-            <Card className="bg-white/95 border-l-4 border-l-accent shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Settings className="w-5 h-5 text-accent" /> Paramètres de l'édition {configForm.marketYear}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase">Année du marché</label>
-                    <Input type="number" value={configForm.marketYear} onChange={(e) => setConfigForm({...configForm, marketYear: parseInt(e.target.value)})} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase">Numéro d'édition</label>
-                    <Input value={configForm.editionNumber} onChange={(e) => setConfigForm({...configForm, editionNumber: e.target.value})} />
-                  </div>
+          <TabsContent value="settings">
+            <Card className="max-w-2xl mx-auto">
+              <CardHeader><CardTitle>Configuration du Marché</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2"><label className="text-xs font-bold">Année</label><Input type="number" value={configForm.marketYear} onChange={(e) => setConfigForm({...configForm, marketYear: parseInt(e.target.value)})} /></div>
+                  <div className="space-y-2"><label className="text-xs font-bold">Édition</label><Input value={configForm.editionNumber} onChange={(e) => setConfigForm({...configForm, editionNumber: e.target.value})} /></div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase">URL de l'affiche publicitaire</label>
-                  <Input value={configForm.posterImageUrl} onChange={(e) => setConfigForm({...configForm, posterImageUrl: e.target.value})} placeholder="https://..." />
-                </div>
-                <Button onClick={handleSaveConfig} disabled={isSavingConfig} className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2">
-                  {isSavingConfig ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Enregistrer les modifications
-                </Button>
+                <div className="space-y-2"><label className="text-xs font-bold">URL de l'Affiche</label><Input value={configForm.posterImageUrl} onChange={(e) => setConfigForm({...configForm, posterImageUrl: e.target.value})} /></div>
+                <Button onClick={handleSaveConfig} className="w-full">Enregistrer</Button>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="access" className="space-y-6">
-            <div className="grid md:grid-cols-3 gap-6">
-              <Card className="md:col-span-1 bg-white/95 border-l-4 border-l-secondary shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><UserPlus className="w-5 h-5 text-secondary" /> Ajouter un accès</CardTitle>
-                  <CardDescription>Donnez les droits d'administration à un nouveau membre.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase">E-mail</label>
-                    <Input value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} placeholder="nom@exemple.com" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase">UID Firebase</label>
-                    <Input value={newAdminUid} onChange={(e) => setNewAdminUid(e.target.value)} placeholder="ID unique de l'utilisateur" />
-                  </div>
-                  <Button onClick={handleAddAdmin} disabled={isAddingAdmin} className="w-full bg-secondary hover:bg-secondary/90 text-white gap-2">
-                    {isAddingAdmin ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />} Autoriser l'accès
-                  </Button>
-                  <div className="p-3 bg-muted/50 rounded-lg text-[10px] text-muted-foreground italic border">
-                    <p className="font-bold mb-1">Comment obtenir l'UID ?</p>
-                    L'utilisateur doit d'abord s'enregistrer via le formulaire (bouton "Nouveau membre") puis vous transmettre l'UID qui s'affichera sur son écran de connexion.
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="md:col-span-2 bg-white/95 border-l-4 border-l-primary shadow-lg">
-                <CardHeader><CardTitle>Administrateurs Autorisés</CardTitle></CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader><TableRow><TableHead>E-mail</TableHead><TableHead>UID</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                    <TableBody>
-                      {isAdminsLoading ? (
-                        <TableRow><TableCell colSpan={3} className="text-center"><Loader2 className="w-4 h-4 animate-spin mx-auto" /></TableCell></TableRow>
-                      ) : adminUsers?.map((admin) => (
-                        <TableRow key={admin.id}>
-                          <TableCell className="font-medium">{admin.email}</TableCell>
-                          <TableCell className="text-xs font-mono text-muted-foreground">{admin.uid}</TableCell>
-                          <TableCell className="text-right">
-                            {admin.email !== "hugues.rabier@gmail.com" && (
-                              <Button variant="ghost" size="sm" onClick={() => handleRemoveAdmin(admin.uid)} className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      <TableRow>
-                        <TableCell className="font-bold text-primary italic">hugues.rabier@gmail.com</TableCell>
-                        <TableCell className="text-xs italic">Super Administrateur (Immuable)</TableCell>
-                        <TableCell></TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </div>
+          <TabsContent value="access">
+             <div className="grid md:grid-cols-2 gap-8">
+               <Card>
+                 <CardHeader><CardTitle>Ajouter un Administrateur</CardTitle></CardHeader>
+                 <CardContent className="space-y-4">
+                   <Input placeholder="Email" value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} />
+                   <Input placeholder="UID Firebase" value={newAdminUid} onChange={(e) => setNewAdminUid(e.target.value)} />
+                   <Button onClick={handleAddAdmin} className="w-full">Autoriser</Button>
+                 </CardContent>
+               </Card>
+               <Card>
+                 <CardHeader><CardTitle>Liste des Admins</CardTitle></CardHeader>
+                 <CardContent>
+                    <Table>
+                      <TableBody>
+                        {adminUsers?.map(admin => (
+                          <TableRow key={admin.uid}>
+                            <TableCell>{admin.email}</TableCell>
+                            <TableCell className="text-right">
+                              {admin.email !== "hugues.rabier@gmail.com" && <Button variant="ghost" onClick={() => handleRemoveAdmin(admin.uid)}><Trash2 className="w-4 h-4" /></Button>}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                 </CardContent>
+               </Card>
+             </div>
           </TabsContent>
         </Tabs>
-
-        <div className="text-center py-6">
-          <p className="flex items-center justify-center gap-2 text-secondary font-bold text-sm uppercase tracking-wider">
-            <Heart className="w-4 h-4 fill-secondary" /> Soutien à l'association "Un jardin pour Félix"
-          </p>
-        </div>
       </main>
+
+      {/* Modal Détails Candidat */}
+      <Dialog open={!!viewingExhibitor} onOpenChange={(open) => !open && setViewingExhibitor(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary" /> Détails de la candidature
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="pr-4">
+            {viewingExhibitor && (
+              <div className="space-y-6 py-4">
+                <section className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg">
+                  <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Enseigne</p><p className="font-bold">{viewingExhibitor.companyName}</p></div>
+                  <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Contact</p><p>{viewingExhibitor.firstName} {viewingExhibitor.lastName}</p></div>
+                  <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Email</p><p className="text-sm">{viewingExhibitor.email}</p></div>
+                  <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Téléphone</p><p className="text-sm">{viewingExhibitor.phone}</p></div>
+                  <div className="col-span-2"><p className="text-[10px] font-bold uppercase text-muted-foreground">Adresse</p><p className="text-sm">{viewingExhibitor.address}, {viewingExhibitor.postalCode} {viewingExhibitor.city}</p></div>
+                </section>
+
+                <section className="space-y-2">
+                  <h4 className="text-sm font-bold border-b pb-1">Détails du Stand</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Tables demandées</p><p>{viewingExhibitor.requestedTables} table(s)</p></div>
+                    <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Statut Pro</p><p>{viewingExhibitor.isRegistered ? "Déclaré" : "Particulier"}</p></div>
+                    <div className="col-span-2">
+                      <p className="text-[10px] font-bold uppercase text-muted-foreground">Description produits</p>
+                      <p className="text-sm whitespace-pre-wrap bg-white p-3 rounded border italic">{viewingExhibitor.productDescription}</p>
+                    </div>
+                    {viewingExhibitor.websiteUrl && (
+                      <div className="col-span-2">
+                        <p className="text-[10px] font-bold uppercase text-muted-foreground">Site / Réseaux</p>
+                        <a href={viewingExhibitor.websiteUrl} target="_blank" className="text-sm text-primary hover:underline flex items-center gap-1">
+                          {viewingExhibitor.websiteUrl} <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                {viewingExhibitor.detailedInfo && (
+                  <section className="space-y-2">
+                    <h4 className="text-sm font-bold border-b pb-1 text-secondary">Détails Techniques (Form. 2)</h4>
+                    <div className="grid grid-cols-2 gap-4 bg-secondary/5 p-4 rounded-lg">
+                      <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Électricité</p><p>{viewingExhibitor.detailedInfo.needsElectricity ? "Oui" : "Non"}</p></div>
+                      <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Repas Dimanche</p><p>{viewingExhibitor.detailedInfo.sundayLunchCount} plateaux</p></div>
+                      <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Assurance</p><p className="text-xs">{viewingExhibitor.detailedInfo.insuranceCompany} (N° {viewingExhibitor.detailedInfo.insurancePolicyNumber})</p></div>
+                      <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Lot Tombola</p><p>{viewingExhibitor.detailedInfo.tombolaLot ? "Oui" : "Non"}</p></div>
+                    </div>
+                  </section>
+                )}
+                
+                {viewingExhibitor.rejectionJustification && (
+                  <section className="p-4 bg-destructive/5 rounded-lg border border-destructive/20">
+                    <p className="text-[10px] font-bold uppercase text-destructive">Motif du refus envoyé</p>
+                    <p className="text-sm italic">{viewingExhibitor.rejectionJustification}</p>
+                  </section>
+                )}
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
