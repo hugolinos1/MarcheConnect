@@ -36,28 +36,16 @@ export default function AdminDashboard() {
   const [selectedExhibitor, setSelectedExhibitor] = useState<Exhibitor | null>(null);
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
 
-  // Check if current user is admin
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (!user) {
-      setIsAdmin(false);
-      return;
-    }
-    // In prototype mode, any signed in user is treated as admin
-    setIsAdmin(true);
-  }, [user]);
-
   // Market Config fetching - Publicly readable
   const marketConfigRef = useMemoFirebase(() => collection(db, 'market_configurations'), [db]);
   const { data: configs } = useCollection(marketConfigRef);
   const currentConfig = configs?.find(c => c.currentMarket) || configs?.[0];
 
-  // Exhibitors fetching - Only if user is authenticated to avoid permission errors on load
+  // Exhibitors fetching - ONLY if user is authenticated and loading is finished
   const exhibitorsRef = useMemoFirebase(() => {
-    if (!user) return null;
+    if (isUserLoading || !user) return null;
     return collection(db, 'pre_registrations');
-  }, [db, user]);
+  }, [db, user, isUserLoading]);
   
   const { data: exhibitorsData, isLoading: isExhibitorsLoading } = useCollection<Exhibitor>(exhibitorsRef);
 
@@ -224,7 +212,7 @@ export default function AdminDashboard() {
             </Button>
             <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
               <ShieldAlert className="w-4 h-4 shrink-0 text-amber-500" />
-              <p>Note : Dans cette version prototype, la connexion anonyme vous donne accès à l'interface. En production, l'accès est restreint aux administrateurs déclarés.</p>
+              <p>Note : Dans cette version prototype, la connexion anonyme vous donne accès à l'interface d'administration.</p>
             </div>
           </CardContent>
         </Card>

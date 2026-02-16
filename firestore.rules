@@ -14,8 +14,8 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // In production, check for existence in roles_admin. 
-      // For the prototype demo, we allow access if signed in to facilitate testing.
+      // In prototype mode, we allow access to all authenticated users
+      // to facilitate easy testing and demonstration of admin features.
       return isSignedIn();
     }
 
@@ -32,16 +32,16 @@ service cloud.firestore {
     }
 
     match /pre_registrations/{preRegistrationId} {
-      // Allow anyone to create a registration
+      // Anyone can submit a pre-registration
       allow create: if true;
-      // Allow signed in users to manage for the prototype demo
+      // Admins (authenticated users in this prototype) can manage registrations
       allow get, list, update, delete: if isAdmin();
     }
 
     match /exhibitor_details/{exhibitorDetailId} {
-      // Allow anyone to create/update their details (Form 2)
+      // Anyone can submit or update their details (using Form 2 link)
       allow create, update: if true;
-      // Allow signed in users to manage for the prototype demo
+      // Admins (authenticated users in this prototype) can manage details
       allow get, list, delete: if isAdmin();
     }
   }
