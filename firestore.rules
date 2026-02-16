@@ -24,8 +24,10 @@ service cloud.firestore {
     // --- Collection Rules ---
 
     match /roles_admin/{adminId} {
-      // Seuls les admins peuvent voir et gérer les autres admins
-      allow get, list: if isAdmin();
+      // Un utilisateur peut voir son propre statut d'admin, sinon il faut être admin
+      allow get: if isSignedIn() && (request.auth.uid == adminId || isAdmin());
+      // Seuls les admins confirmés peuvent lister et gérer tous les accès
+      allow list: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
 
@@ -45,7 +47,6 @@ service cloud.firestore {
 
     match /exhibitor_details/{exhibitorDetailId} {
       // Les exposants peuvent créer/modifier via leur lien (Form 2)
-      // Dans ce prototype, on autorise la création/MAJ publique pour simplifier le flux par lien
       allow create, update: if true;
       // Consultation réservée aux admins
       allow get, list, delete: if isAdmin();

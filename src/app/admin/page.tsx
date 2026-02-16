@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useEffect, useState } from 'react';
 import { Exhibitor, ApplicationStatus } from '@/lib/types';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck, UserPlus2 } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck, UserPlus2, Clock, Lock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -16,7 +17,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { sendAcceptanceEmail, sendRejectionEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useMemoFirebase, useCollection, useUser, useAuth } from '@/firebase';
+import { useFirestore, useMemoFirebase, useCollection, useUser, useAuth, useDoc } from '@/firebase';
 import { collection, doc, query, where, orderBy, getDoc } from 'firebase/firestore';
 import { updateDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { initiateEmailSignIn, initiateEmailSignUp } from '@/firebase/non-blocking-login';
@@ -36,7 +37,6 @@ export default function AdminDashboard() {
   const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [justification, setJustification] = useState('');
   const [acceptanceMessage, setAcceptanceMessage] = useState('');
-  const [selectedExhibitor, setSelectedExhibitor] = useState<Exhibitor | null>(null);
   const [selectedConfigId, setSelectedConfigId] = useState<string>('');
   
   // Login/Signup states
@@ -52,6 +52,16 @@ export default function AdminDashboard() {
 
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
 
+  // Check if current user has admin document
+  const userRoleRef = useMemoFirebase(() => {
+    if (!user || !user.uid) return null;
+    return doc(db, 'roles_admin', user.uid);
+  }, [db, user]);
+  const { data: userRoleDoc, isLoading: isRoleLoading } = useDoc(userRoleRef);
+
+  const isSuperAdmin = user?.email === "hugues.rabier@gmail.com";
+  const isAuthorized = isSuperAdmin || !!userRoleDoc;
+
   // Market Configs fetching
   const marketConfigsQuery = useMemoFirebase(() => query(collection(db, 'market_configurations'), orderBy('marketYear', 'desc')), [db]);
   const { data: configs, isLoading: isConfigsLoading } = useCollection(marketConfigsQuery);
@@ -64,21 +74,21 @@ export default function AdminDashboard() {
     }
   }, [currentConfig, selectedConfigId]);
 
-  // Admins fetching - Strictly conditional to prevent permission errors
+  // Admins fetching - Only if authorized to avoid permission errors
   const adminsQuery = useMemoFirebase(() => {
-    if (isUserLoading || !user || !user.email) return null;
+    if (!isAuthorized) return null;
     return query(collection(db, 'roles_admin'));
-  }, [db, user, isUserLoading]);
+  }, [db, isAuthorized]);
   const { data: adminUsers, isLoading: isAdminsLoading } = useCollection(adminsQuery);
 
-  // Exhibitors fetching - filtered by selected market configuration
+  // Exhibitors fetching - Only if authorized and config selected
   const exhibitorsQuery = useMemoFirebase(() => {
-    if (isUserLoading || !user || !user.email || !selectedConfigId) return null;
+    if (!isAuthorized || !selectedConfigId) return null;
     return query(
       collection(db, 'pre_registrations'), 
       where('marketConfigurationId', '==', selectedConfigId)
     );
-  }, [db, user, isUserLoading, selectedConfigId]);
+  }, [db, isAuthorized, selectedConfigId]);
   
   const { data: exhibitorsData, isLoading: isExhibitorsLoading } = useCollection<Exhibitor>(exhibitorsQuery);
 
@@ -296,7 +306,7 @@ export default function AdminDashboard() {
     validated: (exhibitorsData || []).filter(e => e.status === 'validated').length,
   };
 
-  if (isUserLoading || (user && isConfigsLoading)) {
+  if (isUserLoading || isRoleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
@@ -304,7 +314,7 @@ export default function AdminDashboard() {
     );
   }
 
-  // Show login if not logged in OR if logged in but no email (legacy anonymous session)
+  // Login/Signup screen
   if (!user || !user.email) {
     return (
       <div className="min-h-screen bg-background relative flex items-center justify-center p-4">
@@ -337,21 +347,44 @@ export default function AdminDashboard() {
               </Button>
               
               <Button type="button" variant="ghost" className="w-full text-xs" onClick={() => { setIsSignUp(!isSignUp); setAuthError(''); }}>
-                {isSignUp ? "Déjà un compte ? Se connecter" : "Nouveau membre ? S'enregistrer pour obtenir l'UID"}
+                {isSignUp ? "Déjà un compte ? Se connecter" : "Nouveau membre ? S'enregistrer"}
               </Button>
             </form>
 
-            {user && !user.email && (
-              <div className="mt-4 p-3 bg-blue-50 text-blue-800 rounded-lg text-xs border border-blue-200">
-                <p className="font-bold mb-1">Session anonyme détectée :</p>
-                <p>Veuillez vous connecter avec votre e-mail pour accéder aux données administratives.</p>
-                <p className="mt-2 font-mono">UID : {user.uid}</p>
-              </div>
-            )}
-
             <div className="mt-6 flex items-start gap-2 text-[10px] text-muted-foreground bg-muted/50 p-3 rounded-lg border">
               <ShieldAlert className="w-4 h-4 shrink-0 text-amber-500" />
-              <p>L'accès est limité aux e-mails autorisés (ex: hugues.rabier@gmail.com).</p>
+              <p>L'accès est limité aux e-mails autorisés par l'administrateur principal.</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Pending Authorization screen
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-background relative flex items-center justify-center p-4">
+        <ChristmasSnow />
+        <Card className="max-w-md w-full border-t-8 border-t-amber-500 shadow-2xl relative z-10">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 mb-4">
+              <Clock className="w-8 h-8" />
+            </div>
+            <CardTitle className="text-2xl font-headline font-bold text-amber-700">Accès en attente</CardTitle>
+            <CardDescription>Votre compte est créé, mais n'a pas encore été autorisé par l'administrateur.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="p-4 bg-muted rounded-lg space-y-2">
+              <p className="text-xs font-bold text-muted-foreground uppercase text-center">Votre UID à transmettre :</p>
+              <p className="font-mono text-sm bg-white p-2 border rounded text-center select-all">{user.uid}</p>
+              <p className="text-[10px] text-center text-muted-foreground">Envoyez ce code à hugues.rabier@gmail.com</p>
+            </div>
+            <div className="space-y-3">
+              <Button variant="outline" className="w-full gap-2" asChild>
+                <Link href={`mailto:hugues.rabier@gmail.com?subject=Demande d'accès Admin MarchéConnect&body=Bonjour, pouvez-vous autoriser mon compte ? %0D%0AEmail: ${user.email} %0D%0AUID: ${user.uid}`}><Mail className="w-4 h-4" /> Demander l'accès par mail</Link>
+              </Button>
+              <Button onClick={() => auth.signOut()} variant="ghost" className="w-full text-xs">Se déconnecter</Button>
             </div>
           </CardContent>
         </Card>
