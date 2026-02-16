@@ -348,7 +348,7 @@ export default function AdminDashboard() {
                                       />
                                       <div className="p-3 bg-muted/50 rounded-lg flex items-start gap-2 text-xs">
                                         <Mail className="w-4 h-4 shrink-0 mt-0.5 text-primary" />
-                                        <p>Une copie de l'e-mail de refus envoyé à <strong>{exhibitor.email}</strong> vous sera adressée en copie (CC).</p>
+                                        <p>Une copie de l'e-mail de refus envoyé à <strong>{exhibitor.email}</strong> sera adressée à <strong>lemarchedefelix2020@gmail.com</strong> en copie (CC).</p>
                                       </div>
                                     </div>
                                     <DialogFooter>
@@ -390,7 +390,7 @@ export default function AdminDashboard() {
                                       </div>
                                       <div className="p-3 bg-muted/50 rounded-lg flex items-start gap-2 text-xs">
                                         <Mail className="w-4 h-4 shrink-0 mt-0.5 text-primary" />
-                                        <p>Une copie de l'e-mail envoyé à <strong>{exhibitor.email}</strong> vous sera adressée en copie conforme (CC).</p>
+                                        <p>Une copie de l'e-mail envoyé à <strong>{exhibitor.email}</strong> sera adressée à <strong>lemarchedefelix2020@gmail.com</strong> en copie conforme (CC).</p>
                                       </div>
                                     </div>
                                     <DialogFooter>
