@@ -89,7 +89,7 @@ export default function DetailsPage() {
       } : e
     );
     localStorage.setItem('exhibitors', JSON.stringify(updated));
-    router.push('/register/success');
+    router.push('/register/success?type=final');
   }
 
   if (!isLoaded || !exhibitor) return null;
