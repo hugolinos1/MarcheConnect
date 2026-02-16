@@ -236,8 +236,8 @@ export default function AdminDashboard() {
 
   const stats = {
     pending: (exhibitorsData || []).filter(e => e.status === 'pending').length,
-    accepted: (exhibitorsData || []).filter(e => ['accepted_form1', 'submitted_form2', 'validated'].includes(e.status)).length,
-    validated: (exhibitorsData || []).filter(e => e.status === 'validated').length,
+    accepted: (exhibitorsData || []).filter(e => e.status === 'accepted_form1').length,
+    validated: (exhibitorsData || []).filter(e => ['submitted_form2', 'validated'].includes(e.status)).length,
   };
 
   if (isUserLoading || isRoleLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
@@ -416,6 +416,17 @@ export default function AdminDashboard() {
                                   </DialogContent>
                                 </Dialog>
                               </>
+                            )}
+
+                            {exhibitor.status === 'submitted_form2' && (
+                              <Button 
+                                size="sm" 
+                                className="bg-blue-600 hover:bg-blue-700 shadow-sm"
+                                onClick={() => updateStatus(exhibitor.id, 'validated')}
+                                title="Valider définitivement (Règlement reçu)"
+                              >
+                                <ShieldCheck className="w-4 h-4" />
+                              </Button>
                             )}
 
                             <Button asChild variant="outline" size="sm" title="Voir page dossier" className="bg-white border-muted-foreground/30 hover:bg-muted transition-all shadow-sm">
