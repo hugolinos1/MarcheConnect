@@ -4,20 +4,15 @@ import nodemailer from 'nodemailer';
 import { headers } from 'next/headers';
 
 /**
- * Récupère la base URL de manière dynamique et robuste.
+ * Récupère la base URL de manière dynamique.
+ * En production (App Hosting), x-forwarded-host est la source la plus fiable.
  */
 async function getBaseUrl() {
   const headersList = await headers();
-  // Utilisation des headers de proxy si disponibles (App Hosting / Vercel / Cloud Run)
-  const host = headersList.get('x-forwarded-host') || headersList.get('host');
-  let protocol = headersList.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
+  const host = headersList.get('x-forwarded-host') || headersList.get('host') || 'localhost:9002';
+  const proto = headersList.get('x-forwarded-proto')?.split(',')[0] || (host.includes('localhost') ? 'http' : 'https');
   
-  // Nettoyage du protocole au cas où il y aurait plusieurs valeurs (ex: "https,http")
-  if (protocol.includes(',')) {
-    protocol = protocol.split(',')[0].trim();
-  }
-  
-  return `${protocol}://${host}`;
+  return `${proto}://${host}`;
 }
 
 /**

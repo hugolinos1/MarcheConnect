@@ -1,11 +1,20 @@
-
 "use client"
 import React, { useEffect, useState } from 'react';
 
+interface Snowflake {
+  id: number;
+  left: string;
+  duration: string;
+  size: string;
+  opacity: number;
+  delay: string;
+}
+
 export const ChristmasSnow = () => {
-  const [snowflakes, setSnowflakes] = useState<{ id: number; left: string; duration: string; size: string; opacity: number; delay: string }[]>([]);
+  const [snowflakes, setSnowflakes] = useState<Snowflake[]>([]);
 
   useEffect(() => {
+    // Génération différée sur le client pour éviter les erreurs d'hydratation (Math.random)
     const flakes = Array.from({ length: 30 }).map((_, i) => ({
       id: i,
       left: `${Math.random() * 100}%`,
@@ -16,6 +25,8 @@ export const ChristmasSnow = () => {
     }));
     setSnowflakes(flakes);
   }, []);
+
+  if (snowflakes.length === 0) return null;
 
   return (
     <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">

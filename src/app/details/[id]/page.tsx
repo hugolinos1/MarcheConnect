@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -14,7 +13,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ChristmasSnow } from '@/components/ChristmasSnow';
 import { ShieldCheck, Zap, Utensils, Ticket, Camera, Info, ArrowLeft, Heart, CheckCircle2, Calculator, Mail, Loader2, LayoutGrid, FileText, X } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { sendFinalConfirmationEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
@@ -31,7 +29,6 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
 
-  // Tarifs
   const priceTable1 = currentConfig?.priceTable1 ?? 40;
   const priceTable2 = currentConfig?.priceTable2 ?? 60;
   const priceMeal = currentConfig?.priceMeal ?? 8;
@@ -100,7 +97,7 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
           img.src = event.target?.result;
           img.onload = () => {
             const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 1000; // Légère réduction pour assurer le passage en base64
+            const MAX_WIDTH = 1000;
             const MAX_HEIGHT = 1000;
             let width = img.width;
             let height = img.height;
@@ -120,7 +117,7 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx?.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/jpeg', 0.5)); // Qualité 0.5 pour la pièce d'identité
+            resolve(canvas.toDataURL('image/jpeg', 0.5));
           };
         };
       });
@@ -153,7 +150,6 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
         adminValidationStatus: 'PENDING_REVIEW'
       };
 
-      // Mise à jour Firestore non-bloquante pour la réactivité UI
       setDocumentNonBlocking(detailRef, detailedData, { merge: true });
 
       const preRegRef = doc(db, 'pre_registrations', exhibitor.id);
@@ -162,15 +158,13 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
         detailedInfo: values
       });
 
-      // Envoi de l'email
       const emailResult = await sendFinalConfirmationEmail(exhibitor, values, currentConfig);
       
       if (emailResult && !emailResult.success) {
-        console.warn("Email warning:", emailResult.error);
         toast({
           variant: "destructive",
           title: "Note",
-          description: "Le dossier est enregistré mais l'email de confirmation n'a pu être envoyé.",
+          description: "Dossier enregistré, mais l'e-mail de confirmation n'a pu être envoyé.",
         });
       }
       
@@ -190,7 +184,6 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
-        
         <div className="space-y-6">
           <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3">
             <FileText className="w-5 h-5 text-secondary" /> Administratif
@@ -225,7 +218,6 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
                   <div className="flex flex-col gap-4">
                     {idCardPhoto ? (
                       <div className="relative aspect-video max-w-sm rounded-lg overflow-hidden border shadow-sm group bg-muted">
-                        {/* Utilisation de img standard pour les gros base64 en preview */}
                         <img 
                           src={idCardPhoto} 
                           alt="Pièce d'identité" 
@@ -273,7 +265,7 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
                 Emplacement réservé : <strong>{exhibitor.requestedTables === '1' ? '1.75m (1 table)' : '3.50m (2 tables)'}</strong>.
               </p>
               <p className="text-xs italic opacity-80">
-                L'électricité est facturée {priceElectricity}€ de supplément le jour de l'installation (limité en priorité aux produits alimentaires).
+                L'électricité est facturée {priceElectricity}€ de supplément le jour de l'installation.
               </p>
             </div>
           </div>
@@ -289,7 +281,7 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
                   <div className="space-y-1 leading-none">
                     <FormLabel className="text-base font-bold">Besoin d'un raccordement électrique ?</FormLabel>
                     <FormDescription className="text-sm">
-                      Attention : veuillez prévoir vos propres rallonges et multiprises (normes CE).
+                      Prévoyez vos propres rallonges et multiprises (normes CE).
                     </FormDescription>
                   </div>
                 </FormItem>
@@ -309,7 +301,7 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
                        <LayoutGrid className="w-4 h-4 text-secondary" /> Besoin d'une grille d'exposition ?
                     </FormLabel>
                     <FormDescription className="text-sm">
-                      Les grilles sont fournies par l'organisation pour l'accrochage de vos produits.
+                      Fournie sous réserve de disponibilité pour l'accrochage.
                     </FormDescription>
                   </div>
                 </FormItem>
@@ -329,11 +321,11 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
               <FormItem className="space-y-4">
                 <FormLabel className="text-base font-bold text-foreground">Nombre de plateaux repas souhaités ({priceMeal}€ / unité)</FormLabel>
                 <FormDescription className="text-sm">
-                  Menu complet "Fait Maison" : Quiche, salade composée, fromage, dessert, eau.
+                  Menu complet "Fait Maison" (Quiche, salade, fromage, dessert, eau).
                 </FormDescription>
                 <FormControl>
                   <div className="flex items-center gap-4">
-                    <Input type="number" {...field} className="w-24 text-center text-lg font-bold border-2 border-primary/20 focus:border-primary h-12" />
+                    <Input type="number" {...field} className="w-24 text-center text-lg font-bold border-2 border-primary/20 h-12" />
                     <span className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Plateaux</span>
                   </div>
                 </FormControl>
@@ -356,33 +348,19 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
                   <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                 </FormControl>
                 <div className="space-y-1 leading-none">
-                  <FormLabel className="text-base font-bold">Je souhaite offrir un lot pour la tombola de l'association</FormLabel>
+                  <FormLabel className="text-base font-bold">Je souhaite offrir un lot pour la tombola</FormLabel>
                   <FormDescription className="text-sm">
-                    Votre générosité aide directement Félix. Le lot sera collecté sur votre stand le samedi après-midi.
+                    Votre générosité aide directement Félix. Lot collecté sur place.
                   </FormDescription>
                 </div>
               </FormItem>
             )}
           />
-          {form.watch("tombolaLot") && (
-            <FormField
-              control={form.control}
-              name="tombolaLotDescription"
-              render={({ field }) => (
-                <FormItem className="animate-in fade-in slide-in-from-top-2">
-                  <FormLabel className="text-sm font-bold">Nature du lot (ex: Bougie, Bijou, Bon d'achat...)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Précisez ici..." {...field} className="border-2 border-primary/10 h-11" />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          )}
         </div>
 
         <div className="space-y-6">
           <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3">
-            <ShieldCheck className="w-5 h-5 text-secondary" /> Responsabilité Civile (Obligatoire)
+            <ShieldCheck className="w-5 h-5 text-secondary" /> Assurance Responsabilité Civile
           </h3>
           <div className="grid md:grid-cols-2 gap-6">
             <FormField
@@ -414,28 +392,7 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
           </div>
         </div>
 
-        <div className="space-y-4 p-6 bg-secondary/5 rounded-2xl border border-secondary/10">
-          <FormField
-            control={form.control}
-            name="agreedToImageRights"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                <FormControl>
-                  <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel className="flex items-center gap-2 font-bold text-sm text-primary">
-                    <Camera className="w-4 h-4" /> Droit à l'image
-                  </FormLabel>
-                  <FormDescription className="text-xs text-primary/70">
-                    J'autorise l'association à utiliser des photos de mon stand pour sa communication.
-                  </FormDescription>
-                  <FormMessage />
-                </div>
-              </FormItem>
-            )}
-          />
-          <div className="h-px bg-primary/10 my-2" />
+        <div className="p-6 bg-secondary/5 rounded-2xl border border-secondary/10">
           <FormField
             control={form.control}
             name="agreedToTerms"
@@ -456,58 +413,43 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
           />
         </div>
 
-        <div className="p-6 bg-primary text-white rounded-2xl shadow-lg space-y-4 border-2 border-accent/20">
+        <div className="p-6 bg-primary text-white rounded-2xl shadow-lg space-y-4">
           <h3 className="text-lg font-bold flex items-center gap-3 border-b border-white/20 pb-3">
-            <Calculator className="w-5 h-5 text-accent" /> Récapitulatif de votre règlement
+            <Calculator className="w-5 h-5 text-accent" /> Récapitulatif du règlement
           </h3>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between">
               <span>Emplacement ({exhibitor.requestedTables === '1' ? '1 table' : '2 tables'}) :</span>
               <span className="font-bold">{standPrice} €</span>
             </div>
             {watchLunchCount > 0 && (
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between">
                 <span>Repas Dimanche ({watchLunchCount} x {priceMeal}€) :</span>
                 <span className="font-bold">{mealsPrice} €</span>
               </div>
             )}
-            {watchElectricity && (
-              <div className="flex justify-between items-center text-accent text-xs italic">
-                <span>Option Électricité (à régler sur place) :</span>
-                <span className="font-bold">{priceElectricity} €</span>
-              </div>
-            )}
-            {watchGrid && (
-              <div className="flex justify-between items-center text-accent text-xs italic">
-                <span>Grille d'exposition :</span>
-                <span className="font-bold">Offert sous réserve de disponibilité</span>
-              </div>
-            )}
           </div>
           <div className="pt-3 border-t border-white/40 flex justify-between items-center">
-            <span className="text-xl font-headline font-bold">TOTAL À ENVOYER :</span>
-            <span className="text-3xl font-headline font-bold text-accent">{totalToPay} €</span>
+            <span className="text-xl font-bold">TOTAL À ENVOYER :</span>
+            <span className="text-3xl font-bold text-accent">{totalToPay} €</span>
           </div>
           <div className="bg-white/10 p-3 rounded-lg flex items-start gap-3 text-xs">
             <Mail className="w-4 h-4 shrink-0 mt-0.5" />
-            <p>Chèque à libeller à l'ordre de <strong>"Association Un Jardin pour Félix"</strong> <u className="font-bold">et à envoyer sous 15 jours par courrier</u>.</p>
+            <p>Chèque à l'ordre de <strong>"Association Un Jardin pour Félix"</strong> <u>et à envoyer <strong>sous 15 jours</strong> par courrier</u>.</p>
           </div>
         </div>
 
-        <div className="pt-6 space-y-6">
+        <div className="pt-6">
           <Button 
             type="submit" 
             disabled={isSubmitting}
-            className="w-full bg-secondary hover:bg-secondary/90 text-white h-16 text-xl gold-glow font-bold shadow-lg transition-all hover:scale-[1.01] active:scale-[0.99] border-none"
+            className="w-full bg-secondary hover:bg-secondary/90 text-white h-16 text-xl font-bold shadow-lg"
           >
-            {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : "Valider définitivement mon inscription"}
+            {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : "Valider mon inscription"}
           </Button>
-          
-          <div className="text-center space-y-2">
-            <p className="flex items-center justify-center gap-2 text-primary font-bold text-sm uppercase tracking-wider">
-              <Heart className="w-4 h-4 fill-primary" /> Merci pour votre soutien à Félix
-            </p>
-          </div>
+          <p className="text-center mt-6 text-primary font-bold text-sm flex items-center justify-center gap-2">
+            <Heart className="w-4 h-4 fill-primary" /> Merci de votre soutien
+          </p>
         </div>
       </form>
     </Form>
@@ -517,77 +459,38 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
 export default function DetailsPage() {
   const { id } = useParams();
   const db = useFirestore();
-  const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
 
-  // Market Config fetching
   const marketConfigRef = useMemoFirebase(() => collection(db, 'market_configurations'), [db]);
   const { data: configs } = useCollection(marketConfigRef);
   const currentConfig = configs?.find(c => c.currentMarket) || configs?.[0];
-  const currentYear = currentConfig?.marketYear || 2026;
 
-  // Exhibitor fetching
   const exhibitorRef = useMemoFirebase(() => id ? doc(db, 'pre_registrations', id as string) : null, [db, id]);
   const { data: exhibitor, isLoading: isExhibitorLoading } = useDoc<Exhibitor>(exhibitorRef);
 
-  if (isExhibitorLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (isExhibitorLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
 
   if (!exhibitor) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 text-center space-y-4">
-        <ShieldCheck className="w-16 h-16 text-destructive" />
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center space-y-4">
         <h1 className="text-2xl font-bold text-primary">Dossier introuvable</h1>
-        <p className="text-muted-foreground">Ce lien est invalide ou la candidature n'a pas été acceptée.</p>
-        <Button asChild variant="outline">
-          <Link href="/">Retour à l'accueil</Link>
-        </Button>
+        <Button asChild variant="outline"><Link href="/">Retour à l'accueil</Link></Button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background py-12 px-4 relative selection:bg-accent selection:text-accent-foreground">
+    <div className="min-h-screen bg-background py-12 px-4 relative">
       <ChristmasSnow />
-      
       <div className="container mx-auto max-w-3xl relative z-10">
-        <Link href="/" className="inline-flex items-center gap-2 text-primary hover:underline mb-8 font-medium">
+        <Link href="/" className="inline-flex items-center gap-2 text-primary hover:underline mb-8">
           <ArrowLeft className="w-4 h-4" /> Retour au site
         </Link>
 
         <Card className="border-t-8 border-t-primary shadow-2xl overflow-hidden bg-white/95 backdrop-blur-sm">
-          <div className="bg-primary text-white p-8 flex flex-col md:flex-row items-center justify-between gap-6 border-b">
-            <div className="space-y-2 text-center md:text-left">
-              <h1 className="text-3xl font-headline font-bold">Dossier de Finalisation</h1>
-              <div className="flex flex-col gap-1">
-                <p className="text-lg font-medium text-accent">Exposant : {exhibitor.companyName}</p>
-                <p className="text-xs opacity-80 uppercase tracking-widest">Marché de Noël Solidaire {currentYear}</p>
-              </div>
-            </div>
-            <div className="relative w-20 h-20 rounded-full border-4 border-white/20 overflow-hidden shadow-lg bg-white">
-              <Image src={logoUrl} alt="Logo" fill className="object-cover" />
-            </div>
+          <div className="bg-primary text-white p-8">
+            <h1 className="text-3xl font-bold">Dossier de Finalisation</h1>
+            <p className="text-lg opacity-90 mt-2">Exposant : {exhibitor.companyName}</p>
           </div>
-          
-          <CardHeader className="bg-muted/30 py-8 border-b">
-            <div className="flex items-start gap-4">
-              <div className="bg-secondary/10 p-3 rounded-full text-secondary">
-                <CheckCircle2 className="w-6 h-6" />
-              </div>
-              <div className="space-y-1">
-                <CardTitle className="text-xl font-headline font-bold text-primary">Confirmation de votre demande</CardTitle>
-                <CardDescription className="text-base">
-                  Votre candidature pour <strong>{exhibitor.requestedTables === '1' ? '1 table (1.75m)' : '2 tables (3.50m)'}</strong> a été retenue. 
-                  Complétez les détails ci-dessous pour finaliser votre réservation.
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          
           <CardContent className="p-8">
             <FinalizationForm exhibitor={exhibitor} currentConfig={currentConfig} />
           </CardContent>
