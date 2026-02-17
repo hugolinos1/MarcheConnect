@@ -4,8 +4,7 @@ import nodemailer from 'nodemailer';
 import { headers } from 'next/headers';
 
 /**
- * Récupère la base URL de manière dynamique.
- * En production (App Hosting), x-forwarded-host est la source la plus fiable.
+ * Récupère la base URL de manière dynamique et robuste.
  */
 async function getBaseUrl() {
   const headersList = await headers();
@@ -54,8 +53,6 @@ ${exhibitorData.productDescription}
 Tables demandées : ${exhibitorData.requestedTables}
 Statut Pro : ${exhibitorData.isRegistered ? 'Déclaré' : 'Particulier'}
 Site/Réseaux : ${exhibitorData.websiteUrl || 'Non renseigné'}
-
-Vous pouvez consulter le dossier complet sur votre tableau de bord administrateur.
 
 -- 
 Système de gestion MarchéConnect
@@ -192,7 +189,6 @@ export async function sendFinalConfirmationEmail(exhibitor: any, details: any, m
   const priceTable1 = marketConfig?.priceTable1 ?? 40;
   const priceTable2 = marketConfig?.priceTable2 ?? 60;
   const priceMeal = marketConfig?.priceMeal ?? 8;
-  const priceElectricity = marketConfig?.priceElectricity ?? 1;
 
   const standPrice = exhibitor.requestedTables === '1' ? priceTable1 : priceTable2;
   const mealsPrice = (details.sundayLunchCount || 0) * priceMeal;
@@ -212,8 +208,7 @@ Récapitulatif de vos options :
 Enseigne : ${exhibitor.companyName}
 Emplacement : ${exhibitor.requestedTables === '1' ? '1.75m (1 table)' : '3.50m (2 tables)'}
 Repas Dimanche midi : ${details.sundayLunchCount}
-Besoin Électricité : ${details.needsElectricity ? `Oui (prévoir ${priceElectricity}€ le jour de l'installation + rallonges)` : 'Non'}
-Lot Tombola : ${details.tombolaLot ? 'Oui - Merci !' : 'Non'}
+Besoin Électricité : ${details.needsElectricity ? `Oui` : 'Non'}
 
 MONTANT TOTAL À RÉGLER PAR CHÈQUE : ${total} €
 
