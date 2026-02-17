@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useEffect, useState } from 'react';
 import { Exhibitor, ApplicationStatus } from '@/lib/types';
@@ -6,10 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, Eye, EyeOff, Trash2, Loader2, Download, Camera, Fingerprint, Clock, ShieldCheck, Euro } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, Eye, EyeOff, Loader2, Camera, Fingerprint, Clock, ShieldCheck, Euro } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
@@ -17,11 +17,10 @@ import { sendAcceptanceEmail, sendRejectionEmail } from '@/app/actions/email-act
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useMemoFirebase, useCollection, useUser, useAuth, useDoc } from '@/firebase';
 import { collection, doc, query, where, orderBy } from 'firebase/firestore';
-import { updateDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { initiateEmailSignIn, initiateEmailSignUp } from '@/firebase/non-blocking-login';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import * as XLSX from 'xlsx';
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -44,9 +43,6 @@ export default function AdminDashboard() {
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [authError, setAuthError] = useState('');
-
-  const [newAdminEmail, setNewAdminEmail] = useState('');
-  const [newAdminUid, setNewAdminUid] = useState('');
 
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
 
@@ -72,10 +68,7 @@ export default function AdminDashboard() {
 
   const exhibitorsQuery = useMemoFirebase(() => {
     if (!isAuthorized || !selectedConfigId) return null;
-    return query(
-      collection(db, 'pre_registrations'), 
-      where('marketConfigurationId', '==', selectedConfigId)
-    );
+    return query(collection(db, 'pre_registrations'), where('marketConfigurationId', '==', selectedConfigId));
   }, [db, isAuthorized, selectedConfigId]);
   
   const { data: exhibitorsData, isLoading: isExhibitorsLoading } = useCollection<Exhibitor>(exhibitorsQuery);
@@ -117,8 +110,7 @@ export default function AdminDashboard() {
 
     authPromise
       .catch((err: any) => {
-        if (err.code === 'auth/invalid-credential') setAuthError("Email ou mot de passe incorrect.");
-        else setAuthError("Une erreur est survenue.");
+        setAuthError("Email ou mot de passe incorrect.");
       })
       .finally(() => setIsAuthLoading(false));
   };
@@ -174,12 +166,6 @@ export default function AdminDashboard() {
     `${e.firstName} ${e.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const stats = {
-    pending: (exhibitorsData || []).filter(e => e.status === 'pending').length,
-    accepted: (exhibitorsData || []).filter(e => e.status === 'accepted_form1').length,
-    validated: (exhibitorsData || []).filter(e => ['submitted_form2', 'validated'].includes(e.status)).length,
-  };
-
   if (isUserLoading || isRoleLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
   if (!user || !user.email) {
@@ -200,27 +186,9 @@ export default function AdminDashboard() {
                 </button>
               </div>
               {authError && <p className="text-xs text-destructive text-center">{authError}</p>}
-              <Button type="submit" disabled={isAuthLoading} className="w-full">
-                {isAuthLoading ? <Loader2 className="animate-spin" /> : isSignUp ? "S'enregistrer" : "Se connecter"}
-              </Button>
-              <Button type="button" variant="ghost" className="w-full text-xs" onClick={() => setIsSignUp(!isSignUp)}>
-                {isSignUp ? "Déjà un compte ? Se connecter" : "Nouveau ? S'enregistrer"}
-              </Button>
+              <Button type="submit" disabled={isAuthLoading} className="w-full">Se connecter</Button>
             </form>
           </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full text-center p-6 space-y-4">
-          <Clock className="w-12 h-12 mx-auto text-amber-500" />
-          <h2 className="text-xl font-bold">Accès en attente</h2>
-          <p className="text-sm text-muted-foreground">Votre UID : <code className="bg-muted p-1 rounded">{user.uid}</code></p>
-          <Button onClick={() => auth.signOut()} variant="outline">Déconnexion</Button>
         </Card>
       </div>
     );
@@ -235,12 +203,7 @@ export default function AdminDashboard() {
             <img src={logoUrl} alt="Logo" width={40} height={40} className="rounded-full" />
             <h1 className="text-lg font-bold">Admin Marché de Félix</h1>
           </div>
-          <div className="flex gap-2">
-            <Button asChild variant="secondary" size="sm" className="font-bold">
-              <Link href="/">Voir le site</Link>
-            </Button>
-            <Button onClick={() => auth.signOut()} variant="ghost" size="sm" className="text-white">Déconnexion</Button>
-          </div>
+          <Button onClick={() => auth.signOut()} variant="ghost" size="sm" className="text-white">Déconnexion</Button>
         </div>
       </div>
 
@@ -252,100 +215,29 @@ export default function AdminDashboard() {
           </TabsList>
 
           <TabsContent value="exhibitors" className="space-y-6">
-            <div className="grid md:grid-cols-4 gap-4">
-              <Card className="bg-primary/5 border-primary/20">
-                <CardHeader className="p-4 pb-2"><CardTitle className="text-xs uppercase text-muted-foreground">Édition</CardTitle></CardHeader>
-                <CardContent className="p-4 pt-0 font-bold text-primary">Marché {currentConfig?.marketYear}</CardContent>
-              </Card>
-              <Card><CardHeader className="p-4 pb-0"><CardTitle className="text-xs uppercase text-muted-foreground">À Étudier</CardTitle></CardHeader><CardContent className="p-4 text-2xl font-bold">{stats.pending}</CardContent></Card>
-              <Card><CardHeader className="p-4 pb-0"><CardTitle className="text-xs uppercase text-muted-foreground">En cours</CardTitle></CardHeader><CardContent className="p-4 text-2xl font-bold text-secondary">{stats.accepted}</CardContent></Card>
-              <Card><CardHeader className="p-4 pb-0"><CardTitle className="text-xs uppercase text-muted-foreground">Validés</CardTitle></CardHeader><CardContent className="p-4 text-2xl font-bold text-accent">{stats.validated}</CardContent></Card>
-            </div>
-
             <div className="flex flex-col md:flex-row gap-4 items-center">
               <div className="relative flex-1 w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input placeholder="Rechercher un exposant..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                <Input placeholder="Rechercher..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
               </div>
             </div>
 
             <Card className="overflow-hidden">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Exposant</TableHead>
-                    <TableHead>Tables</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
+                  <TableRow><TableHead>Exposant</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Actions</TableHead></TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isExhibitorsLoading ? <TableRow><TableCell colSpan={4} className="text-center py-8"><Loader2 className="animate-spin mx-auto" /></TableCell></TableRow> :
+                  {isExhibitorsLoading ? <TableRow><TableCell colSpan={3} className="text-center py-8"><Loader2 className="animate-spin mx-auto" /></TableCell></TableRow> :
                     filteredExhibitors.map(exhibitor => (
                       <TableRow key={exhibitor.id}>
                         <TableCell>
                           <div className="font-bold">{exhibitor.companyName}</div>
                           <div className="text-xs text-muted-foreground">{exhibitor.firstName} {exhibitor.lastName}</div>
                         </TableCell>
-                        <TableCell><Badge variant="outline">{exhibitor.requestedTables}</Badge></TableCell>
-                        <TableCell>
-                          <Badge variant={exhibitor.status === 'pending' ? 'secondary' : exhibitor.status === 'rejected' ? 'destructive' : 'default'}>
-                            {exhibitor.status === 'pending' ? 'À étudier' : exhibitor.status === 'accepted_form1' ? 'Accepté (F1)' : exhibitor.status === 'submitted_form2' ? 'Dossier reçu' : exhibitor.status === 'validated' ? 'Validé' : 'Refusé'}
-                          </Badge>
-                        </TableCell>
+                        <TableCell><Badge>{exhibitor.status}</Badge></TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="outline" size="sm" onClick={() => setViewingExhibitor(exhibitor)}>
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            
-                            {exhibitor.status === 'pending' && (
-                              <>
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                                      <CheckCircle className="w-4 h-4" />
-                                    </Button>
-                                  </DialogTrigger>
-                                  <DialogContent>
-                                    <DialogHeader><DialogTitle>Accepter la candidature</DialogTitle></DialogHeader>
-                                    <Textarea placeholder="Message personnalisé (optionnel)..." value={acceptanceMessage} onChange={(e) => setAcceptanceMessage(e.target.value)} />
-                                    <DialogFooter><Button onClick={() => handleAcceptAndSend(exhibitor)} disabled={isSending}>Confirmer</Button></DialogFooter>
-                                  </DialogContent>
-                                </Dialog>
-                                
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <Button variant="destructive" size="sm">
-                                      <XCircle className="w-4 h-4" />
-                                    </Button>
-                                  </DialogTrigger>
-                                  <DialogContent>
-                                    <DialogHeader><DialogTitle>Refuser la candidature</DialogTitle></DialogHeader>
-                                    <div className="space-y-4">
-                                      <div className="flex gap-2">
-                                        <Button variant="outline" size="sm" onClick={() => handleGenerateRejectIA(exhibitor, ["Manque de place"])} disabled={isGenerating}>IA: Manque de place</Button>
-                                        <Button variant="outline" size="sm" onClick={() => handleGenerateRejectIA(exhibitor, ["Produits non artisanaux"])} disabled={isGenerating}>IA: Non artisanal</Button>
-                                      </div>
-                                      <Textarea value={justification} onChange={(e) => setJustification(e.target.value)} placeholder="Motif du refus..." rows={6} />
-                                    </div>
-                                    <DialogFooter><Button variant="destructive" onClick={() => handleConfirmReject(exhibitor)} disabled={isSending}>Envoyer le refus</Button></DialogFooter>
-                                  </DialogContent>
-                                </Dialog>
-                              </>
-                            )}
-
-                            {exhibitor.status === 'submitted_form2' && (
-                              <Button 
-                                size="sm" 
-                                className="bg-blue-600"
-                                onClick={() => updateStatus(exhibitor.id, 'validated')}
-                                title="Valider définitivement"
-                              >
-                                <ShieldCheck className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
+                          <Button variant="outline" size="sm" onClick={() => setViewingExhibitor(exhibitor)}><Eye className="w-4 h-4" /></Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -356,27 +248,13 @@ export default function AdminDashboard() {
 
           <TabsContent value="settings">
             <Card className="max-w-2xl mx-auto">
-              <CardHeader><CardTitle>Configuration du Marché</CardTitle></CardHeader>
+              <CardHeader><CardTitle>Configuration</CardTitle></CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><label className="text-sm font-bold">Année</label><Input type="number" value={configForm.marketYear} onChange={(e) => setConfigForm({...configForm, marketYear: parseInt(e.target.value)})} /></div>
-                  <div className="space-y-2"><label className="text-sm font-bold">Édition</label><Input value={configForm.editionNumber} onChange={(e) => setConfigForm({...configForm, editionNumber: e.target.value})} /></div>
+                  <div className="space-y-2"><label className="text-sm font-bold">Prix 1 Table</label><Input type="number" value={configForm.priceTable1} onChange={(e) => setConfigForm({...configForm, priceTable1: parseFloat(e.target.value)})} /></div>
+                  <div className="space-y-2"><label className="text-sm font-bold">Prix 2 Tables</label><Input type="number" value={configForm.priceTable2} onChange={(e) => setConfigForm({...configForm, priceTable2: parseFloat(e.target.value)})} /></div>
                 </div>
-                <div className="space-y-2"><label className="text-sm font-bold">URL Affiche</label><Input value={configForm.posterImageUrl} onChange={(e) => setConfigForm({...configForm, posterImageUrl: e.target.value})} /></div>
-                
-                <div className="space-y-4 border-t pt-4">
-                  <h3 className="font-bold flex items-center gap-2"><Euro className="w-4 h-4" /> Tarification</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2"><label className="text-xs font-bold uppercase">Prix 1 Table</label><Input type="number" value={configForm.priceTable1} onChange={(e) => setConfigForm({...configForm, priceTable1: parseFloat(e.target.value)})} /></div>
-                    <div className="space-y-2"><label className="text-xs font-bold uppercase">Prix 2 Tables</label><Input type="number" value={configForm.priceTable2} onChange={(e) => setConfigForm({...configForm, priceTable2: parseFloat(e.target.value)})} /></div>
-                    <div className="space-y-2"><label className="text-xs font-bold uppercase">Prix Repas</label><Input type="number" value={configForm.priceMeal} onChange={(e) => setConfigForm({...configForm, priceMeal: parseFloat(e.target.value)})} /></div>
-                    <div className="space-y-2"><label className="text-xs font-bold uppercase">Prix Élec</label><Input type="number" value={configForm.priceElectricity} onChange={(e) => setConfigForm({...configForm, priceElectricity: parseFloat(e.target.value)})} /></div>
-                  </div>
-                </div>
-
-                <Button onClick={handleSaveConfig} disabled={isSavingConfig} className="w-full font-bold">
-                  {isSavingConfig ? <Loader2 className="animate-spin" /> : "Enregistrer"}
-                </Button>
+                <Button onClick={handleSaveConfig} disabled={isSavingConfig} className="w-full">Enregistrer</Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -385,41 +263,25 @@ export default function AdminDashboard() {
 
       <Dialog open={!!viewingExhibitor} onOpenChange={(open) => !open && setViewingExhibitor(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh]">
-          <DialogHeader><DialogTitle className="flex items-center gap-2 text-primary"><FileText className="w-5 h-5" /> Dossier Exposant</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2 text-primary"><FileText className="w-5 h-5" /> Dossier</DialogTitle></DialogHeader>
           <ScrollArea className="h-[70vh] pr-4">
             {viewingExhibitor && (
               <div className="space-y-6 py-4">
                 <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg">
-                  <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Enseigne</p><p className="font-bold">{viewingExhibitor.companyName}</p></div>
-                  <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Contact</p><p>{viewingExhibitor.firstName} {viewingExhibitor.lastName}</p></div>
-                  <div className="col-span-2"><p className="text-[10px] font-bold uppercase text-muted-foreground">Adresse</p><p className="text-sm">{viewingExhibitor.address}, {viewingExhibitor.postalCode} {viewingExhibitor.city}</p></div>
+                  <div><p className="font-bold">{viewingExhibitor.companyName}</p></div>
+                  <div><p>{viewingExhibitor.firstName} {viewingExhibitor.lastName}</p></div>
                 </div>
-
                 {viewingExhibitor.productImages && viewingExhibitor.productImages.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-sm font-bold flex items-center gap-2"><Camera className="w-4 h-4" /> Photos produits</p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {viewingExhibitor.productImages.map((img, i) => (
-                        <img key={i} src={img} alt="" className="w-full aspect-square object-cover rounded border" />
-                      ))}
-                    </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {viewingExhibitor.productImages.map((img, i) => (
+                      <img key={i} src={img} alt="" className="w-full aspect-square object-cover rounded border" />
+                    ))}
                   </div>
                 )}
-
-                {viewingExhibitor.detailedInfo && (
-                  <div className="space-y-4">
-                    <p className="text-sm font-bold flex items-center gap-2"><Fingerprint className="w-4 h-4" /> Dossier Technique</p>
-                    <div className="grid grid-cols-2 gap-4 bg-primary/5 p-4 rounded-lg border">
-                      <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Élec</p><p className="text-sm">{viewingExhibitor.detailedInfo.needsElectricity ? "Oui" : "Non"}</p></div>
-                      <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Repas</p><p className="text-sm">{viewingExhibitor.detailedInfo.sundayLunchCount} plateaux</p></div>
-                      <div className="col-span-2"><p className="text-[10px] font-bold uppercase text-muted-foreground">Assurance</p><p className="text-xs">{viewingExhibitor.detailedInfo.insuranceCompany} - {viewingExhibitor.detailedInfo.insurancePolicyNumber}</p></div>
-                      {viewingExhibitor.detailedInfo.idCardPhoto && (
-                        <div className="col-span-2 mt-2">
-                          <p className="text-[10px] font-bold uppercase text-muted-foreground">Pièce d'identité</p>
-                          <img src={viewingExhibitor.detailedInfo.idCardPhoto} alt="ID" className="w-full max-h-48 object-contain mt-1 rounded border bg-white" />
-                        </div>
-                      )}
-                    </div>
+                {viewingExhibitor.detailedInfo?.idCardPhoto && (
+                  <div>
+                    <p className="text-xs font-bold uppercase mb-1">Pièce d'identité</p>
+                    <img src={viewingExhibitor.detailedInfo.idCardPhoto} alt="ID" className="w-full max-h-64 object-contain rounded border bg-white" />
                   </div>
                 )}
               </div>

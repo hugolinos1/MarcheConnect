@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useEffect, useState } from 'react';
 
@@ -11,7 +12,7 @@ interface Snowflake {
 }
 
 /**
- * Composant de neige sécurisé pour éviter les erreurs d'hydratation (mismatch serveur/client).
+ * Composant de neige sécurisé pour éviter les erreurs d'hydratation.
  * Les valeurs aléatoires sont générées exclusivement côté client après le montage.
  */
 export const ChristmasSnow = () => {
@@ -19,13 +20,13 @@ export const ChristmasSnow = () => {
 
   useEffect(() => {
     // Génération uniquement sur le client pour éviter Math.random() différent entre serveur et client
-    const flakes = Array.from({ length: 30 }).map((_, i) => ({
+    const flakes = Array.from({ length: 20 }).map((_, i) => ({
       id: i,
       left: `${Math.random() * 100}%`,
       duration: `${10 + Math.random() * 15}s`,
       size: `${Math.random() * 10 + 5}px`,
       opacity: Math.random() * 0.7 + 0.3,
-      delay: `${Math.random() * 10}s`,
+      delay: `${Math.random() * 5}s`,
     }));
     setSnowflakes(flakes);
   }, []);

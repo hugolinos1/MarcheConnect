@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -19,10 +20,6 @@ import { useFirestore, useMemoFirebase, useDoc, useCollection } from '@/firebase
 import { doc, collection } from 'firebase/firestore';
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
-/**
- * Sous-composant pour isoler le formulaire et éviter les erreurs de rendu initial
- * Utilise des balises <img> standards car next/image n'aime pas les Base64 lourds en prod.
- */
 function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; currentConfig: any }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -149,44 +146,9 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
             </FormItem>
           )} />
         </div>
-
-        <div className="space-y-6">
-          <h3 className="text-lg font-bold flex items-center gap-3 border-b pb-2"><Zap className="w-5 h-5" /> Logistique</h3>
-          <FormField control={form.control} name="needsElectricity" render={({ field }) => (
-            <FormItem className="flex items-center space-x-3 space-y-0 rounded border p-4 bg-white">
-              <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-              <FormLabel className="font-bold">Besoin d'électricité ?</FormLabel>
-            </FormItem>
-          )} />
-        </div>
-
-        <div className="space-y-6">
-          <h3 className="text-lg font-bold flex items-center gap-3 border-b pb-2"><Utensils className="w-5 h-5" /> Repas</h3>
-          <FormField control={form.control} name="sundayLunchCount" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Plateaux repas Dimanche ({priceMeal}€/unité)</FormLabel>
-              <FormControl><Input type="number" {...field} className="w-24" /></FormControl>
-            </FormItem>
-          )} />
-        </div>
-
-        <div className="space-y-6">
-          <h3 className="text-lg font-bold flex items-center gap-3 border-b pb-2"><ShieldCheck className="w-5 h-5" /> Assurance</h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            <FormField control={form.control} name="insuranceCompany" render={({ field }) => (
-              <FormItem><FormLabel>Assurance</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
-            )} />
-            <FormField control={form.control} name="insurancePolicyNumber" render={({ field }) => (
-              <FormItem><FormLabel>N° Police</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
-            )} />
-          </div>
-        </div>
-
         <div className="bg-primary p-6 text-white rounded-xl shadow-inner text-right">
-          <p className="text-sm font-medium opacity-80 uppercase tracking-widest">Montant à régler par chèque</p>
           <p className="text-3xl font-bold">{totalToPay} €</p>
         </div>
-
         <Button type="submit" disabled={isSubmitting} className="w-full h-14 text-lg font-bold">
           {isSubmitting ? <Loader2 className="animate-spin" /> : "Valider mon dossier"}
         </Button>
@@ -207,7 +169,7 @@ export default function DetailsPage() {
   const { data: exhibitor, isLoading } = useDoc<Exhibitor>(exhibitorRef);
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
-  if (!exhibitor) return <div className="min-h-screen flex items-center justify-center p-4"><Card className="p-8 text-center"><p>Dossier introuvable</p><Button asChild variant="link"><Link href="/">Accueil</Link></Button></Card></div>;
+  if (!exhibitor) return <div className="min-h-screen flex items-center justify-center p-4"><p>Dossier introuvable</p></div>;
 
   return (
     <div className="min-h-screen bg-muted/20 py-12 px-4 relative">
