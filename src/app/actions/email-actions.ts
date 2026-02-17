@@ -1,4 +1,3 @@
-
 'use server';
 
 import nodemailer from 'nodemailer';
@@ -11,7 +10,12 @@ async function getBaseUrl() {
   const headersList = await headers();
   // Utilisation des headers de proxy si disponibles (App Hosting / Vercel / Cloud Run)
   const host = headersList.get('x-forwarded-host') || headersList.get('host');
-  const protocol = headersList.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
+  let protocol = headersList.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
+  
+  // Nettoyage du protocole au cas où il y aurait plusieurs valeurs (ex: "https,http")
+  if (protocol.includes(',')) {
+    protocol = protocol.split(',')[0].trim();
+  }
   
   return `${protocol}://${host}`;
 }
