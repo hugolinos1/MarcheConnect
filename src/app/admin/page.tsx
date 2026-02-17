@@ -14,7 +14,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
-import Image from 'next/image';
 import { sendAcceptanceEmail, sendRejectionEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useMemoFirebase, useCollection, useUser, useAuth, useDoc } from '@/firebase';
@@ -297,7 +296,7 @@ export default function AdminDashboard() {
       <div className="bg-primary text-white py-4 shadow-lg sticky top-0 z-50">
         <div className="container mx-auto px-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <Image src={logoUrl} alt="Logo" width={40} height={40} className="rounded-full" />
+            <img src={logoUrl} alt="Logo" width={40} height={40} className="rounded-full" />
             <h1 className="text-lg font-bold hidden md:block">Admin : Le Marché de Félix</h1>
           </div>
           <div className="flex gap-2">
