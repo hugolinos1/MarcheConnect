@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, Eye, EyeOff, Trash2, ExternalLink, Settings, Euro, Loader2, Download, Camera, Fingerprint, Clock, ShieldCheck } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, Eye, EyeOff, Trash2, Loader2, Download, Camera, Fingerprint, Clock, ShieldCheck, Euro } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -70,12 +70,6 @@ export default function AdminDashboard() {
     }
   }, [currentConfig, selectedConfigId]);
 
-  const adminsQuery = useMemoFirebase(() => {
-    if (!isAuthorized) return null;
-    return query(collection(db, 'roles_admin'));
-  }, [db, isAuthorized]);
-  const { data: adminUsers } = useCollection(adminsQuery);
-
   const exhibitorsQuery = useMemoFirebase(() => {
     if (!isAuthorized || !selectedConfigId) return null;
     return query(
@@ -129,20 +123,6 @@ export default function AdminDashboard() {
       .finally(() => setIsAuthLoading(false));
   };
 
-  const handleAddAdmin = () => {
-    if (!newAdminEmail || !newAdminUid) return;
-    const adminRef = doc(db, 'roles_admin', newAdminUid);
-    setDocumentNonBlocking(adminRef, { email: newAdminEmail, uid: newAdminUid, addedAt: new Date().toISOString() }, { merge: true });
-    setNewAdminEmail('');
-    setNewAdminUid('');
-    toast({ title: "Accès ajouté" });
-  };
-
-  const handleRemoveAdmin = (uid: string) => {
-    deleteDocumentNonBlocking(doc(db, 'roles_admin', uid));
-    toast({ title: "Accès retiré" });
-  };
-
   const handleSaveConfig = () => {
     setIsSavingConfig(true);
     const configId = selectedConfigId || `config-${configForm.marketYear}`;
@@ -187,38 +167,6 @@ export default function AdminDashboard() {
     });
     setJustification(result.justificationMessage);
     setIsGenerating(false);
-  };
-
-  const handleExportExcel = () => {
-    if (!exhibitorsData || exhibitorsData.length === 0) {
-      toast({ title: "Aucune donnée à exporter", variant: "destructive" });
-      return;
-    }
-
-    const exportData = filteredExhibitors.map(e => ({
-      "Enseigne": e.companyName,
-      "Nom": e.lastName,
-      "Prénom": e.firstName,
-      "Email": e.email,
-      "Téléphone": e.phone,
-      "Tables": e.requestedTables,
-      "Statut": e.status,
-      "Adresse": e.address,
-      "Ville": e.city,
-      "Code Postal": e.postalCode,
-      "Déclaré": e.isRegistered ? "Oui" : "Non",
-      "Electricité": e.detailedInfo?.needsElectricity ? "Oui" : "Non",
-      "Repas Dimanche": e.detailedInfo?.sundayLunchCount || 0,
-      "Assurance": e.detailedInfo?.insuranceCompany || ""
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Exposants");
-    
-    const fileName = `Exposants_Marche_${currentConfig?.marketYear || 'Export'}.xlsx`;
-    XLSX.writeFile(workbook, fileName);
-    toast({ title: "Exportation réussie" });
   };
 
   const filteredExhibitors = (exhibitorsData || []).filter(e => 
@@ -301,7 +249,6 @@ export default function AdminDashboard() {
           <TabsList className="mb-6">
             <TabsTrigger value="exhibitors">Candidatures</TabsTrigger>
             <TabsTrigger value="settings">Paramètres Marché</TabsTrigger>
-            <TabsTrigger value="access">Gestion Accès</TabsTrigger>
           </TabsList>
 
           <TabsContent value="exhibitors" className="space-y-6">
@@ -320,9 +267,6 @@ export default function AdminDashboard() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input placeholder="Rechercher un exposant..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
               </div>
-              <Button onClick={handleExportExcel} variant="outline" className="gap-2 w-full md:w-auto font-bold">
-                <Download className="w-4 h-4" /> Exporter Excel
-              </Button>
             </div>
 
             <Card className="overflow-hidden">
@@ -401,16 +345,6 @@ export default function AdminDashboard() {
                                 <ShieldCheck className="w-4 h-4" />
                               </Button>
                             )}
-
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm" className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader><AlertDialogTitle>Supprimer ?</AlertDialogTitle></AlertDialogHeader>
-                                <AlertDialogFooter><AlertDialogCancel>Annuler</AlertDialogCancel><AlertDialogAction onClick={() => deleteDocumentNonBlocking(doc(db, 'pre_registrations', exhibitor.id))}>Supprimer</AlertDialogAction></AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -445,38 +379,6 @@ export default function AdminDashboard() {
                 </Button>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="access">
-             <div className="grid md:grid-cols-2 gap-8">
-               <Card>
-                 <CardHeader><CardTitle>Ajouter un Administrateur</CardTitle></CardHeader>
-                 <CardContent className="space-y-4">
-                   <Input placeholder="Email" value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} />
-                   <Input placeholder="UID Firebase" value={newAdminUid} onChange={(e) => setNewAdminUid(e.target.value)} />
-                   <Button onClick={handleAddAdmin} className="w-full">Ajouter</Button>
-                 </CardContent>
-               </Card>
-               <Card>
-                 <CardHeader><CardTitle>Liste des Admins</CardTitle></CardHeader>
-                 <CardContent>
-                    <Table>
-                      <TableBody>
-                        {adminUsers?.map(admin => (
-                          <TableRow key={admin.uid}>
-                            <TableCell className="text-sm">{admin.email}</TableCell>
-                            <TableCell className="text-right">
-                              {admin.email !== "hugues.rabier@gmail.com" && (
-                                <Button variant="ghost" size="sm" onClick={() => handleRemoveAdmin(admin.uid)} className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                 </CardContent>
-               </Card>
-             </div>
           </TabsContent>
         </Tabs>
       </main>

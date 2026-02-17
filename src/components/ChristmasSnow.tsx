@@ -10,11 +10,15 @@ interface Snowflake {
   delay: string;
 }
 
+/**
+ * Composant de neige sécurisé pour éviter les erreurs d'hydratation (mismatch serveur/client).
+ * Les valeurs aléatoires sont générées exclusivement côté client après le montage.
+ */
 export const ChristmasSnow = () => {
   const [snowflakes, setSnowflakes] = useState<Snowflake[]>([]);
 
   useEffect(() => {
-    // Génération différée sur le client pour éviter les erreurs d'hydratation (Math.random)
+    // Génération uniquement sur le client pour éviter Math.random() différent entre serveur et client
     const flakes = Array.from({ length: 30 }).map((_, i) => ({
       id: i,
       left: `${Math.random() * 100}%`,

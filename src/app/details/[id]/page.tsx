@@ -11,14 +11,18 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { ShieldCheck, Zap, Utensils, Camera, Info, Loader2, X, FileText } from 'lucide-react';
+import { ShieldCheck, Zap, Utensils, Camera, Loader2, X, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { sendFinalConfirmationEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { useFirestore, useMemoFirebase, useDoc, useCollection } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
+/**
+ * Sous-composant pour isoler le formulaire et éviter les erreurs de rendu initial
+ * Utilise des balises <img> standards car next/image n'aime pas les Base64 lourds en prod.
+ */
 function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; currentConfig: any }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -77,9 +81,10 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
         let w = img.width;
         let h = img.height;
         if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } }
-        else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+        else { if (h > MAX) { h *= MAX / h; h = MAX; } }
         canvas.width = w; canvas.height = h;
-        canvas.getContext('2d')?.drawImage(img, 0, 0, w, h);
+        const ctx = canvas.getContext('2d');
+        if (ctx) ctx.drawImage(img, 0, 0, w, h);
         form.setValue('idCardPhoto', canvas.toDataURL('image/jpeg', 0.5));
         setIsProcessingImage(false);
       };
@@ -182,7 +187,7 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
           <p className="text-3xl font-bold">{totalToPay} €</p>
         </div>
 
-        <Button type="submit" disabled={isSubmitting} className="w-full h-14 text-lg">
+        <Button type="submit" disabled={isSubmitting} className="w-full h-14 text-lg font-bold">
           {isSubmitting ? <Loader2 className="animate-spin" /> : "Valider mon dossier"}
         </Button>
       </form>
