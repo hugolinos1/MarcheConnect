@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, EyeOff, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck, UserPlus2, Clock, Lock, Info, ExternalLink, Sparkles, Download, Camera, LayoutGrid, Fingerprint, Euro } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, UserCheck, Globe, MapPin, Ticket, Zap, Utensils, Heart, Mail, Loader2, Trash2, Eye, EyeOff, Settings, Save, LogIn, ShieldAlert, Calendar, Plus, Users, UserPlus, ShieldCheck, UserPlus2, Clock, Lock, Info, ExternalLink, Sparkles, Download, Camera, LayoutGrid, Fingerprint, Euro, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -567,8 +567,8 @@ export default function AdminDashboard() {
                       {viewingExhibitor.detailedInfo.idCardPhoto && (
                         <div className="col-span-2 space-y-2">
                           <p className="text-[10px] font-bold uppercase text-muted-foreground">Pièce d'identité</p>
-                          <div className="relative aspect-video w-full rounded-md overflow-hidden border">
-                            <Image src={viewingExhibitor.detailedInfo.idCardPhoto} alt="ID Card" fill className="object-contain bg-white" />
+                          <div className="relative aspect-video w-full rounded-md overflow-hidden border bg-white">
+                            <img src={viewingExhibitor.detailedInfo.idCardPhoto} alt="ID Card" className="w-full h-full object-contain" />
                           </div>
                         </div>
                       )}
@@ -585,7 +585,7 @@ export default function AdminDashboard() {
                     <div className="grid grid-cols-3 gap-2">
                       {viewingExhibitor.productImages.map((img, idx) => (
                         <div key={idx} className="relative aspect-square rounded-md overflow-hidden border shadow-inner">
-                          <Image src={img} alt={`Produit ${idx + 1}`} fill className="object-cover" />
+                          <img src={img} alt={`Produit ${idx + 1}`} className="w-full h-full object-cover" />
                         </div>
                       ))}
                     </div>
