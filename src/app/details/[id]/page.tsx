@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -73,8 +74,6 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
   });
 
   const watchLunchCount = form.watch("sundayLunchCount") || 0;
-  const watchElectricity = form.watch("needsElectricity");
-  const watchGrid = form.watch("needsGrid");
   const idCardPhoto = form.watch("idCardPhoto");
   
   const standPrice = exhibitor.requestedTables === '1' ? priceTable1 : priceTable2;

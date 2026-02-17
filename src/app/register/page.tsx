@@ -55,17 +55,13 @@ export default function RegisterPage() {
   const [images, setImages] = useState<string[]>([]);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   
-  // Market Config fetching
   const marketConfigRef = useMemoFirebase(() => collection(db, 'market_configurations'), [db]);
   const { data: configs } = useCollection(marketConfigRef);
   const currentConfig = configs?.find(c => c.currentMarket) || configs?.[0];
   const marketYear = currentConfig?.marketYear || 2026;
 
-  // Prices from config
   const priceTable1 = currentConfig?.priceTable1 ?? 40;
   const priceTable2 = currentConfig?.priceTable2 ?? 60;
-  const priceMeal = currentConfig?.priceMeal ?? 8;
-  const priceElectricity = currentConfig?.priceElectricity ?? 1;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -220,7 +216,7 @@ export default function RegisterPage() {
                       <h4 className="font-bold text-foreground underline mb-1">Article 4 :</h4>
                       <p>L’installation des exposants (artisans/créateurs exclusivement) aura lieu le samedi entre 11h et 13h. Les emplacements seront attribués à l’arrivée de chaque exposant. Grilles, tables et chaises sont fournies et installées préalablement, en fonction des besoins exprimés.</p>
                       <p className="mt-2">Nous pourrons fournir en électricité 8 à 10 stands maximum, merci d’en faire la demande lors de l’inscription. Nous ne garantirons pas de pouvoir répondre à toutes les demandes, priorité sera donnée aux produits alimentaires. Les rallonges sont à prévoir par l'exposant.</p>
-                      <p className="mt-2">Nous vous préviendrons début novembre de l’attribution du point électrique. Le jour du marché, nous vous indiquerons l’emplacement avec l’électricité pour un supplément de {priceElectricity}€. </p>
+                      <p className="mt-2">Nous vous préviendrons début novembre de l’attribution du point électrique. Le jour du marché, nous vous indiquerons l’emplacement avec l’électricité pour un supplément de {currentConfig?.priceElectricity || 1}€. </p>
                       <p className="mt-2">Il est essentiel de respecter les horaires d’installation pour ne pas retarder l’ouverture du marché de Noël. Si vous pensez avoir du retard ou avez un empêchement de dernière minute à la suite d’une contrainte familiale ou médicale, merci de me prévenir au 06 81 14 77 76 (Cécile Rabier).</p>
                       <p className="mt-2">Merci de prendre en compte le temps d’installation de votre stand pour qu’il soit prêt à l’ouverture au public. Le démontage du stand ne pourra se faire que le dimanche après la fermeture du marché soit 17h30.</p>
                       <p className="mt-2">Nous ne prévoyons pas de bénévoles pour vous aider à ranger, nos bénévoles sont là pour l’organisation du marché en priorité.</p>
@@ -231,7 +227,7 @@ export default function RegisterPage() {
                       <p>- Un chèque correspondant au nombre de tables souhaité (1 table = 1m75 ou 2 tables = 3m50) est demandé après validation de votre inscription. Sans ce versement, l’inscription ne sera pas prise en compte. Tarif {marketYear} : {priceTable1}€ pour 1 table et {priceTable2}€ pour 2 tables (les tables sont fournies / mesures de la table : 1m75x0.8m).</p>
                       <p>- Chèque à l’ordre de « Les amis d’un jardin pour Félix » association locale de Chazay d’Azergues. Le chèque sera encaissé à partir du 20 novembre {marketYear}.</p>
                       <p>- Toute annulation à partir du 20 novembre ne donnera pas lieu à remboursement.</p>
-                      <p>- Restauration : nous proposons aux exposants un plateau repas le dimanche midi. Si vous êtes intéressés, la réservation (+ paiement) est demandée en même temps que l’inscription. Il s’agit d’un plateau repas fait maison : salade composée maison, part de quiche (différentes recettes), fromage avec une tranche de pain, une clémentine et une part de gâteau à choisir au bar et une bouteille d’eau. Le prix du repas/personne est de {priceMeal}€, toujours le même tarif depuis 2023.</p>
+                      <p>- Restauration : nous proposons aux exposants un plateau repas le dimanche midi. Si vous êtes intéressés, la réservation (+ paiement) est demandée en même temps que l’inscription. Il s’agit d’un plateau repas fait maison : salade composée maison, part de quiche (différentes recettes), fromage avec une tranche de pain, une clémentine et une part de gâteau à choisir au bar et une bouteille d’eau. Le prix du repas/personne est de {currentConfig?.priceMeal || 8}€, toujours le même tarif depuis 2023.</p>
                       <p>- Un café, un thé ou une boisson fraîche vous sera offert le samedi contre remise d’un ticket qui vous sera attribué à votre arrivée (nous n’offrons pas de chocolat chaud, ni de vin chaud, ni tout autre boisson autre que celles énoncées ci-dessus).</p>
                       <p>- Le dimanche matin nous vous invitons à venir pour 9h30 afin de vous offrir café, thé ou une bouteille d’eau accompagné d’une part de gâteau (offert par Bruno Saladino, chocolatier à Vilefranche sur saône). Ce moment nous permet de débriefer de la veille.</p>
                       <p>- Une buvette avec petite restauration à tarif attractif sera ouverte à tous le samedi midi et le dimanche (salades, quiches, crêpes, crêpes salées, gâteaux …)</p>
@@ -486,7 +482,7 @@ export default function RegisterPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {images.map((img, idx) => (
                       <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border shadow-sm group">
-                        <Image src={img} alt={`Produit ${idx + 1}`} fill className="object-cover" />
+                        <img src={img} alt={`Produit ${idx + 1}`} className="w-full h-full object-cover" />
                         <button 
                           type="button"
                           onClick={() => removeImage(idx)}
