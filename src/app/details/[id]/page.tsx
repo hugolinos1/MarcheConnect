@@ -20,9 +20,6 @@ import { useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase
 import { collection, doc } from 'firebase/firestore';
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
-/**
- * Sous-composant pour isoler la logique du formulaire et garantir une initialisation propre de useForm.
- */
 function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; currentConfig: any }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -135,11 +132,9 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
-    
     try {
       const detailId = exhibitor.id;
       const detailRef = doc(db, 'exhibitor_details', detailId);
-      
       const detailedData = {
         ...values,
         id: detailId,
@@ -148,28 +143,15 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
         submissionDate: new Date().toISOString(),
         adminValidationStatus: 'PENDING_REVIEW'
       };
-
       setDocumentNonBlocking(detailRef, detailedData, { merge: true });
-
       const preRegRef = doc(db, 'pre_registrations', exhibitor.id);
       updateDocumentNonBlocking(preRegRef, { 
         status: 'submitted_form2',
         detailedInfo: values
       });
-
-      const emailResult = await sendFinalConfirmationEmail(exhibitor, values, currentConfig);
-      
-      if (emailResult && !emailResult.success) {
-        toast({
-          variant: "destructive",
-          title: "Note",
-          description: "Dossier enregistré, mais l'e-mail de confirmation n'a pu être envoyé.",
-        });
-      }
-      
+      await sendFinalConfirmationEmail(exhibitor, values, currentConfig);
       router.push('/register/success?type=final');
     } catch (error) {
-      console.error("Submit error:", error);
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -187,7 +169,6 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
           <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3">
             <FileText className="w-5 h-5 text-secondary" /> Administratif
           </h3>
-          
           {exhibitor.isRegistered && (
             <FormField
               control={form.control}
@@ -195,53 +176,28 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-bold">Numéro de SIRET <span className="text-destructive">*</span></FormLabel>
-                  <FormControl>
-                    <Input placeholder="14 chiffres" {...field} className="h-11 border-primary/10" />
-                  </FormControl>
+                  <FormControl><Input placeholder="14 chiffres" {...field} className="h-11 border-primary/10" /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
           )}
-
           <FormField
             control={form.control}
             name="idCardPhoto"
             render={() => (
               <FormItem className="space-y-4">
                 <FormLabel className="text-sm font-bold">Photo de votre pièce d'identité (Recto) <span className="text-destructive">*</span></FormLabel>
-                <FormDescription className="text-xs">
-                  Obligatoire pour l'organisation et le registre de la manifestation.
-                </FormDescription>
                 <FormControl>
                   <div className="flex flex-col gap-4">
                     {idCardPhoto ? (
                       <div className="relative aspect-video max-w-sm rounded-lg overflow-hidden border shadow-sm group bg-muted">
-                        <img 
-                          src={idCardPhoto} 
-                          alt="Pièce d'identité" 
-                          className="w-full h-full object-contain" 
-                        />
-                        <Button 
-                          type="button" 
-                          variant="destructive" 
-                          size="icon" 
-                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => form.setValue('idCardPhoto', '')}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+                        <img src={idCardPhoto} alt="Pièce d'identité" className="w-full h-full object-contain" />
+                        <Button type="button" variant="destructive" size="icon" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100" onClick={() => form.setValue('idCardPhoto', '')}><X className="w-4 h-4" /></Button>
                       </div>
                     ) : (
                       <label className="flex flex-col items-center justify-center aspect-video max-w-sm rounded-lg border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 cursor-pointer transition-all">
-                        {isProcessingImage ? (
-                          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                        ) : (
-                          <>
-                            <Camera className="w-10 h-10 text-primary mb-2" />
-                            <span className="text-sm font-bold text-primary">Prendre en photo / Charger</span>
-                          </>
-                        )}
+                        {isProcessingImage ? <Loader2 className="w-8 h-8 animate-spin text-primary" /> : <><Camera className="w-10 h-10 text-primary mb-2" /><span className="text-sm font-bold text-primary">Charger</span></>}
                         <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={isProcessingImage} />
                       </label>
                     )}
@@ -254,80 +210,32 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
         </div>
 
         <div className="space-y-6">
-          <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3">
-            <Zap className="w-5 h-5 text-secondary" /> Logistique & Énergie
-          </h3>
+          <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3"><Zap className="w-5 h-5 text-secondary" /> Logistique & Énergie</h3>
           <div className="p-4 bg-primary/5 border border-primary/10 rounded-xl text-sm text-primary flex gap-4">
             <Info className="w-5 h-5 shrink-0 mt-0.5" />
-            <div className="space-y-2">
-              <p>
-                Emplacement réservé : <strong>{exhibitor.requestedTables === '1' ? '1.75m (1 table)' : '3.50m (2 tables)'}</strong>.
-              </p>
-              <p className="text-xs italic opacity-80">
-                L'électricité est facturée {priceElectricity}€ de supplément le jour de l'installation.
-              </p>
-            </div>
+            <p>Emplacement réservé : <strong>{exhibitor.requestedTables === '1' ? '1.75m (1 table)' : '3.50m (2 tables)'}</strong>.</p>
           </div>
-          <div className="grid gap-6">
-            <FormField
-              control={form.control}
-              name="needsElectricity"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-xl border p-5 bg-white hover:bg-muted/10 transition-colors shadow-sm cursor-pointer">
-                  <FormControl>
-                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel className="text-base font-bold">Besoin d'un raccordement électrique ?</FormLabel>
-                    <FormDescription className="text-sm">
-                      Prévoyez vos propres rallonges et multiprises (normes CE).
-                    </FormDescription>
-                  </div>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="needsGrid"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-xl border p-5 bg-white hover:bg-muted/10 transition-colors shadow-sm cursor-pointer">
-                  <FormControl>
-                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel className="text-base font-bold flex items-center gap-2">
-                       <LayoutGrid className="w-4 h-4 text-secondary" /> Besoin d'une grille d'exposition ?
-                    </FormLabel>
-                    <FormDescription className="text-sm">
-                      Fournie sous réserve de disponibilité pour l'accrochage.
-                    </FormDescription>
-                  </div>
-                </FormItem>
-              )}
-            />
-          </div>
+          <FormField
+            control={form.control}
+            name="needsElectricity"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-xl border p-5 bg-white shadow-sm">
+                <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                <div className="space-y-1 leading-none"><FormLabel className="text-base font-bold">Besoin d'un raccordement électrique ?</FormLabel></div>
+              </FormItem>
+            )}
+          />
         </div>
 
         <div className="space-y-6">
-          <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3">
-            <Utensils className="w-5 h-5 text-secondary" /> Restauration (Dimanche midi)
-          </h3>
+          <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3"><Utensils className="w-5 h-5 text-secondary" /> Restauration</h3>
           <FormField
             control={form.control}
             name="sundayLunchCount"
             render={({ field }) => (
               <FormItem className="space-y-4">
-                <FormLabel className="text-base font-bold text-foreground">Nombre de plateaux repas souhaités ({priceMeal}€ / unité)</FormLabel>
-                <FormDescription className="text-sm">
-                  Menu complet "Fait Maison" (Quiche, salade, fromage, dessert, eau).
-                </FormDescription>
-                <FormControl>
-                  <div className="flex items-center gap-4">
-                    <Input type="number" {...field} className="w-24 text-center text-lg font-bold border-2 border-primary/20 h-12" />
-                    <span className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Plateaux</span>
-                  </div>
-                </FormControl>
+                <FormLabel className="text-base font-bold">Plateaux repas souhaités ({priceMeal}€ / unité)</FormLabel>
+                <FormControl><Input type="number" {...field} className="w-24 text-center h-12" /></FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -335,121 +243,35 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
         </div>
 
         <div className="space-y-6">
-          <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3">
-            <Ticket className="w-5 h-5 text-secondary" /> Action Solidaire : Tombola
-          </h3>
-          <FormField
-            control={form.control}
-            name="tombolaLot"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-xl border p-5 bg-white hover:bg-muted/10 transition-colors shadow-sm cursor-pointer">
-                <FormControl>
-                  <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel className="text-base font-bold">Je souhaite offrir un lot pour la tombola</FormLabel>
-                  <FormDescription className="text-sm">
-                    Votre générosité aide directement Félix. Lot collecté sur place.
-                  </FormDescription>
-                </div>
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="space-y-6">
-          <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3">
-            <ShieldCheck className="w-5 h-5 text-secondary" /> Assurance Responsabilité Civile
-          </h3>
+          <h3 className="text-lg font-bold flex items-center gap-3 text-primary border-b pb-3"><ShieldCheck className="w-5 h-5 text-secondary" /> Assurance</h3>
           <div className="grid md:grid-cols-2 gap-6">
             <FormField
               control={form.control}
               name="insuranceCompany"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-bold">Compagnie d'Assurance</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: AXA, MAIF, MMA..." {...field} className="h-11 border-primary/10" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+                <FormItem><FormLabel>Compagnie d'Assurance</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
               )}
             />
             <FormField
               control={form.control}
               name="insurancePolicyNumber"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-bold">Numéro de Contrat (Police)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="N° de contrat" {...field} className="h-11 border-primary/10" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+                <FormItem><FormLabel>Numéro de Contrat</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
               )}
             />
           </div>
         </div>
 
-        <div className="p-6 bg-secondary/5 rounded-2xl border border-secondary/10">
-          <FormField
-            control={form.control}
-            name="agreedToTerms"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                <FormControl>
-                  <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel className="font-bold text-sm text-primary">Acceptation définitive du Règlement</FormLabel>
-                  <FormDescription className="text-xs text-primary/70">
-                    Je confirme avoir lu et accepté l'intégralité du règlement intérieur {currentConfig?.marketYear || ''}.
-                  </FormDescription>
-                  <FormMessage />
-                </div>
-              </FormItem>
-            )}
-          />
-        </div>
-
         <div className="p-6 bg-primary text-white rounded-2xl shadow-lg space-y-4">
-          <h3 className="text-lg font-bold flex items-center gap-3 border-b border-white/20 pb-3">
-            <Calculator className="w-5 h-5 text-accent" /> Récapitulatif du règlement
-          </h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Emplacement ({exhibitor.requestedTables === '1' ? '1 table' : '2 tables'}) :</span>
-              <span className="font-bold">{standPrice} €</span>
-            </div>
-            {watchLunchCount > 0 && (
-              <div className="flex justify-between">
-                <span>Repas Dimanche ({watchLunchCount} x {priceMeal}€) :</span>
-                <span className="font-bold">{mealsPrice} €</span>
-              </div>
-            )}
-          </div>
-          <div className="pt-3 border-t border-white/40 flex justify-between items-center">
-            <span className="text-xl font-bold">TOTAL À ENVOYER :</span>
+          <div className="pt-3 flex justify-between items-center">
+            <span className="text-xl font-bold">TOTAL À RÉGLER :</span>
             <span className="text-3xl font-bold text-accent">{totalToPay} €</span>
           </div>
-          <div className="bg-white/10 p-3 rounded-lg flex items-start gap-3 text-xs">
-            <Mail className="w-4 h-4 shrink-0 mt-0.5" />
-            <p>Chèque à l'ordre de <strong>"Association Un Jardin pour Félix"</strong> <u>et à envoyer <strong>sous 15 jours</strong> par courrier</u>.</p>
-          </div>
         </div>
 
-        <div className="pt-6">
-          <Button 
-            type="submit" 
-            disabled={isSubmitting}
-            className="w-full bg-secondary hover:bg-secondary/90 text-white h-16 text-xl font-bold shadow-lg"
-          >
-            {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : "Valider mon inscription"}
-          </Button>
-          <p className="text-center mt-6 text-primary font-bold text-sm flex items-center justify-center gap-2">
-            <Heart className="w-4 h-4 fill-primary" /> Merci de votre soutien
-          </p>
-        </div>
+        <Button type="submit" disabled={isSubmitting} className="w-full h-16 text-xl font-bold">
+          {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : "Valider mon inscription"}
+        </Button>
       </form>
     </Form>
   );
@@ -481,10 +303,6 @@ export default function DetailsPage() {
     <div className="min-h-screen bg-background py-12 px-4 relative">
       <ChristmasSnow />
       <div className="container mx-auto max-w-3xl relative z-10">
-        <Link href="/" className="inline-flex items-center gap-2 text-primary hover:underline mb-8">
-          <ArrowLeft className="w-4 h-4" /> Retour au site
-        </Link>
-
         <Card className="border-t-8 border-t-primary shadow-2xl overflow-hidden bg-white/95 backdrop-blur-sm">
           <div className="bg-primary text-white p-8">
             <h1 className="text-3xl font-bold">Dossier de Finalisation</h1>
