@@ -4,37 +4,30 @@ import nodemailer from 'nodemailer';
 import { headers } from 'next/headers';
 
 /**
- * Récupère la base URL de manière dynamique et robuste.
+ * Récupère la base URL de manière dynamique et robuste pour la production.
  */
 async function getBaseUrl() {
   try {
     const headersList = await headers();
     const host = headersList.get('x-forwarded-host') || headersList.get('host');
     
-    // Si on est dans le Studio ou en local sans host défini
-    if (!host || host.includes('127.0.0.1') || host.includes('localhost')) {
-      // On essaye de voir si on peut construire l'URL de production
-      // Sinon on retourne une valeur par défaut pour éviter le crash
-      return 'https://marche-connect.web.app';
+    // Si on est en production sur Firebase App Hosting / Cloud Run
+    if (host && !host.includes('127.0.0.1') && !host.includes('localhost') && !host.includes('9002')) {
+      let protocol = headersList.get('x-forwarded-proto') || 'https';
+      if (protocol.includes(',')) {
+        protocol = protocol.split(',')[0].trim();
+      }
+      return `${protocol}://${host}`;
     }
 
-    let protocol = headersList.get('x-forwarded-proto') || 'https';
-    if (protocol.includes(',')) {
-      protocol = protocol.split(',')[0].trim();
-    }
-    
-    return `${protocol}://${host}`;
+    // Fallback pour le domaine principal du projet
+    return 'https://marche-connect.web.app';
   } catch (e) {
     return 'https://marche-connect.web.app';
   }
 }
 
 function createTransporter() {
-  // Vérification des variables d'environnement
-  if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER) {
-    console.error("SMTP Configuration manquante dans le fichier .env");
-  }
-
   return nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: Number(process.env.EMAIL_PORT),
@@ -43,7 +36,6 @@ function createTransporter() {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
-    // Augmentation du timeout pour éviter les coupures
     connectionTimeout: 10000, 
   });
 }
