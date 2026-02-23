@@ -6,7 +6,7 @@ export const ChristmasSnow = () => {
   const [snowflakes, setSnowflakes] = useState<{ id: number; left: string; duration: string; size: string; opacity: number }[]>([]);
 
   useEffect(() => {
-    setMounted(true);
+    // On génère les flocons uniquement côté client pour éviter les erreurs d'hydratation
     const flakes = Array.from({ length: 30 }).map((_, i) => ({
       id: i,
       left: `${Math.random() * 100}%`,
@@ -15,6 +15,7 @@ export const ChristmasSnow = () => {
       opacity: Math.random() * 0.7 + 0.3,
     }));
     setSnowflakes(flakes);
+    setMounted(true);
   }, []);
 
   if (!mounted) return null;

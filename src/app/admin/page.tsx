@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
 import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
 import { Textarea } from '@/components/ui/textarea';
@@ -125,7 +125,6 @@ export default function AdminDashboard() {
     try {
       const result = await sendAcceptanceEmail(actingExhibitor, acceptanceMessage, currentConfig);
       
-      // On valide toujours le dossier dans la base de données
       updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { status: 'accepted_form1' });
       
       if (result.success) {
@@ -133,8 +132,8 @@ export default function AdminDashboard() {
       } else {
         toast({ 
           variant: "destructive", 
-          title: "Dossier accepté (Email échoué)", 
-          description: "Le dossier est passé en 'Accepté', mais l'e-mail n'a pas pu être envoyé (Erreur SMTP)." 
+          title: "Email non envoyé", 
+          description: "Le dossier est passé en 'Accepté', mais l'e-mail a échoué. Vérifiez vos réglages SMTP." 
         });
       }
     } catch (err) {
@@ -289,11 +288,12 @@ export default function AdminDashboard() {
                           <div className="flex justify-end gap-2">
                             <Button variant="outline" size="sm" onClick={() => setViewingExhibitor(exhibitor)} className="text-primary border-primary/30"><Eye className="w-4 h-4" /></Button>
                             
-                            {exhibitor.status === 'pending' && (
-                              <>
-                                <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => { setActingExhibitor(exhibitor); setIsAcceptDialogOpen(true); }}><CheckCircle className="w-4 h-4" /></Button>
-                                <Button variant="destructive" size="sm" onClick={() => { setActingExhibitor(exhibitor); setIsRejectDialogOpen(true); }}><XCircle className="w-4 h-4" /></Button>
-                              </>
+                            {(exhibitor.status === 'pending' || exhibitor.status === 'rejected') && (
+                              <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => { setActingExhibitor(exhibitor); setIsAcceptDialogOpen(true); }}><CheckCircle className="w-4 h-4" /></Button>
+                            )}
+
+                            {(exhibitor.status === 'pending' || exhibitor.status === 'accepted_form1') && (
+                              <Button variant="destructive" size="sm" onClick={() => { setActingExhibitor(exhibitor); setIsRejectDialogOpen(true); }}><XCircle className="w-4 h-4" /></Button>
                             )}
 
                             {exhibitor.status === 'submitted_form2' && (

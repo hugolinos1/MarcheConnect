@@ -5,13 +5,14 @@ import { headers } from 'next/headers';
 
 /**
  * Récupère la base URL de manière dynamique et robuste pour la production.
+ * Évite le retour vers localhost ou 127.0.0.1 si on est sur le domaine réel.
  */
 async function getBaseUrl() {
   try {
     const headersList = await headers();
-    const host = headersList.get('x-forwarded-host') || headersList.get('host');
+    const host = headersList.get('x-forwarded-host') || headersList.get('host') || '';
     
-    // Si on est en production sur Firebase App Hosting / Cloud Run
+    // Si on détecte un domaine de production connu ou un domaine personnalisé
     if (host && !host.includes('127.0.0.1') && !host.includes('localhost') && !host.includes('9002')) {
       let protocol = headersList.get('x-forwarded-proto') || 'https';
       if (protocol.includes(',')) {
@@ -20,7 +21,7 @@ async function getBaseUrl() {
       return `${protocol}://${host}`;
     }
 
-    // Fallback pour le domaine principal du projet
+    // Fallback par défaut sur le domaine Firebase
     return 'https://marche-connect.web.app';
   } catch (e) {
     return 'https://marche-connect.web.app';
@@ -28,13 +29,14 @@ async function getBaseUrl() {
 }
 
 function createTransporter() {
+  // Configuration explicite pour Orange SMTP
   return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: Number(process.env.EMAIL_PORT),
-    secure: process.env.EMAIL_USE_SSL === 'True',
+    host: "smtp.orange.fr",
+    port: 465,
+    secure: true, // SSL pour le port 465
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      user: "rabier.hugues@orange.fr",
+      pass: "Ptmee52r2ora2!",
     },
     connectionTimeout: 10000, 
   });
@@ -46,7 +48,7 @@ export async function sendApplicationNotification(exhibitorData: any, marketConf
   const notificationEmail = marketConfig?.notificationEmail || "lemarchedefelix2020@gmail.com";
 
   const mailOptions = {
-    from: `"MarchéConnect" <${process.env.EMAIL_USER}>`,
+    from: `"MarchéConnect" <rabier.hugues@orange.fr>`,
     to: notificationEmail,
     subject: `[MarchéConnect] Nouvelle Candidature : ${exhibitorData.companyName}`,
     text: `Nouvelle candidature pour le Marché de Noël ${year}.\n\nEnseigne : ${exhibitorData.companyName}\nContact : ${exhibitorData.firstName} ${exhibitorData.lastName}\nEmail : ${exhibitorData.email}\n\nConsultez le tableau de bord pour plus de détails.`,
@@ -71,7 +73,7 @@ export async function sendAcceptanceEmail(exhibitor: any, customMessage: string,
   const detailsLink = `${baseUrl}/details/${exhibitor.id}`;
 
   const mailOptions = {
-    from: `"Le Marché de Félix" <${process.env.EMAIL_USER}>`,
+    from: `"Le Marché de Félix" <rabier.hugues@orange.fr>`,
     to: exhibitor.email,
     cc: notificationEmail,
     subject: `Votre candidature pour le Marché de Félix ${year} a été retenue !`,
@@ -105,7 +107,7 @@ export async function sendRejectionEmail(exhibitor: any, justification: string, 
   const notificationEmail = marketConfig?.notificationEmail || "lemarchedefelix2020@gmail.com";
 
   const mailOptions = {
-    from: `"Le Marché de Félix" <${process.env.EMAIL_USER}>`,
+    from: `"Le Marché de Félix" <rabier.hugues@orange.fr>`,
     to: exhibitor.email,
     cc: notificationEmail,
     subject: `Votre candidature pour le Marché de Noël ${year}`,
@@ -148,7 +150,7 @@ export async function sendFinalConfirmationEmail(exhibitor: any, details: any, m
   const total = standPrice + mealsPrice;
 
   const mailOptions = {
-    from: `"Le Marché de Félix" <${process.env.EMAIL_USER}>`,
+    from: `"Le Marché de Félix" <rabier.hugues@orange.fr>`,
     to: exhibitor.email,
     cc: notificationEmail,
     subject: `Réception de votre dossier technique - ${exhibitor.companyName}`,

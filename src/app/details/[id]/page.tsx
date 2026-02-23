@@ -11,7 +11,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { ShieldCheck, Zap, Utensils, Camera, Info, ArrowLeft, Calculator, Loader2, FileText, X } from 'lucide-react';
+import { ShieldCheck, Zap, Utensils, Camera, ArrowLeft, Calculator, Loader2, FileText, X } from 'lucide-react';
 import Link from 'next/link';
 import { sendFinalConfirmationEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
