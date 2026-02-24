@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useEffect, useState, useMemo } from 'react';
 import { Exhibitor } from '@/lib/types';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Users, ExternalLink, UserCheck, Clock, ArrowLeft, Phone, MapPin, Globe, CreditCard, Heart, TrendingUp, Wallet, ClipboardList, Filter, LayoutGrid } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Users, ExternalLink, UserCheck, Clock, ArrowLeft, Phone, MapPin, Globe, CreditCard, Heart, TrendingUp, Wallet, ClipboardList, Filter, LayoutGrid, Info, Camera, MessageSquare } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -59,7 +60,11 @@ export default function AdminDashboard() {
   const { data: userRoleDoc, isLoading: isRoleLoading } = useDoc(userRoleRef);
   const isAuthorized = isSuperAdmin || !!userRoleDoc;
 
-  // Market Configs (Archive management)
+  // Admin Requests for SuperAdmin
+  const adminRequestsQuery = useMemoFirebase(() => isSuperAdmin ? collection(db, 'admin_requests') : null, [db, isSuperAdmin]);
+  const { data: adminRequests } = useCollection(adminRequestsQuery);
+
+  // Market Configs
   const marketConfigsQuery = useMemoFirebase(() => query(collection(db, 'market_configurations'), orderBy('marketYear', 'desc')), [db]);
   const { data: configs } = useCollection(marketConfigsQuery);
   
@@ -82,7 +87,7 @@ export default function AdminDashboard() {
   
   const { data: exhibitorsData, isLoading: isExhibitorsLoading } = useCollection<Exhibitor>(exhibitorsQuery);
 
-  // Statistics Calculation
+  // Statistics
   const stats = useMemo(() => {
     if (!exhibitorsData) return { total: 0, pending: 0, accepted: 0, rejected: 0, validated: 0, submitted: 0, revenue: 0 };
     
@@ -93,7 +98,6 @@ export default function AdminDashboard() {
     const priceElec = currentConfig?.priceElectricity ?? 1;
 
     exhibitorsData.forEach(e => {
-      // Revenue calculation only for those who filled Form 2 (confirmed/validated)
       if (e.status === 'submitted_form2' || e.status === 'validated') {
         const stand = e.requestedTables === '1' ? priceTable1 : priceTable2;
         const meals = (e.detailedInfo?.sundayLunchCount || 0) * priceMeal;
@@ -156,6 +160,16 @@ export default function AdminDashboard() {
       ? initiateEmailSignUp(auth, email, password)
       : initiateEmailSignIn(auth, email, password);
     authPromise.catch((err: any) => setAuthError("Erreur d'authentification.")).finally(() => setIsAuthLoading(false));
+  };
+
+  const handleRequestAccess = () => {
+    if (!user) return;
+    setDocumentNonBlocking(doc(db, 'admin_requests', user.uid), {
+      email: user.email,
+      requestedAt: new Date().toISOString(),
+      status: 'PENDING'
+    }, { merge: true });
+    toast({ title: "Demande envoyée", description: "Le super-admin va examiner votre demande." });
   };
 
   const handleApproveRequest = (requestId: string, requestEmail: string) => {
@@ -226,6 +240,7 @@ export default function AdminDashboard() {
             <h2 className="text-xl font-bold">Accès en attente</h2>
             <p className="text-sm text-muted-foreground">Votre compte ({user.email}) doit être approuvé par l'administrateur principal.</p>
           </div>
+          <Button onClick={handleRequestAccess} className="w-full bg-amber-500 hover:bg-amber-600">Demander l'accès administrateur</Button>
           <Button onClick={() => auth.signOut()} variant="outline" className="w-full">Se déconnecter</Button>
         </Card>
       </div>
@@ -249,7 +264,7 @@ export default function AdminDashboard() {
       </div>
 
       <main className="container mx-auto px-4 py-8 space-y-8">
-        {/* Statistics Dashboard */}
+        {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="border-l-4 border-l-primary shadow-sm">
             <CardContent className="p-4 flex items-center gap-4">
@@ -282,7 +297,7 @@ export default function AdminDashboard() {
             <TabsList>
               <TabsTrigger value="exhibitors">Exposants</TabsTrigger>
               <TabsTrigger value="settings">Configuration</TabsTrigger>
-              {isSuperAdmin && <TabsTrigger value="admins">Admin & Accès</TabsTrigger>}
+              {isSuperAdmin && <TabsTrigger value="admins">Administrateurs</TabsTrigger>}
             </TabsList>
             
             <div className="flex items-center gap-3 w-full md:w-auto">
@@ -316,7 +331,7 @@ export default function AdminDashboard() {
                 </TableHeader>
                 <TableBody>
                   {isExhibitorsLoading ? <TableRow><TableCell colSpan={4} className="text-center py-12"><Loader2 className="animate-spin mx-auto text-primary" /></TableCell></TableRow> :
-                    filteredExhibitors.length === 0 ? <TableRow><TableCell colSpan={4} className="text-center py-12 text-muted-foreground italic">Aucun dossier trouvé pour cette sélection.</TableCell></TableRow> :
+                    filteredExhibitors.length === 0 ? <TableRow><TableCell colSpan={4} className="text-center py-12 text-muted-foreground italic">Aucun dossier trouvé.</TableCell></TableRow> :
                     filteredExhibitors.map(exhibitor => (
                       <TableRow key={exhibitor.id}>
                         <TableCell>
@@ -340,7 +355,10 @@ export default function AdminDashboard() {
                           <div className="flex justify-end gap-2">
                             <Button variant="outline" size="sm" onClick={() => setViewingExhibitor(exhibitor)} className="text-primary border-primary/20"><Eye className="w-4 h-4" /></Button>
                             {exhibitor.status === 'pending' && (
-                              <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => { setActingExhibitor(exhibitor); setIsAcceptDialogOpen(true); }}><CheckCircle className="w-4 h-4" /></Button>
+                              <div className="flex gap-1">
+                                <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => { setActingExhibitor(exhibitor); setIsAcceptDialogOpen(true); }}><CheckCircle className="w-4 h-4" /></Button>
+                                <Button size="sm" variant="destructive" onClick={() => { setActingExhibitor(exhibitor); setIsRejectDialogOpen(true); }}><XCircle className="w-4 h-4" /></Button>
+                              </div>
                             )}
                             {exhibitor.status === 'submitted_form2' && (
                               <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => updateDocumentNonBlocking(doc(db, 'pre_registrations', exhibitor.id), { status: 'validated' })}><ShieldCheck className="w-4 h-4 mr-1" /> Valider</Button>
@@ -388,15 +406,29 @@ export default function AdminDashboard() {
           {isSuperAdmin && (
             <TabsContent value="admins" className="space-y-6">
               <Card className="border-t-4 border-t-primary bg-white shadow-xl">
-                <CardHeader><CardTitle className="text-primary flex items-center gap-2"><ShieldCheck className="w-6 h-6" /> Administration & Droits</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-primary flex items-center gap-2"><Users className="w-6 h-6" /> Demandes d'accès & Administrateurs</CardTitle></CardHeader>
                 <CardContent className="space-y-8">
-                  <Alert className="bg-primary/5 border-primary/20"><Info className="w-4 h-4 text-primary" /><AlertTitle>Gestion des accès</AlertTitle><AlertDescription>Toute personne avec un compte créé peut demander l'accès. Approuvez-les ici pour qu'ils puissent gérer le marché.</AlertDescription></Alert>
-                  
-                  {/* Note: Demandes d'accès real-time fetched logic remains similarly accessible as before */}
                   <div className="space-y-4">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">UID du super-admin actuel</h3>
-                    <div className="p-3 bg-muted rounded font-mono text-xs break-all">{user.uid}</div>
-                    <p className="text-[10px] italic text-muted-foreground">Seul le super-admin ({user.email}) peut voir cet onglet.</p>
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Demandes en attente</h3>
+                    {adminRequests && adminRequests.length > 0 ? (
+                      <div className="space-y-2">
+                        {adminRequests.map(req => (
+                          <div key={req.id} className="flex justify-between items-center p-4 bg-amber-50 rounded-xl border border-amber-200">
+                            <div><p className="font-bold">{req.email}</p><p className="text-xs text-muted-foreground">Demandé le {new Date(req.requestedAt).toLocaleDateString()}</p></div>
+                            <Button onClick={() => handleApproveRequest(req.id, req.email)} className="bg-green-600 hover:bg-green-700 gap-2"><UserCheck className="w-4 h-4" /> Approuver</Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm italic text-muted-foreground">Aucune demande en attente.</p>
+                    )}
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Administrateurs actuels</h3>
+                    <p className="text-xs italic text-muted-foreground">Géré via la collection 'roles_admin'.</p>
                   </div>
                 </CardContent>
               </Card>
@@ -423,7 +455,12 @@ export default function AdminDashboard() {
                         <LayoutGrid className="w-3 h-3" /> 
                         Emplacement : {viewingExhibitor.requestedTables === '1' ? '1 table (1.75m)' : '2 tables (3.50m)'}
                       </p>
-                      {viewingExhibitor.websiteUrl && <a href={viewingExhibitor.websiteUrl} target="_blank" className="flex items-center gap-2 text-primary hover:underline"><Globe className="w-3 h-3" /> {viewingExhibitor.websiteUrl}</a>}
+                      {viewingExhibitor.websiteUrl && (
+                        <p className="flex items-center gap-2 text-primary hover:underline">
+                          <Globe className="w-3 h-3" /> 
+                          <a href={viewingExhibitor.websiteUrl} target="_blank" className="break-all">{viewingExhibitor.websiteUrl}</a>
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="space-y-4">
@@ -440,35 +477,106 @@ export default function AdminDashboard() {
                   <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
                     <p className="text-sm italic leading-relaxed">"{viewingExhibitor.productDescription}"</p>
                   </div>
-                  {viewingExhibitor.productImages && (
+                  {viewingExhibitor.productImages && viewingExhibitor.productImages.length > 0 && (
                     <div className="grid grid-cols-3 gap-3">
                       {viewingExhibitor.productImages.map((img, i) => (
-                        <div key={i} className="relative aspect-square rounded-lg overflow-hidden border shadow-sm"><img src={img} alt="Produit" className="object-cover w-full h-full" /></div>
+                        <div key={i} className="relative aspect-square rounded-lg overflow-hidden border shadow-sm group">
+                          <img src={img} alt="Produit" className="object-cover w-full h-full cursor-pointer hover:scale-105 transition-transform" />
+                        </div>
                       ))}
                     </div>
                   )}
                 </section>
 
-                {viewingExhibitor.detailedInfo && (
+                {viewingExhibitor.detailedInfo ? (
                   <section className="space-y-6 p-6 border-2 border-primary/20 rounded-2xl bg-white shadow-inner">
-                    <h4 className="text-lg font-bold text-primary flex items-center gap-2 border-b pb-2"><ShieldCheck className="w-5 h-5" /> DOSSIER TECHNIQUE FINAL</h4>
+                    <h4 className="text-lg font-bold text-primary flex items-center gap-2 border-b pb-2">
+                      <ShieldCheck className="w-5 h-5" /> DOSSIER TECHNIQUE FINAL
+                    </h4>
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="space-y-4">
-                        <div className="space-y-1"><p className="text-[10px] font-bold text-muted-foreground uppercase">SIRET</p><p className="font-medium text-sm">{viewingExhibitor.detailedInfo.siret || "N/A"}</p></div>
-                        <div className="space-y-1"><p className="text-[10px] font-bold text-muted-foreground uppercase">Assurance</p><p className="text-sm">{viewingExhibitor.detailedInfo.insuranceCompany} - {viewingExhibitor.detailedInfo.insurancePolicyNumber}</p></div>
-                        <div className="space-y-1"><p className="text-[10px] font-bold text-muted-foreground uppercase">Électricité & Grille</p><div className="flex gap-2"><Badge variant={viewingExhibitor.detailedInfo.needsElectricity ? "default" : "outline"}>Élec: {viewingExhibitor.detailedInfo.needsElectricity ? "Oui" : "Non"}</Badge><Badge variant={viewingExhibitor.detailedInfo.needsGrid ? "default" : "outline"}>Grille: {viewingExhibitor.detailedInfo.needsGrid ? "Oui" : "Non"}</Badge></div></div>
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Informations Légales</p>
+                          <div className="space-y-1">
+                            <p className="text-sm font-bold">SIRET : <span className="font-normal">{viewingExhibitor.detailedInfo.siret || "Non renseigné"}</span></p>
+                            <p className="text-sm font-bold">Assurance : <span className="font-normal">{viewingExhibitor.detailedInfo.insuranceCompany}</span></p>
+                            <p className="text-sm font-bold">Contrat N° : <span className="font-normal">{viewingExhibitor.detailedInfo.insurancePolicyNumber}</span></p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Pièce d'identité</p>
+                          {viewingExhibitor.detailedInfo.idCardPhoto ? (
+                            <div className="relative aspect-video max-w-xs rounded-lg overflow-hidden border bg-muted">
+                              <img src={viewingExhibitor.detailedInfo.idCardPhoto} alt="ID Card" className="w-full h-full object-contain" />
+                            </div>
+                          ) : (
+                            <p className="text-xs italic text-destructive">Document manquant</p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Options Logistiques</p>
+                          <div className="flex flex-wrap gap-2">
+                            <Badge variant={viewingExhibitor.detailedInfo.needsElectricity ? "default" : "outline"}>
+                              Électricité : {viewingExhibitor.detailedInfo.needsElectricity ? "OUI" : "NON"}
+                            </Badge>
+                            <Badge variant={viewingExhibitor.detailedInfo.needsGrid ? "default" : "outline"}>
+                              Besoin Grille : {viewingExhibitor.detailedInfo.needsGrid ? "OUI" : "NON"}
+                            </Badge>
+                          </div>
+                        </div>
                       </div>
-                      <div className="space-y-4">
-                        <div className="space-y-1"><p className="text-[10px] font-bold text-muted-foreground uppercase">Repas Dimanche</p><p className="text-sm font-bold">{viewingExhibitor.detailedInfo.sundayLunchCount} plateau(x)</p></div>
-                        <div className="space-y-1"><p className="text-[10px] font-bold text-muted-foreground uppercase">Tombola Solidaire</p><Badge variant={viewingExhibitor.detailedInfo.tombolaLot ? "secondary" : "outline"}>{viewingExhibitor.detailedInfo.tombolaLot ? "Lot Offert" : "Non participation"}</Badge>{viewingExhibitor.detailedInfo.tombolaLotDescription && <p className="text-xs italic mt-1">{viewingExhibitor.detailedInfo.tombolaLotDescription}</p>}</div>
+
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Restauration & Tombola</p>
+                          <div className="space-y-3">
+                            <p className="text-sm font-bold">Repas Dimanche : <Badge variant="secondary">{viewingExhibitor.detailedInfo.sundayLunchCount} plateau(x)</Badge></p>
+                            <div className="p-3 bg-muted/20 rounded-lg border">
+                              <p className="text-xs font-bold mb-1">Tombola Solidaire : {viewingExhibitor.detailedInfo.tombolaLot ? "Participant" : "Non-participant"}</p>
+                              {viewingExhibitor.detailedInfo.tombolaLotDescription && (
+                                <p className="text-xs italic">Lot : {viewingExhibitor.detailedInfo.tombolaLotDescription}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Commentaires Additionnels</p>
+                          <div className="p-3 bg-secondary/5 border border-secondary/10 rounded-lg">
+                            <p className="text-xs leading-relaxed italic">
+                              {viewingExhibitor.detailedInfo.additionalComments || "Aucun commentaire particulier."}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 pt-2 border-t">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2 text-[10px] font-bold">
+                              {viewingExhibitor.detailedInfo.agreedToImageRights ? <CheckCircle className="w-3 h-3 text-green-600" /> : <XCircle className="w-3 h-3 text-destructive" />}
+                              DROIT À L'IMAGE {viewingExhibitor.detailedInfo.agreedToImageRights ? "ACCEPTE" : "REFUSE"}
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] font-bold">
+                              {viewingExhibitor.detailedInfo.agreedToTerms ? <CheckCircle className="w-3 h-3 text-green-600" /> : <XCircle className="w-3 h-3 text-destructive" />}
+                              RÈGLEMENT MARCHÉ ACCEPTE
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <Separator className="my-4" />
-                    <div className="text-[10px] text-muted-foreground flex justify-between">
-                      <span>Droit à l'image : {viewingExhibitor.detailedInfo.agreedToImageRights ? "Accepté" : "Refusé"}</span>
-                      <span>Règlement : {viewingExhibitor.detailedInfo.agreedToTerms ? "Accepté" : "Refusé"}</span>
+                    
+                    <div className="pt-4 border-t flex justify-between items-center bg-primary/5 p-4 rounded-xl">
+                      <p className="text-sm font-bold text-primary">Nombre de tables demandées :</p>
+                      <Badge className="text-lg px-4 py-1">{viewingExhibitor.requestedTables} table(s)</Badge>
                     </div>
                   </section>
+                ) : (
+                  <div className="p-12 text-center border-2 border-dashed rounded-2xl bg-muted/20">
+                    <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4 animate-pulse" />
+                    <p className="text-sm font-medium text-muted-foreground">Dossier technique non encore complété par l'exposant.</p>
+                  </div>
                 )}
               </div>
             )}
@@ -476,18 +584,85 @@ export default function AdminDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Acceptance & Rejection Dialogs remain largely the same in logic */}
+      {/* Acceptance Dialog */}
       <Dialog open={isAcceptDialogOpen} onOpenChange={setIsAcceptDialogOpen}>
-        <DialogContent><DialogHeader><DialogTitle>Accepter {actingExhibitor?.companyName}</DialogTitle></DialogHeader><div className="py-4 space-y-4"><Textarea placeholder="Message personnel d'accueil..." value={acceptanceMessage} onChange={(e) => setAcceptanceMessage(e.target.value)} rows={4} /></div><DialogFooter><Button onClick={async () => { if (!actingExhibitor) return; setIsSending(true); updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { status: 'accepted_form1' }); const r = await sendAcceptanceEmail(actingExhibitor, acceptanceMessage, currentConfig); toast({ title: r.success ? "Candidature Acceptée" : "Erreur Email" }); setIsAcceptDialogOpen(false); setIsSending(false); }} disabled={isSending}>{isSending ? <Loader2 className="animate-spin" /> : "Envoyer l'acceptation"}</Button></DialogFooter></DialogContent>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Accepter {actingExhibitor?.companyName}</DialogTitle></DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-xs text-muted-foreground">L'exposant recevra un email contenant son lien de finalisation technique.</p>
+            <Textarea 
+              placeholder="Ajouter un mot personnel (optionnel)..." 
+              value={acceptanceMessage} 
+              onChange={(e) => setAcceptanceMessage(e.target.value)} 
+              rows={4} 
+            />
+          </div>
+          <DialogFooter>
+            <Button onClick={async () => {
+              if (!actingExhibitor) return;
+              setIsSending(true);
+              updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { status: 'accepted_form1' });
+              const r = await sendAcceptanceEmail(actingExhibitor, acceptanceMessage, currentConfig);
+              toast({ title: r.success ? "Candidature Acceptée" : "Erreur Email", variant: r.success ? "default" : "destructive" });
+              setIsAcceptDialogOpen(false);
+              setIsSending(false);
+              setAcceptanceMessage('');
+            }} disabled={isSending}>
+              {isSending ? <Loader2 className="animate-spin" /> : "Confirmer et envoyer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
 
+      {/* Rejection Dialog */}
       <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
-        <DialogContent><DialogHeader><DialogTitle>Refuser la candidature</DialogTitle></DialogHeader><div className="py-4 space-y-4"><div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={async () => { if (!actingExhibitor) return; setIsGenerating(true); const r = await generateRejectionJustification({ applicantName: `${actingExhibitor.firstName} ${actingExhibitor.lastName}`, applicationSummary: actingExhibitor.productDescription, rejectionReasons: ["Manque de place"] }); setJustification(r.justificationMessage); setIsGenerating(false); }} disabled={isGenerating}>{isGenerating ? <Loader2 className="animate-spin" /> : <Sparkles className="w-3 h-3 mr-2" />} IA: Place</Button><Button variant="outline" size="sm" onClick={async () => { if (!actingExhibitor) return; setIsGenerating(true); const r = await generateRejectionJustification({ applicantName: `${actingExhibitor.firstName} ${actingExhibitor.lastName}`, applicationSummary: actingExhibitor.productDescription, rejectionReasons: ["Catégorie saturée"] }); setJustification(r.justificationMessage); setIsGenerating(false); }} disabled={isGenerating}>{isGenerating ? <Loader2 className="animate-spin" /> : <Sparkles className="w-3 h-3 mr-2" />} IA: Catégorie</Button></div><Textarea value={justification} onChange={(e) => setJustification(e.target.value)} placeholder="Motif du refus..." rows={6} /></div><DialogFooter><Button variant="destructive" onClick={async () => { if (!actingExhibitor) return; setIsSending(true); updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { status: 'rejected', rejectionJustification: justification }); const r = await sendRejectionEmail(actingExhibitor, justification, currentConfig); toast({ title: r.success ? "Candidature Refusée" : "Erreur Email" }); setIsRejectDialogOpen(false); setIsSending(false); }} disabled={isSending || !justification}>Confirmer le refus</Button></DialogFooter></DialogContent>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Refuser la candidature</DialogTitle></DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={async () => {
+                if (!actingExhibitor) return;
+                setIsGenerating(true);
+                const r = await generateRejectionJustification({ 
+                  applicantName: `${actingExhibitor.firstName} ${actingExhibitor.lastName}`, 
+                  applicationSummary: actingExhibitor.productDescription, 
+                  rejectionReasons: ["Manque de place pour cette édition"] 
+                });
+                setJustification(r.justificationMessage);
+                setIsGenerating(false);
+              }} disabled={isGenerating}>
+                {isGenerating ? <Loader2 className="animate-spin" /> : <Sparkles className="w-3 h-3 mr-2" />} IA: Place
+              </Button>
+              <Button variant="outline" size="sm" onClick={async () => {
+                if (!actingExhibitor) return;
+                setIsGenerating(true);
+                const r = await generateRejectionJustification({ 
+                  applicantName: `${actingExhibitor.firstName} ${actingExhibitor.lastName}`, 
+                  applicationSummary: actingExhibitor.productDescription, 
+                  rejectionReasons: ["Catégorie de produits déjà trop représentée"] 
+                });
+                setJustification(r.justificationMessage);
+                setIsGenerating(false);
+              }} disabled={isGenerating}>
+                {isGenerating ? <Loader2 className="animate-spin" /> : <Sparkles className="w-3 h-3 mr-2" />} IA: Catégorie
+              </Button>
+            </div>
+            <Textarea value={justification} onChange={(e) => setJustification(e.target.value)} placeholder="Rédiger le motif du refus..." rows={6} />
+          </div>
+          <DialogFooter>
+            <Button variant="destructive" onClick={async () => {
+              if (!actingExhibitor) return;
+              setIsSending(true);
+              updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { status: 'rejected', rejectionJustification: justification });
+              const r = await sendRejectionEmail(actingExhibitor, justification, currentConfig);
+              toast({ title: r.success ? "Candidature Refusée" : "Erreur Email", variant: r.success ? "default" : "destructive" });
+              setIsRejectDialogOpen(false);
+              setIsSending(false);
+              setJustification('');
+            }} disabled={isSending || !justification}>Confirmer le refus</Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
     </div>
   );
-}
-
-function Info(props: any) {
-  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
 }
