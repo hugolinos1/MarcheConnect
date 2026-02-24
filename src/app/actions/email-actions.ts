@@ -47,10 +47,10 @@ function createTransporter() {
 export async function testSmtpOrange() {
   const transporter = createTransporter();
   const mailOptions = {
-    from: `"Test MarchéConnect" <rabier.hugues@orange.fr>`,
+    from: `"Test MarcheConnect" <rabier.hugues@orange.fr>`,
     to: "hugues.rabier@gmail.com",
-    subject: "Test SMTP Orange Réussi",
-    text: "Ceci est un test de connexion SMTP depuis l'application MarchéConnect.",
+    subject: "Test SMTP Orange Reussi",
+    text: "Ceci est un test de connexion SMTP depuis l'application MarcheConnect.",
   };
 
   try {
@@ -67,23 +67,23 @@ export async function sendAcceptanceEmail(exhibitor: any, customMessage: string,
   const baseUrl = await getBaseUrl();
   const detailsLink = `${baseUrl}/details/${exhibitor.id}`;
 
-  // Format simplifié au maximum pour éviter le rejet OFR_997 d'Orange (plus de CC)
+  // Format ultra-simplifié sans accents dans les headers pour éviter le rejet OFR_997 d'Orange
   const mailOptions = {
-    from: `"Le Marché de Félix" <rabier.hugues@orange.fr>`,
+    from: `"Le Marche de Felix" <rabier.hugues@orange.fr>`,
     to: exhibitor.email,
-    subject: `Candidature retenue - Marché de Noël ${year}`,
+    subject: `Candidature retenue - Marche de Noel ${year}`,
     text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 
-Nous avons le plaisir de vous informer que votre candidature pour le Marché de Noël ${year} "Un jardin pour Félix" a été acceptée !
+Nous avons le plaisir de vous informer que votre candidature pour le Marche de Noel ${year} "Un jardin pour Felix" a ete acceptee !
 
 ${customMessage ? `Note de l'organisateur :\n---------------------------\n${customMessage}\n---------------------------\n` : ''}
 
-Pour finaliser votre inscription, merci de compléter votre dossier technique en cliquant sur le lien ci-dessous :
+Pour finaliser votre inscription, merci de completer votre dossier technique en cliquant sur le lien ci-dessous :
 
 Lien vers votre dossier : ${detailsLink}
 
-À très bientôt !
-L'équipe "Un jardin pour Félix"`,
+A tres bientot !
+L'equipe "Un jardin pour Felix"`,
   };
 
   try {
@@ -100,14 +100,14 @@ export async function sendRejectionEmail(exhibitor: any, justification: string, 
   const year = marketConfig?.marketYear || '2026';
 
   const mailOptions = {
-    from: `"Le Marché de Félix" <rabier.hugues@orange.fr>`,
+    from: `"Le Marche de Felix" <rabier.hugues@orange.fr>`,
     to: exhibitor.email,
-    subject: `Candidature Marché de Noël ${year}`,
+    subject: `Candidature Marche de Noel ${year}`,
     text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 
-Nous vous remercions de l'intérêt porté à notre marché solidaire.
+Nous vous remercions de l'interet porte a notre marche solidaire.
 
-Après étude de votre dossier, nous ne pouvons malheureusement pas retenir votre candidature pour l'édition ${year}.
+Apres etude de votre dossier, nous ne pouvons malheureusement pas retenir votre candidature pour l'edition ${year}.
 
 Motif :
 ---------------------------
@@ -115,7 +115,7 @@ ${justification}
 ---------------------------
 
 Bonne continuation.
-L'équipe "Un jardin pour Félix"`,
+L'equipe "Un jardin pour Felix"`,
   };
 
   try {
@@ -132,10 +132,10 @@ export async function sendApplicationNotification(exhibitorData: any, marketConf
   const notificationEmail = marketConfig?.notificationEmail || "lemarchedefelix2020@gmail.com";
 
   const mailOptions = {
-    from: `"MarchéConnect" <rabier.hugues@orange.fr>`,
+    from: `"MarcheConnect" <rabier.hugues@orange.fr>`,
     to: notificationEmail,
     subject: `Nouvelle Candidature : ${exhibitorData.companyName}`,
-    text: `Nouvelle candidature pour le Marché de Noël ${year}.\n\nEnseigne : ${exhibitorData.companyName}\nContact : ${exhibitorData.firstName} ${exhibitorData.lastName}\nEmail : ${exhibitorData.email}`,
+    text: `Nouvelle candidature pour le Marche de Noel ${year}.\n\nEnseigne : ${exhibitorData.companyName}\nContact : ${exhibitorData.firstName} ${exhibitorData.lastName}\nEmail : ${exhibitorData.email}`,
   };
 
   try {
@@ -154,25 +154,25 @@ export async function sendFinalConfirmationEmail(exhibitor: any, details: any, m
   const total = standPrice + ((details.sundayLunchCount || 0) * (marketConfig?.priceMeal ?? 8));
 
   const mailOptions = {
-    from: `"Le Marché de Félix" <rabier.hugues@orange.fr>`,
+    from: `"Le Marche de Felix" <rabier.hugues@orange.fr>`,
     to: exhibitor.email,
     subject: `Confirmation dossier technique - ${exhibitor.companyName}`,
     text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 
-Nous avons bien reçu votre dossier technique final pour le Marché de Noël ${year}.
+Nous avons bien recu votre dossier technique final pour le Marche de Noel ${year}.
 
-Récapitulatif :
+Recapitulatif :
 ---------------------------
 Enseigne : ${exhibitor.companyName}
 Tables : ${exhibitor.requestedTables}
 Repas : ${details.sundayLunchCount}
-Electricité : ${details.needsElectricity ? 'Oui' : 'Non'}
+Electricite : ${details.needsElectricity ? 'Oui' : 'Non'}
 
-MONTANT TOTAL À RÉGLER : ${total} €
+MONTANT TOTAL A REGLER : ${total} EUR
 
-Merci d'envoyer votre chèque à l'ordre de "Association Un Jardin pour Félix" pour confirmer définitivement votre place.
+Merci d'envoyer votre cheque a l'ordre de "Association Un Jardin pour Felix" pour confirmer definitivement votre place.
 
-L'équipe "Un jardin pour Félix"`,
+L'equipe "Un jardin pour Felix"`,
   };
 
   try {
