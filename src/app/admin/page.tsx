@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useEffect, useState, useMemo } from 'react';
 import { Exhibitor } from '@/lib/types';
@@ -460,10 +459,10 @@ export default function AdminDashboard() {
                       <p className="font-bold">{viewingExhibitor.firstName} {viewingExhibitor.lastName}</p>
                       <p className="flex items-center gap-2"><Mail className="w-3 h-3 text-primary" /> {viewingExhibitor.email}</p>
                       <p className="flex items-center gap-2"><Phone className="w-3 h-3 text-primary" /> {viewingExhibitor.phone}</p>
-                      <p className="flex items-center gap-2 font-bold text-secondary">
+                      <div className="flex items-center gap-2 font-bold text-secondary">
                         <LayoutGrid className="w-3 h-3" /> 
                         Emplacement : {viewingExhibitor.requestedTables === '1' ? '1 table (1.75m)' : '2 tables (3.50m)'}
-                      </p>
+                      </div>
                       {viewingExhibitor.websiteUrl && (
                         <p className="flex items-center gap-2 text-primary hover:underline">
                           <Globe className="w-3 h-3" /> 
@@ -542,7 +541,9 @@ export default function AdminDashboard() {
                         <div className="space-y-2">
                           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Restauration & Tombola</p>
                           <div className="space-y-3">
-                            <p className="text-sm font-bold">Repas Dimanche : <Badge variant="secondary">{viewingExhibitor.detailedInfo.sundayLunchCount} plateau(x)</Badge></p>
+                            <div className="text-sm font-bold flex items-center gap-2">
+                              Repas Dimanche : <Badge variant="secondary">{viewingExhibitor.detailedInfo.sundayLunchCount} plateau(x)</Badge>
+                            </div>
                             <div className="p-3 bg-muted/20 rounded-lg border">
                               <p className="text-xs font-bold mb-1">Tombola Solidaire : {viewingExhibitor.detailedInfo.tombolaLot ? "Participant" : "Non-participant"}</p>
                               {viewingExhibitor.detailedInfo.tombolaLotDescription && (
