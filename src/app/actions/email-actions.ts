@@ -11,7 +11,6 @@ async function getBaseUrl() {
     const headersList = await headers();
     const host = headersList.get('x-forwarded-host') || headersList.get('host') || '';
     
-    // Si on détecte un environnement de production (non-local)
     if (host && !host.includes('127.0.0.1') && !host.includes('localhost') && !host.includes('9002')) {
       let protocol = headersList.get('x-forwarded-proto') || 'https';
       if (protocol.includes(',')) {
@@ -20,7 +19,6 @@ async function getBaseUrl() {
       return `${protocol}://${host}`;
     }
 
-    // Fallback par défaut vers l'URL de production
     return 'https://marche-connect.web.app';
   } catch (e) {
     return 'https://marche-connect.web.app';
@@ -28,7 +26,7 @@ async function getBaseUrl() {
 }
 
 /**
- * Nettoie les chaînes pour éviter les problèmes d'encodage (bien que Gmail soit plus souple qu'Orange).
+ * Nettoie les chaînes pour éviter les problèmes d'encodage.
  */
 function stripAccents(str: string = "") {
   if (!str) return "";
@@ -40,15 +38,16 @@ function stripAccents(str: string = "") {
 
 /**
  * Configuration du transporteur Gmail.
+ * Note : Si la 2FA est activée, utilisez un "Mot de passe d'application".
  */
 function createTransporter() {
   return nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
-    secure: true, // Utilisation de SSL pour le port 465
+    secure: true,
     auth: {
       user: "hugues.rabier@gmail.com",
-      pass: "Ptmee52r2gma", // Note : Nécessite un "Mot de passe d'application" si la 2FA est activée sur Gmail
+      pass: "Ptmee52r2gma",
     },
     connectionTimeout: 15000,
     greetingTimeout: 15000,
@@ -57,9 +56,9 @@ function createTransporter() {
 }
 
 /**
- * Fonction de test SMTP.
+ * Fonction de test SMTP Gmail.
  */
-export async function testSmtpOrange() {
+export async function testSmtpGmail() {
   const transporter = createTransporter();
   const mailOptions = {
     from: `"Test MarcheConnect" <hugues.rabier@gmail.com>`,

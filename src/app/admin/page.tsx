@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
-import { sendAcceptanceEmail, sendRejectionEmail, testSmtpOrange } from '@/app/actions/email-actions';
+import { sendAcceptanceEmail, sendRejectionEmail, testSmtpGmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useMemoFirebase, useCollection, useUser, useAuth, useDoc } from '@/firebase';
 import { collection, doc, query, orderBy, where } from 'firebase/firestore';
@@ -126,11 +126,9 @@ export default function AdminDashboard() {
     setIsAcceptDialogOpen(false);
     setIsSending(true);
     
-    // 1. Mise à jour Firestore IMMÉDIATE (avant l'email)
     updateDocumentNonBlocking(doc(db, 'pre_registrations', targetExhibitor.id), { status: 'accepted_form1' });
 
     try {
-      // 2. Envoi de l'e-mail (Gmail)
       const result = await sendAcceptanceEmail(targetExhibitor, acceptanceMessage, currentConfig);
       
       if (result.success) {
@@ -180,7 +178,7 @@ export default function AdminDashboard() {
 
   const handleTestSmtp = async () => {
     toast({ title: "Test SMTP Gmail en cours..." });
-    const res = await testSmtpOrange();
+    const res = await testSmtpGmail();
     if (res.success) {
       toast({ title: "Test SMTP Réussi", description: "L'e-mail Gmail a bien été envoyé." });
     } else {
