@@ -26,7 +26,6 @@ async function getBaseUrl() {
 }
 
 function createTransporter() {
-  // Configuration pour Orange SMTP (Port 465 avec SSL)
   return nodemailer.createTransport({
     host: "smtp.orange.fr",
     port: 465,
@@ -35,35 +34,10 @@ function createTransporter() {
       user: "rabier.hugues@orange.fr",
       pass: "Ptmee52r2ora2!",
     },
-    connectionTimeout: 15000, // Augmentation du timeout pour Cloud Run
-    greetingTimeout: 15000,
-    socketTimeout: 20000,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   });
-}
-
-/**
- * Fonction de test dédiée demandée par l'utilisateur
- */
-export async function testSmtpConnection() {
-  const transporter = createTransporter();
-  const mailOptions = {
-    from: `"Test MarchéConnect" <rabier.hugues@orange.fr>`,
-    to: "hugues.rabier@gmail.com",
-    subject: "[Test] Diagnostic SMTP Orange",
-    text: `Ceci est un test de connexion SMTP envoyé depuis l'application MarchéConnect.
-    
-Si vous recevez cet email sur hugues.rabier@gmail.com, cela signifie que la configuration SMTP avec Orange est valide.
-Date du test : ${new Date().toLocaleString('fr-FR')}`,
-  };
-
-  try {
-    await transporter.verify(); // Vérifie la connexion d'abord
-    await transporter.sendMail(mailOptions);
-    return { success: true };
-  } catch (error: any) {
-    console.error('Erreur Test SMTP:', error.message);
-    return { success: false, error: error.message };
-  }
 }
 
 export async function sendApplicationNotification(exhibitorData: any, marketConfig: any) {
@@ -98,7 +72,7 @@ export async function sendAcceptanceEmail(exhibitor: any, customMessage: string,
   const mailOptions = {
     from: `"Le Marché de Félix" <rabier.hugues@orange.fr>`,
     to: exhibitor.email,
-    cc: notificationEmail,
+    cc: (notificationEmail && notificationEmail !== exhibitor.email) ? notificationEmail : undefined,
     subject: `Votre candidature pour le Marché de Félix ${year} a été retenue !`,
     text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 
@@ -119,6 +93,7 @@ L'équipe "Un jardin pour Félix"
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error: any) {
+    console.error('SMTP Error:', error.message);
     return { success: false, error: error.message };
   }
 }
@@ -131,7 +106,7 @@ export async function sendRejectionEmail(exhibitor: any, justification: string, 
   const mailOptions = {
     from: `"Le Marché de Félix" <rabier.hugues@orange.fr>`,
     to: exhibitor.email,
-    cc: notificationEmail,
+    cc: (notificationEmail && notificationEmail !== exhibitor.email) ? notificationEmail : undefined,
     subject: `Votre candidature pour le Marché de Noël ${year}`,
     text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 
@@ -173,7 +148,7 @@ export async function sendFinalConfirmationEmail(exhibitor: any, details: any, m
   const mailOptions = {
     from: `"Le Marché de Félix" <rabier.hugues@orange.fr>`,
     to: exhibitor.email,
-    cc: notificationEmail,
+    cc: (notificationEmail && notificationEmail !== exhibitor.email) ? notificationEmail : undefined,
     subject: `Réception de votre dossier technique - ${exhibitor.companyName}`,
     text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 

@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
-import { sendAcceptanceEmail, sendRejectionEmail, testSmtpConnection } from '@/app/actions/email-actions';
+import { sendAcceptanceEmail, sendRejectionEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useMemoFirebase, useCollection, useUser, useAuth, useDoc } from '@/firebase';
 import { collection, doc, query, orderBy, where } from 'firebase/firestore';
@@ -33,7 +33,6 @@ export default function AdminDashboard() {
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [isTestingSmtp, setIsTestingSmtp] = useState(false);
   const [justification, setJustification] = useState('');
   const [acceptanceMessage, setAcceptanceMessage] = useState('');
   const [selectedConfigId, setSelectedConfigId] = useState<string>('');
@@ -120,31 +119,10 @@ export default function AdminDashboard() {
     toast({ title: "Paramètres enregistrés" });
   };
 
-  const handleTestSmtp = async () => {
-    setIsTestingSmtp(true);
-    try {
-      const result = await testSmtpConnection();
-      if (result.success) {
-        toast({ title: "Test réussi !", description: "L'e-mail a été envoyé à hugues.rabier@gmail.com." });
-      } else {
-        toast({ 
-          variant: "destructive", 
-          title: "Échec du test SMTP", 
-          description: result.error || "Une erreur est survenue lors de l'envoi." 
-        });
-      }
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Erreur technique", description: err.message });
-    } finally {
-      setIsTestingSmtp(false);
-    }
-  };
-
   const handleAcceptAndSend = async () => {
     if (!actingExhibitor) return;
     setIsSending(true);
     try {
-      // On met à jour le statut avant tout pour ne pas bloquer si l'email échoue
       updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { status: 'accepted_form1' });
       
       const result = await sendAcceptanceEmail(actingExhibitor, acceptanceMessage, currentConfig);
@@ -154,12 +132,12 @@ export default function AdminDashboard() {
       } else {
         toast({ 
           variant: "destructive", 
-          title: "Attention", 
-          description: `Le dossier a été accepté dans la base, mais l'e-mail n'a pas pu partir : ${result.error}` 
+          title: "Email non envoyé", 
+          description: "Le dossier est accepté mais l'email a échoué (Vérifiez le SMTP)." 
         });
       }
     } catch (err) {
-      toast({ variant: "destructive", title: "Erreur technique", description: "Problème lors de la validation." });
+      toast({ variant: "destructive", title: "Erreur technique" });
     } finally {
       setIsSending(false);
       setIsAcceptDialogOpen(false);
@@ -184,7 +162,7 @@ export default function AdminDashboard() {
         toast({ 
           variant: "destructive", 
           title: "Statut mis à jour", 
-          description: `Le refus est enregistré, mais l'e-mail a échoué : ${result.error}` 
+          description: "Le refus est enregistré, mais l'e-mail a échoué." 
         });
       }
     } catch (err) {
@@ -344,15 +322,6 @@ export default function AdminDashboard() {
                 <div className="space-y-2"><label className="text-xs font-bold">URL de l'Affiche</label><Input value={configForm.posterImageUrl} onChange={(e) => setConfigForm({...configForm, posterImageUrl: e.target.value})} /></div>
                 <div className="space-y-2"><label className="text-xs font-bold">Email Admin</label><Input value={configForm.notificationEmail} onChange={(e) => setConfigForm({...configForm, notificationEmail: e.target.value})} /></div>
                 <Button onClick={handleSaveConfig} className="w-full font-bold">Enregistrer la configuration</Button>
-                
-                <div className="pt-8 border-t">
-                  <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">Diagnostic SMTP</h3>
-                  <p className="text-xs text-muted-foreground mb-4">Cliquez sur ce bouton pour envoyer un email de test à <strong>hugues.rabier@gmail.com</strong> et vérifier vos identifiants Orange.</p>
-                  <Button variant="outline" onClick={handleTestSmtp} disabled={isTestingSmtp} className="w-full text-secondary border-secondary/50 hover:bg-secondary/5">
-                    {isTestingSmtp ? <Loader2 className="animate-spin mr-2" /> : <Mail className="w-4 h-4 mr-2" />} 
-                    Lancer le test SMTP Orange
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
