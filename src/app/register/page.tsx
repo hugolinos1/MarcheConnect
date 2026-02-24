@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -62,8 +61,6 @@ export default function RegisterPage() {
 
   const priceTable1 = currentConfig?.priceTable1 ?? 40;
   const priceTable2 = currentConfig?.priceTable2 ?? 60;
-  const priceMeal = currentConfig?.priceMeal ?? 8;
-  const priceElectricity = currentConfig?.priceElectricity ?? 1;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
