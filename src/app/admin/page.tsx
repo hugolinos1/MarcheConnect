@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, UserPlus, Users, AlertTriangle, ExternalLink, UserCheck, Clock, ArrowLeft } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, UserPlus, Users, AlertTriangle, ExternalLink, UserCheck, Clock, ArrowLeft, Phone, MapPin, Globe } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -23,6 +23,7 @@ import { initiateEmailSignIn, initiateEmailSignUp } from '@/firebase/non-blockin
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 import * as XLSX from 'xlsx';
 
 export default function AdminDashboard() {
@@ -646,40 +647,119 @@ export default function AdminDashboard() {
       </Dialog>
 
       <Dialog open={!!viewingExhibitor} onOpenChange={(open) => !open && setViewingExhibitor(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh]">
+        <DialogContent className="max-w-3xl max-h-[90vh]">
           <DialogHeader><DialogTitle className="text-primary flex items-center gap-2"><FileText className="w-6 h-6" /> Dossier de {viewingExhibitor?.companyName}</DialogTitle></DialogHeader>
-          <ScrollArea className="pr-4 h-[70vh]">
+          <ScrollArea className="pr-4 h-[75vh]">
             {viewingExhibitor && (
-              <div className="space-y-6 py-4">
-                <section className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg">
-                  <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Contact</p><p className="font-bold">{viewingExhibitor.firstName} {viewingExhibitor.lastName}</p></div>
-                  <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Ville</p><p>{viewingExhibitor.city}</p></div>
-                  <div className="col-span-2"><p className="text-[10px] font-bold uppercase text-muted-foreground">Description</p><p className="text-sm italic">{viewingExhibitor.productDescription}</p></div>
+              <div className="space-y-8 py-4">
+                {/* Informations de contact */}
+                <section className="space-y-4">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                    <Users className="w-4 h-4" /> Coordonnées du contact
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold uppercase text-muted-foreground">Responsable</p>
+                      <p className="font-bold text-sm">{viewingExhibitor.firstName} {viewingExhibitor.lastName}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold uppercase text-muted-foreground">E-mail</p>
+                      <p className="text-sm flex items-center gap-2">
+                        <Mail className="w-3 h-3 text-primary" /> {viewingExhibitor.email}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold uppercase text-muted-foreground">Téléphone</p>
+                      <p className="text-sm flex items-center gap-2">
+                        <Phone className="w-3 h-3 text-primary" /> {viewingExhibitor.phone}
+                      </p>
+                    </div>
+                    {viewingExhibitor.websiteUrl && (
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold uppercase text-muted-foreground">Site / Réseaux</p>
+                        <a href={viewingExhibitor.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-2">
+                          <Globe className="w-3 h-3" /> Voir le lien <ExternalLink className="w-2 h-2" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                {/* Localisation */}
+                <section className="space-y-4">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                    <MapPin className="w-4 h-4" /> Localisation
+                  </h4>
+                  <div className="bg-muted/30 p-4 rounded-xl">
+                    <p className="text-sm">{viewingExhibitor.address}</p>
+                    <p className="text-sm font-bold">{viewingExhibitor.postalCode} {viewingExhibitor.city}</p>
+                  </div>
+                </section>
+
+                {/* Description du projet */}
+                <section className="space-y-4">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" /> Le Projet
+                  </h4>
+                  <div className="bg-muted/30 p-4 rounded-xl space-y-3">
+                    <div className="flex gap-2">
+                      <Badge variant="outline" className="text-[10px]">{viewingExhibitor.isRegistered ? "Professionnel" : "Particulier"}</Badge>
+                      <Badge variant="secondary" className="text-[10px]">{viewingExhibitor.requestedTables} table(s)</Badge>
+                    </div>
+                    <p className="text-sm italic leading-relaxed text-foreground/80">"{viewingExhibitor.productDescription}"</p>
+                  </div>
                 </section>
                 
+                {/* Photos des produits */}
                 {viewingExhibitor.productImages && viewingExhibitor.productImages.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2">
-                    {viewingExhibitor.productImages.map((img, idx) => (
-                      <div key={idx} className="relative aspect-square rounded-md overflow-hidden border">
-                        <img src={img} alt="Produit" className="object-cover w-full h-full" />
-                      </div>
-                    ))}
-                  </div>
+                  <section className="space-y-4">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-primary">Photos des produits</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      {viewingExhibitor.productImages.map((img, idx) => (
+                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border shadow-sm group">
+                          <img src={img} alt="Produit" className="object-cover w-full h-full transition-transform hover:scale-110" />
+                        </div>
+                      ))}
+                    </div>
+                  </section>
                 )}
 
+                <Separator />
+
+                {/* Détails techniques si formulaire 2 soumis */}
                 {viewingExhibitor.detailedInfo && (
-                  <section className="space-y-3 p-4 border-2 border-primary/10 rounded-xl bg-primary/5">
-                    <h4 className="text-sm font-bold text-primary underline">DOSSIER TECHNIQUE FINAL</h4>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div><p className="text-[10px] font-bold">Electricité</p><p>{viewingExhibitor.detailedInfo.needsElectricity ? "OUI" : "NON"}</p></div>
-                      <div><p className="text-[10px] font-bold">Grille</p><p>{viewingExhibitor.detailedInfo.needsGrid ? "OUI" : "NON"}</p></div>
-                      <div><p className="text-[10px] font-bold">Repas</p><p>{viewingExhibitor.detailedInfo.sundayLunchCount} plateaux</p></div>
-                      <div className="col-span-2"><p className="text-[10px] font-bold">Assurance</p><p>{viewingExhibitor.detailedInfo.insuranceCompany} ({viewingExhibitor.detailedInfo.insurancePolicyNumber})</p></div>
+                  <section className="space-y-4 p-5 border-2 border-primary/20 rounded-2xl bg-primary/5">
+                    <h4 className="text-sm font-bold text-primary flex items-center gap-2">
+                      <ShieldCheck className="w-5 h-5" /> DOSSIER TECHNIQUE FINAL
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold uppercase text-muted-foreground">Électricité</p>
+                        <p className="font-medium">{viewingExhibitor.detailedInfo.needsElectricity ? "Requis" : "Non requis"}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold uppercase text-muted-foreground">Besoin Grille</p>
+                        <p className="font-medium">{viewingExhibitor.detailedInfo.needsGrid ? "Oui" : "Non"}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold uppercase text-muted-foreground">Repas Dimanche</p>
+                        <p className="font-medium">{viewingExhibitor.detailedInfo.sundayLunchCount} plateau(x)</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold uppercase text-muted-foreground">Tombola</p>
+                        <p className="font-medium">{viewingExhibitor.detailedInfo.tombolaLot ? "Participant" : "Non"}</p>
+                      </div>
+                      <div className="col-span-2 space-y-1 border-t pt-2">
+                        <p className="text-[10px] font-bold uppercase text-muted-foreground">Assurance RC</p>
+                        <p className="font-medium text-xs">{viewingExhibitor.detailedInfo.insuranceCompany} — N°{viewingExhibitor.detailedInfo.insurancePolicyNumber}</p>
+                      </div>
                     </div>
                     {viewingExhibitor.detailedInfo.idCardPhoto && (
-                      <div className="mt-2">
-                        <p className="text-[10px] font-bold mb-1">PIÈCE D'IDENTITÉ</p>
-                        <img src={viewingExhibitor.detailedInfo.idCardPhoto} alt="ID" className="w-full rounded border" />
+                      <div className="mt-4 pt-4 border-t">
+                        <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Pièce d'identité (Recto)</p>
+                        <div className="rounded-lg overflow-hidden border max-w-sm">
+                          <img src={viewingExhibitor.detailedInfo.idCardPhoto} alt="ID" className="w-full" />
+                        </div>
                       </div>
                     )}
                   </section>
