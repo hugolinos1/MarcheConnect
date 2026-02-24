@@ -122,47 +122,51 @@ export default function AdminDashboard() {
   const handleAcceptAndSend = async () => {
     if (!actingExhibitor) return;
     setIsSending(true);
+    
+    // Mise à jour de la base de données immédiate (Non-bloquant)
+    updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { status: 'accepted_form1' });
+    
     try {
-      updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { status: 'accepted_form1' });
-      
+      // Tentative d'envoi de l'e-mail
       const result = await sendAcceptanceEmail(actingExhibitor, acceptanceMessage, currentConfig);
       
       if (result.success) {
-        toast({ title: "Dossier accepté", description: "L'e-mail a été envoyé au candidat." });
+        toast({ title: "Candidature acceptée", description: "L'e-mail a été envoyé avec succès." });
       } else {
         toast({ 
           variant: "destructive", 
           title: "Email non envoyé", 
-          description: "Le dossier est accepté mais l'email a échoué (Vérifiez le SMTP)." 
+          description: `Dossier accepté, mais l'e-mail a échoué : ${result.error}` 
         });
       }
-    } catch (err) {
-      toast({ variant: "destructive", title: "Erreur technique" });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erreur lors de l'envoi", description: err.message });
     } finally {
       setIsSending(false);
       setIsAcceptDialogOpen(false);
       setActingExhibitor(null);
+      setAcceptanceMessage('');
     }
   };
 
   const handleConfirmReject = async () => {
     if (!actingExhibitor) return;
     setIsSending(true);
-    try {
-      updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { 
-        status: 'rejected', 
-        rejectionJustification: justification 
-      });
+    
+    updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { 
+      status: 'rejected', 
+      rejectionJustification: justification 
+    });
 
+    try {
       const result = await sendRejectionEmail(actingExhibitor, justification, currentConfig);
-      
       if (result.success) {
         toast({ title: "Candidature refusée", description: "L'e-mail de refus a été envoyé." });
       } else {
         toast({ 
           variant: "destructive", 
-          title: "Statut mis à jour", 
-          description: "Le refus est enregistré, mais l'e-mail a échoué." 
+          title: "Email non envoyé", 
+          description: "Refus enregistré, mais l'e-mail a échoué." 
         });
       }
     } catch (err) {
@@ -171,6 +175,7 @@ export default function AdminDashboard() {
       setIsSending(false);
       setIsRejectDialogOpen(false);
       setActingExhibitor(null);
+      setJustification('');
     }
   };
 
