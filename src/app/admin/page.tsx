@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Users, ExternalLink, UserCheck, Clock, ArrowLeft, Phone, MapPin, Globe, CreditCard, Heart, TrendingUp, Wallet, ClipboardList, Filter } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Users, ExternalLink, UserCheck, Clock, ArrowLeft, Phone, MapPin, Globe, CreditCard, Heart, TrendingUp, Wallet, ClipboardList, Filter, LayoutGrid } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -419,6 +419,10 @@ export default function AdminDashboard() {
                       <p className="font-bold">{viewingExhibitor.firstName} {viewingExhibitor.lastName}</p>
                       <p className="flex items-center gap-2"><Mail className="w-3 h-3 text-primary" /> {viewingExhibitor.email}</p>
                       <p className="flex items-center gap-2"><Phone className="w-3 h-3 text-primary" /> {viewingExhibitor.phone}</p>
+                      <p className="flex items-center gap-2 font-bold text-secondary">
+                        <LayoutGrid className="w-3 h-3" /> 
+                        Emplacement : {viewingExhibitor.requestedTables === '1' ? '1 table (1.75m)' : '2 tables (3.50m)'}
+                      </p>
                       {viewingExhibitor.websiteUrl && <a href={viewingExhibitor.websiteUrl} target="_blank" className="flex items-center gap-2 text-primary hover:underline"><Globe className="w-3 h-3" /> {viewingExhibitor.websiteUrl}</a>}
                     </div>
                   </div>
@@ -458,6 +462,11 @@ export default function AdminDashboard() {
                         <div className="space-y-1"><p className="text-[10px] font-bold text-muted-foreground uppercase">Repas Dimanche</p><p className="text-sm font-bold">{viewingExhibitor.detailedInfo.sundayLunchCount} plateau(x)</p></div>
                         <div className="space-y-1"><p className="text-[10px] font-bold text-muted-foreground uppercase">Tombola Solidaire</p><Badge variant={viewingExhibitor.detailedInfo.tombolaLot ? "secondary" : "outline"}>{viewingExhibitor.detailedInfo.tombolaLot ? "Lot Offert" : "Non participation"}</Badge>{viewingExhibitor.detailedInfo.tombolaLotDescription && <p className="text-xs italic mt-1">{viewingExhibitor.detailedInfo.tombolaLotDescription}</p>}</div>
                       </div>
+                    </div>
+                    <Separator className="my-4" />
+                    <div className="text-[10px] text-muted-foreground flex justify-between">
+                      <span>Droit à l'image : {viewingExhibitor.detailedInfo.agreedToImageRights ? "Accepté" : "Refusé"}</span>
+                      <span>Règlement : {viewingExhibitor.detailedInfo.agreedToTerms ? "Accepté" : "Refusé"}</span>
                     </div>
                   </section>
                 )}
