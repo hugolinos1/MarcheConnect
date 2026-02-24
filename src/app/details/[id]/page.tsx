@@ -99,7 +99,7 @@ export default function DetailsPage() {
         canvas.height = img.height * scaleSize;
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-        form.setValue('idCardPhoto', canvas.toDataURL('image/jpeg', 0.7));
+        form.setValue('idCardPhoto', canvas.toDataURL('image/jpeg', 0.7), { shouldValidate: true });
         setIsProcessingImage(false);
       };
     };
@@ -125,12 +125,13 @@ export default function DetailsPage() {
         detailedInfo: detailedData
       });
 
-      sendFinalConfirmationEmail(exhibitor, values, currentConfig).catch(e => console.error(e));
+      // Tentative d'envoi d'e-mail silencieuse
+      sendFinalConfirmationEmail(exhibitor, values, currentConfig).catch(e => console.error("Email error:", e));
       
       toast({ title: "Dossier enregistré !", description: "Merci pour votre finalisation." });
       setTimeout(() => router.push('/register/success?type=final'), 1000);
     } catch (error) {
-      toast({ variant: "destructive", title: "Erreur technique" });
+      toast({ variant: "destructive", title: "Erreur technique lors de l'enregistrement" });
     } finally {
       setIsSubmitting(false);
     }
@@ -176,6 +177,7 @@ export default function DetailsPage() {
                           )}
                         </div>
                       </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )} />
                 </div>
@@ -204,6 +206,15 @@ export default function DetailsPage() {
                       <FormItem><FormLabel>N° Contrat *</FormLabel><Input {...field} /></FormItem>
                     )} />
                   </div>
+                </div>
+
+                <div className="space-y-4 p-4 bg-muted/20 rounded-xl border">
+                   <FormField control={form.control} name="agreedToImageRights" render={({ field }) => (
+                    <FormItem className="flex items-start space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1"><FormLabel className="font-bold">Droit à l'image *</FormLabel><FormDescription className="text-xs">J'accepte que des vues de mon stand soient diffusées pour la communication de l'événement.</FormDescription><FormMessage /></div></FormItem>
+                  )} />
+                   <FormField control={form.control} name="agreedToTerms" render={({ field }) => (
+                    <FormItem className="flex items-start space-x-3 space-y-0 border-t pt-4"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1"><FormLabel className="font-bold">Acceptation du règlement *</FormLabel><FormDescription className="text-xs">J'accepte l'intégralité du règlement du marché.</FormDescription><FormMessage /></div></FormItem>
+                  )} />
                 </div>
 
                 <div className="p-6 bg-primary text-white rounded-2xl shadow-lg space-y-4">

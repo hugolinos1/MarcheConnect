@@ -5,16 +5,15 @@ import { headers } from 'next/headers';
 
 /**
  * Récupère la base URL de manière dynamique pour les liens dans les emails.
- * Ignore systématiquement localhost/127.0.0.1 en production.
+ * Privilégie le domaine de production ou le domaine actuel du studio.
  */
 async function getBaseUrl() {
   try {
     const headersList = await headers();
     const host = headersList.get('x-forwarded-host') || headersList.get('host') || '';
     
-    // Si on est sur un environnement de dev ou studio, on peut forcer l'URL de prod si besoin
-    // ou laisser la détection automatique si on teste localement.
-    if (host && !host.includes('127.0.0.1') && !host.includes('localhost') && !host.includes('9002')) {
+    // On détecte si on est sur un domaine personnalisé (production ou studio port-forwarded)
+    if (host && !host.includes('127.0.0.1') && !host.includes('localhost')) {
       let protocol = headersList.get('x-forwarded-proto') || 'https';
       if (protocol.includes(',')) {
         protocol = protocol.split(',')[0].trim();
@@ -22,7 +21,7 @@ async function getBaseUrl() {
       return `${protocol}://${host}`;
     }
 
-    // URL par défaut si détection impossible ou environnement local
+    // URL par défaut si détection locale
     return 'https://marche-connect.web.app';
   } catch (e) {
     return 'https://marche-connect.web.app';
