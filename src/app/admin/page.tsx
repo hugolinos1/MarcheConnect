@@ -454,7 +454,11 @@ export default function AdminDashboard() {
                     {viewingExhibitor.websiteUrl && (
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold text-muted-foreground uppercase">Site / Réseaux</p>
-                        <a href={viewingExhibitor.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-2"><Globe className="w-3 h-3" /> Voir le lien <ExternalLink className="w-2 h-2" /></a>
+                        <a href={viewingExhibitor.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-2 break-all">
+                          <Globe className="w-3 h-3 shrink-0" /> 
+                          {viewingExhibitor.websiteUrl} 
+                          <ExternalLink className="w-2 h-2 shrink-0" />
+                        </a>
                       </div>
                     )}
                   </div>
