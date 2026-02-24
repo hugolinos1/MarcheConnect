@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useEffect, useState } from 'react';
 import { Exhibitor } from '@/lib/types';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, UserPlus, Users, AlertTriangle } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, UserPlus, Users, AlertTriangle, ExternalLink } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -381,9 +382,11 @@ export default function AdminDashboard() {
                 <CardContent className="space-y-6">
                   <Alert variant="default" className="bg-amber-50 border-amber-200 text-amber-900">
                     <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Attention</AlertTitle>
-                    <AlertDescription>
-                      L'ajout d'un administrateur nécessite son <strong>UID Firebase</strong> unique. Vous pouvez le trouver dans la console Firebase Authentication.
+                    <AlertTitle>Comment faire ?</AlertTitle>
+                    <AlertDescription className="space-y-2">
+                      <p>1. Le futur administrateur doit d'abord créer un compte sur le site (via le bouton Connexion).</p>
+                      <p>2. Récupérez son <strong>UID Firebase</strong> unique dans la console <a href="https://console.firebase.google.com/" target="_blank" className="underline font-bold inline-flex items-center gap-1">Authentication <ExternalLink className="w-3 h-3" /></a>.</p>
+                      <p>3. Collez l'UID ci-dessous et validez.</p>
                     </AlertDescription>
                   </Alert>
 

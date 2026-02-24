@@ -244,6 +244,19 @@
         "submissionDate",
         "adminValidationStatus"
       ]
+    },
+    "AdminRole": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AdminRole",
+      "type": "object",
+      "description": "Represents a user with administrative privileges in the system.",
+      "properties": {
+        "addedAt": {
+          "type": "string",
+          "description": "The date and time when the administrator access was granted.",
+          "format": "date-time"
+        }
+      }
     }
   },
   "auth": {
