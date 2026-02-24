@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import * as XLSX from 'xlsx';
 
 export default function AdminDashboard() {
@@ -83,7 +84,7 @@ export default function AdminDashboard() {
 
   // Statistics Calculation
   const stats = useMemo(() => {
-    if (!exhibitorsData) return { total: 0, pending: 0, accepted: 0, rejected: 0, validated: 0, revenue: 0 };
+    if (!exhibitorsData) return { total: 0, pending: 0, accepted: 0, rejected: 0, validated: 0, submitted: 0, revenue: 0 };
     
     let totalRevenue = 0;
     const priceTable1 = currentConfig?.priceTable1 ?? 40;
