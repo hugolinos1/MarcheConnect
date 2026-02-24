@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, UserPlus, Users, ExternalLink, UserCheck, Clock, ArrowLeft, Phone, MapPin, Globe } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Users, ExternalLink, UserCheck, Clock, ArrowLeft, Phone, MapPin, Globe, CreditCard, Heart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -164,15 +164,6 @@ export default function AdminDashboard() {
     const configId = selectedConfigId || `config-${configForm.marketYear}`;
     setDocumentNonBlocking(doc(db, 'market_configurations', configId), { ...configForm, id: configId, currentMarket: true }, { merge: true });
     toast({ title: "Paramètres enregistrés" });
-  };
-
-  const handleAddAdmin = () => {
-    if (!newAdminUid.trim()) return;
-    setIsAdminAdding(true);
-    setDocumentNonBlocking(doc(db, 'roles_admin', newAdminUid.trim()), { addedAt: new Date().toISOString() }, { merge: true });
-    setNewAdminUid('');
-    setIsAdminAdding(false);
-    toast({ title: "Accès administrateur ajouté" });
   };
 
   const handleAcceptAndSend = async () => {
@@ -440,7 +431,7 @@ export default function AdminDashboard() {
       </main>
 
       <Dialog open={!!viewingExhibitor} onOpenChange={(open) => !open && setViewingExhibitor(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh]">
+        <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader><DialogTitle className="text-primary flex items-center gap-2"><FileText className="w-6 h-6" /> Dossier de {viewingExhibitor?.companyName}</DialogTitle></DialogHeader>
           <ScrollArea className="pr-4 h-[75vh]">
             {viewingExhibitor && (
@@ -476,24 +467,98 @@ export default function AdminDashboard() {
                     <p className="text-sm italic leading-relaxed">"{viewingExhibitor.productDescription}"</p>
                   </div>
                 </section>
+
                 {viewingExhibitor.productImages && (
                   <section className="space-y-4">
-                    <h4 className="text-xs font-bold uppercase tracking-widest text-primary">Photos</h4>
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-primary">Photos Produits (Préinscription)</h4>
                     <div className="grid grid-cols-3 gap-3">
                       {viewingExhibitor.productImages.map((img, idx) => (
-                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border"><img src={img} alt="Produit" className="object-cover w-full h-full" /></div>
+                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border shadow-sm"><img src={img} alt="Produit" className="object-cover w-full h-full" /></div>
                       ))}
                     </div>
                   </section>
                 )}
+
                 {viewingExhibitor.detailedInfo && (
-                  <section className="space-y-4 p-5 border-2 border-primary/20 rounded-2xl bg-primary/5">
-                    <h4 className="text-sm font-bold text-primary flex items-center gap-2"><ShieldCheck className="w-5 h-5" /> DOSSIER TECHNIQUE FINAL</h4>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="space-y-1"><p className="text-[10px] font-bold text-muted-foreground uppercase">Électricité</p><p className="font-medium">{viewingExhibitor.detailedInfo.needsElectricity ? "Oui" : "Non"}</p></div>
-                      <div className="space-y-1"><p className="text-[10px] font-bold text-muted-foreground uppercase">Grille</p><p className="font-medium">{viewingExhibitor.detailedInfo.needsGrid ? "Oui" : "Non"}</p></div>
-                      <div className="space-y-1"><p className="text-[10px] font-bold text-muted-foreground uppercase">Repas</p><p className="font-medium">{viewingExhibitor.detailedInfo.sundayLunchCount}</p></div>
-                      <div className="space-y-1"><p className="text-[10px] font-bold text-muted-foreground uppercase">Tombola</p><p className="font-medium">{viewingExhibitor.detailedInfo.tombolaLot ? "Oui" : "Non"}</p></div>
+                  <section className="space-y-6 p-6 border-2 border-primary/20 rounded-2xl bg-primary/5">
+                    <h4 className="text-lg font-bold text-primary flex items-center gap-2 border-b border-primary/10 pb-2"><ShieldCheck className="w-6 h-6" /> DOSSIER TECHNIQUE FINAL</h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <h5 className="text-[10px] font-bold uppercase tracking-widest text-primary/70 flex items-center gap-1"><CreditCard className="w-3 h-3" /> Administratif</h5>
+                        <div className="space-y-2 text-sm">
+                          {viewingExhibitor.detailedInfo.siret && (
+                            <div className="flex justify-between border-b border-primary/5 pb-1">
+                              <span className="text-muted-foreground">SIRET :</span>
+                              <span className="font-medium">{viewingExhibitor.detailedInfo.siret}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between border-b border-primary/5 pb-1">
+                            <span className="text-muted-foreground">Assurance :</span>
+                            <span className="font-medium">{viewingExhibitor.detailedInfo.insuranceCompany}</span>
+                          </div>
+                          <div className="flex justify-between border-b border-primary/5 pb-1">
+                            <span className="text-muted-foreground">N° Contrat :</span>
+                            <span className="font-medium">{viewingExhibitor.detailedInfo.insurancePolicyNumber}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h5 className="text-[10px] font-bold uppercase tracking-widest text-primary/70 flex items-center gap-1"><Settings className="w-3 h-3" /> Options</h5>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between border-b border-primary/5 pb-1">
+                            <span className="text-muted-foreground">Électricité :</span>
+                            <Badge variant={viewingExhibitor.detailedInfo.needsElectricity ? 'default' : 'outline'}>{viewingExhibitor.detailedInfo.needsElectricity ? "Oui" : "Non"}</Badge>
+                          </div>
+                          <div className="flex justify-between border-b border-primary/5 pb-1">
+                            <span className="text-muted-foreground">Grille Expo :</span>
+                            <Badge variant={viewingExhibitor.detailedInfo.needsGrid ? 'default' : 'outline'}>{viewingExhibitor.detailedInfo.needsGrid ? "Oui" : "Non"}</Badge>
+                          </div>
+                          <div className="flex justify-between border-b border-primary/5 pb-1">
+                            <span className="text-muted-foreground">Plateaux Repas :</span>
+                            <span className="font-bold">{viewingExhibitor.detailedInfo.sundayLunchCount}</span>
+                          </div>
+                          <div className="flex justify-between border-b border-primary/5 pb-1">
+                            <span className="text-muted-foreground">Tombola :</span>
+                            <Badge variant={viewingExhibitor.detailedInfo.tombolaLot ? 'secondary' : 'outline'}>{viewingExhibitor.detailedInfo.tombolaLot ? "Oui" : "Non"}</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {viewingExhibitor.detailedInfo.tombolaLotDescription && (
+                      <div className="space-y-2 bg-white/50 p-3 rounded-lg border border-primary/10">
+                        <p className="text-[10px] font-bold text-primary/70 uppercase">Lot Tombola</p>
+                        <p className="text-sm italic">"{viewingExhibitor.detailedInfo.tombolaLotDescription}"</p>
+                      </div>
+                    )}
+
+                    {viewingExhibitor.detailedInfo.idCardPhoto && (
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-primary/70 uppercase">Pièce d'identité (Recto)</p>
+                        <div className="relative aspect-video max-w-sm rounded-lg overflow-hidden border-2 border-white shadow-md">
+                          <img src={viewingExhibitor.detailedInfo.idCardPhoto} alt="ID Card" className="object-cover w-full h-full" />
+                        </div>
+                      </div>
+                    )}
+
+                    {viewingExhibitor.detailedInfo.additionalComments && (
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-primary/70 uppercase">Commentaires</p>
+                        <div className="bg-white/50 p-3 rounded-lg text-sm leading-relaxed">
+                          {viewingExhibitor.detailedInfo.additionalComments}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap gap-4 pt-4 border-t border-primary/10">
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-primary/60">
+                         <Heart className="w-3 h-3 text-secondary" /> DROIT IMAGE : {viewingExhibitor.detailedInfo.agreedToImageRights ? "ACCEPTÉ" : "REFUSÉ"}
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-primary/60">
+                         <FileText className="w-3 h-3 text-secondary" /> RÈGLEMENT : {viewingExhibitor.detailedInfo.agreedToTerms ? "ACCEPTÉ" : "REFUSÉ"}
+                      </div>
                     </div>
                   </section>
                 )}
