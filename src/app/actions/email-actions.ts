@@ -1,4 +1,3 @@
-
 'use server';
 
 import nodemailer from 'nodemailer';
@@ -6,12 +5,15 @@ import { headers } from 'next/headers';
 
 /**
  * Récupère la base URL de manière dynamique pour les liens dans les emails.
+ * Ignore systématiquement localhost/127.0.0.1 en production.
  */
 async function getBaseUrl() {
   try {
     const headersList = await headers();
     const host = headersList.get('x-forwarded-host') || headersList.get('host') || '';
     
+    // Si on est sur un environnement de dev ou studio, on peut forcer l'URL de prod si besoin
+    // ou laisser la détection automatique si on teste localement.
     if (host && !host.includes('127.0.0.1') && !host.includes('localhost') && !host.includes('9002')) {
       let protocol = headersList.get('x-forwarded-proto') || 'https';
       if (protocol.includes(',')) {
@@ -20,6 +22,7 @@ async function getBaseUrl() {
       return `${protocol}://${host}`;
     }
 
+    // URL par défaut si détection impossible ou environnement local
     return 'https://marche-connect.web.app';
   } catch (e) {
     return 'https://marche-connect.web.app';
@@ -27,19 +30,19 @@ async function getBaseUrl() {
 }
 
 /**
- * Nettoie les chaînes pour éviter les problèmes d'encodage.
+ * Nettoie les chaînes pour éviter les problèmes d'encodage avec certains serveurs SMTP.
  */
 function stripAccents(str: string = "") {
   if (!str) return "";
   return str
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") 
-    .replace(/[^\x00-\x7F]/g, "");    
+    .replace(/[\u0300-\u036f]/g, "") // Supprime les accents
+    .replace(/[^\x00-\x7F]/g, "");    // Supprime les caractères non-ASCII
 }
 
 /**
  * Configuration du transporteur Gmail.
- * IMPORTANT : Utilisez un "Mot de passe d'application" généré dans votre compte Google.
+ * Utilise le mot de passe d'application généré par l'utilisateur.
  */
 function createTransporter() {
   return nodemailer.createTransport({
@@ -48,7 +51,7 @@ function createTransporter() {
     secure: true,
     auth: {
       user: "hugues.rabier@gmail.com",
-      pass: "Ptmee52r2gma", // REMPLACEZ PAR LE CODE DE 16 CARACTÈRES GÉNÉRÉ PAR GOOGLE
+      pass: "fcmnbojqjvbxbeqg", // MOT DE PASSE D'APPLICATION GMAIL
     },
     connectionTimeout: 15000,
     greetingTimeout: 15000,
@@ -65,7 +68,7 @@ export async function testSmtpGmail() {
     from: `"Test MarcheConnect" <hugues.rabier@gmail.com>`,
     to: "hugues.rabier@gmail.com",
     subject: "Test SMTP Gmail Reussi",
-    text: "Ceci est un test de connexion SMTP Gmail depuis l'application MarcheConnect.",
+    text: "Ceci est un test de connexion SMTP Gmail depuis l'application MarcheConnect avec le nouveau mot de passe d'application.",
   };
 
   try {
