@@ -11,7 +11,8 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { ShieldCheck, Zap, Utensils, Camera, ArrowLeft, Calculator, Loader2, FileText, X, LayoutGrid } from 'lucide-react';
+import { ShieldCheck, Zap, Utensils, Camera, ArrowLeft, Calculator, Loader2, FileText, X, LayoutGrid, Gift, MessageSquare } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import { sendFinalConfirmationEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
@@ -72,6 +73,7 @@ export default function DetailsPage() {
 
   const watchLunchCount = form.watch("sundayLunchCount") || 0;
   const watchNeedsElectricity = form.watch("needsElectricity") || false;
+  const watchTombolaLot = form.watch("tombolaLot");
   const idCardPhoto = form.watch("idCardPhoto");
   
   const standPrice = exhibitor?.requestedTables === '1' ? (currentConfig?.priceTable1 ?? 40) : (currentConfig?.priceTable2 ?? 60);
@@ -188,19 +190,69 @@ export default function DetailsPage() {
                   <h3 className="text-lg font-bold border-b pb-3 flex items-center gap-3 text-primary"><Zap className="w-5 h-5" /> Logistique</h3>
                   <div className="grid gap-4">
                     <FormField control={form.control} name="needsElectricity" render={({ field }) => (
-                      <FormItem className="flex items-start space-x-3 p-4 border rounded-xl"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div><FormLabel className="font-bold">Electricité ?</FormLabel><FormDescription>Supplément de {currentConfig?.priceElectricity ?? 1}€.</FormDescription></div></FormItem>
+                      <FormItem className="flex items-start space-x-3 p-4 border rounded-xl">
+                        <FormControl>
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <div>
+                          <FormLabel className="font-bold">Electricité ?</FormLabel>
+                          <FormDescription>Supplément de {currentConfig?.priceElectricity ?? 1}€.</FormDescription>
+                        </div>
+                      </FormItem>
                     )} />
                     <FormField control={form.control} name="needsGrid" render={({ field }) => (
-                      <FormItem className="flex items-start space-x-3 p-4 border rounded-xl"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div><FormLabel className="font-bold flex items-center gap-2"><LayoutGrid className="w-4 h-4" /> Besoin d'une grille d'exposition ?</FormLabel><FormDescription>Gratuit (sous réserve de disponibilité).</FormDescription></div></FormItem>
+                      <FormItem className="flex items-start space-x-3 p-4 border rounded-xl">
+                        <FormControl>
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <div>
+                          <FormLabel className="font-bold flex items-center gap-2"><LayoutGrid className="w-4 h-4" /> Besoin d'une grille d'exposition ?</FormLabel>
+                          <FormDescription>Gratuit (sous réserve de disponibilité).</FormDescription>
+                        </div>
+                      </FormItem>
                     )} />
                   </div>
                 </div>
 
                 <div className="space-y-6">
-                  <h3 className="text-lg font-bold border-b pb-3 flex items-center gap-3 text-primary"><Utensils className="w-5 h-5" /> Repas</h3>
+                  <h3 className="text-lg font-bold border-b pb-3 flex items-center gap-3 text-primary"><Utensils className="w-5 h-5" /> Restauration</h3>
                   <FormField control={form.control} name="sundayLunchCount" render={({ field }) => (
-                    <FormItem><FormLabel>Nombre de plateaux repas ({currentConfig?.priceMeal ?? 8}€)</FormLabel><FormControl><Input type="number" {...field} className="w-24" /></FormControl></FormItem>
+                    <FormItem>
+                      <FormLabel>Nombre de plateaux repas ({currentConfig?.priceMeal ?? 8}€)</FormLabel>
+                      <FormDescription>Le dimanche midi (fait maison).</FormDescription>
+                      <FormControl>
+                        <Input type="number" {...field} className="w-24" />
+                      </FormControl>
+                    </FormItem>
                   )} />
+                </div>
+
+                <div className="space-y-6">
+                  <h3 className="text-lg font-bold border-b pb-3 flex items-center gap-3 text-primary"><Gift className="w-5 h-5" /> Tombola solidaire</h3>
+                  <div className="space-y-4">
+                    <FormField control={form.control} name="tombolaLot" render={({ field }) => (
+                      <FormItem className="flex items-start space-x-3 p-4 border rounded-xl">
+                        <FormControl>
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <div>
+                          <FormLabel className="font-bold">Je souhaite offrir un lot pour la tombola</FormLabel>
+                          <FormDescription>Un lot mettant en avant votre savoir-faire artisanal.</FormDescription>
+                        </div>
+                      </FormItem>
+                    )} />
+                    
+                    {watchTombolaLot && (
+                      <FormField control={form.control} name="tombolaLotDescription" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nature du lot offert</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Ex: Un bijou en argent, un pot de miel, une décoration..." {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )} />
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-6">
@@ -215,6 +267,17 @@ export default function DetailsPage() {
                   </div>
                 </div>
 
+                <div className="space-y-4">
+                  <h3 className="text-lg font-bold border-b pb-3 flex items-center gap-3 text-primary"><MessageSquare className="w-5 h-5" /> Commentaires libres</h3>
+                  <FormField control={form.control} name="additionalComments" render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Textarea placeholder="Besoin spécifique, question, précision..." {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )} />
+                </div>
+
                 <div className="space-y-4 p-4 bg-muted/20 rounded-xl border">
                    <FormField control={form.control} name="agreedToImageRights" render={({ field }) => (
                     <FormItem className="flex items-start space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1"><FormLabel className="font-bold">Droit à l'image *</FormLabel><FormDescription className="text-xs">J'accepte que des vues de mon stand soient diffusées pour la communication de l'événement.</FormDescription><FormMessage /></div></FormItem>
@@ -225,7 +288,7 @@ export default function DetailsPage() {
                 </div>
 
                 <div className="p-6 bg-primary text-white rounded-2xl shadow-lg space-y-4">
-                  <h3 className="text-lg font-bold flex items-center gap-3 border-b border-white/20 pb-3"><Calculator className="w-5 h-5" /> Récapitulatif</h3>
+                  <h3 className="text-lg font-bold flex items-center gap-3 border-b border-white/20 pb-3"><Calculator className="w-5 h-5" /> Récapitulatif du règlement</h3>
                   <div className="space-y-2 text-sm opacity-90">
                     <div className="flex justify-between">
                       <span>Emplacement ({exhibitor?.requestedTables === '1' ? '1.75m' : '3.50m'}) :</span>
@@ -239,7 +302,7 @@ export default function DetailsPage() {
                     )}
                     {watchLunchCount > 0 && (
                       <div className="flex justify-between">
-                        <span>Plateaux Repas ({watchLunchCount}) :</span>
+                        <span>Plateaux Repas ({watchLunchCount} x {currentConfig?.priceMeal ?? 8}€) :</span>
                         <span>{mealsPrice} €</span>
                       </div>
                     )}
@@ -248,9 +311,12 @@ export default function DetailsPage() {
                     <span>MONTANT TOTAL :</span>
                     <span className="text-3xl text-accent">{totalToPay} €</span>
                   </div>
+                  <p className="text-[10px] text-center italic opacity-80 pt-2">
+                    Le paiement s'effectue par chèque à l'ordre de "Un jardin pour Félix".
+                  </p>
                 </div>
 
-                <Button type="submit" disabled={isSubmitting} className="w-full bg-secondary text-white h-16 text-xl font-bold">
+                <Button type="submit" disabled={isSubmitting} className="w-full bg-secondary text-white h-16 text-xl font-bold gold-glow">
                   {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : "Finaliser mon inscription"}
                 </Button>
               </form>
