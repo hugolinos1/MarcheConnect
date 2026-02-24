@@ -5,14 +5,12 @@ import { headers } from 'next/headers';
 
 /**
  * Récupère la base URL de manière dynamique pour les liens dans les emails.
- * Privilégie le domaine de production ou le domaine actuel du studio.
  */
 async function getBaseUrl() {
   try {
     const headersList = await headers();
     const host = headersList.get('x-forwarded-host') || headersList.get('host') || '';
     
-    // On détecte si on est sur un domaine personnalisé (production ou studio port-forwarded)
     if (host && !host.includes('127.0.0.1') && !host.includes('localhost')) {
       let protocol = headersList.get('x-forwarded-proto') || 'https';
       if (protocol.includes(',')) {
@@ -21,7 +19,6 @@ async function getBaseUrl() {
       return `${protocol}://${host}`;
     }
 
-    // URL par défaut si détection locale
     return 'https://marche-connect.web.app';
   } catch (e) {
     return 'https://marche-connect.web.app';
@@ -29,19 +26,18 @@ async function getBaseUrl() {
 }
 
 /**
- * Nettoie les chaînes pour éviter les problèmes d'encodage avec certains serveurs SMTP.
+ * Nettoie les chaînes pour éviter les problèmes d'encodage avec Gmail.
  */
 function stripAccents(str: string = "") {
   if (!str) return "";
   return str
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // Supprime les accents
-    .replace(/[^\x00-\x7F]/g, "");    // Supprime les caractères non-ASCII
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\x00-\x7F]/g, "");
 }
 
 /**
  * Configuration du transporteur Gmail.
- * Utilise le mot de passe d'application généré par l'utilisateur.
  */
 function createTransporter() {
   return nodemailer.createTransport({
@@ -50,7 +46,7 @@ function createTransporter() {
     secure: true,
     auth: {
       user: "hugues.rabier@gmail.com",
-      pass: "fcmnbojqjvbxbeqg", // MOT DE PASSE D'APPLICATION GMAIL
+      pass: "fcmnbojqjvbxbeqg",
     },
     connectionTimeout: 15000,
     greetingTimeout: 15000,
@@ -171,7 +167,11 @@ export async function sendApplicationNotification(exhibitorData: any, marketConf
 export async function sendFinalConfirmationEmail(exhibitor: any, details: any, marketConfig: any) {
   const transporter = createTransporter();
   const year = marketConfig?.marketYear || '2026';
-  const total = (exhibitor.requestedTables === '1' ? (marketConfig?.priceTable1 ?? 40) : (marketConfig?.priceTable2 ?? 60)) + ((details.sundayLunchCount || 0) * (marketConfig?.priceMeal ?? 8));
+  
+  const standPrice = exhibitor.requestedTables === '1' ? (marketConfig?.priceTable1 ?? 40) : (marketConfig?.priceTable2 ?? 60);
+  const electricityPrice = details.needsElectricity ? (marketConfig?.priceElectricity ?? 1) : 0;
+  const mealsPrice = (details.sundayLunchCount || 0) * (marketConfig?.priceMeal ?? 8);
+  const total = standPrice + electricityPrice + mealsPrice;
 
   const mailOptions = {
     from: `"Le Marche de Felix" <hugues.rabier@gmail.com>`,
@@ -181,15 +181,22 @@ export async function sendFinalConfirmationEmail(exhibitor: any, details: any, m
 
 Dossier technique recu pour le Marche de Noel ${year}.
 
+DETAIL DU REGLEMENT :
+- Emplacement : ${standPrice} EUR
+- Electricite : ${electricityPrice} EUR
+- Repas : ${mealsPrice} EUR
+
 MONTANT TOTAL A REGLER : ${total} EUR
 
-Merci d'envoyer votre cheque pour confirmer definitivement votre place.`,
+Merci d'envoyer votre cheque pour confirmer definitivement votre place.
+L'equipe "Un jardin pour Felix"`,
   };
 
   try {
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error: any) {
+    console.error('SMTP Error:', error);
     return { success: false, error: error.message };
   }
 }

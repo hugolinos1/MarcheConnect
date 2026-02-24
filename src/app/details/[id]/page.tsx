@@ -11,7 +11,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { ShieldCheck, Zap, Utensils, Camera, ArrowLeft, Calculator, Loader2, FileText, X } from 'lucide-react';
+import { ShieldCheck, Zap, Utensils, Camera, ArrowLeft, Calculator, Loader2, FileText, X, LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
 import { sendFinalConfirmationEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
@@ -71,10 +71,13 @@ export default function DetailsPage() {
   });
 
   const watchLunchCount = form.watch("sundayLunchCount") || 0;
+  const watchNeedsElectricity = form.watch("needsElectricity") || false;
   const idCardPhoto = form.watch("idCardPhoto");
   
   const standPrice = exhibitor?.requestedTables === '1' ? (currentConfig?.priceTable1 ?? 40) : (currentConfig?.priceTable2 ?? 60);
-  const totalToPay = standPrice + (watchLunchCount * (currentConfig?.priceMeal ?? 8));
+  const electricityPrice = watchNeedsElectricity ? (currentConfig?.priceElectricity ?? 1) : 0;
+  const mealsPrice = watchLunchCount * (currentConfig?.priceMeal ?? 8);
+  const totalToPay = standPrice + electricityPrice + mealsPrice;
 
   useEffect(() => {
     if (exhibitor?.detailedInfo) {
@@ -125,7 +128,6 @@ export default function DetailsPage() {
         detailedInfo: detailedData
       });
 
-      // Tentative d'envoi d'e-mail silencieuse
       sendFinalConfirmationEmail(exhibitor, values, currentConfig).catch(e => console.error("Email error:", e));
       
       toast({ title: "Dossier enregistré !", description: "Merci pour votre finalisation." });
@@ -184,9 +186,14 @@ export default function DetailsPage() {
 
                 <div className="space-y-6">
                   <h3 className="text-lg font-bold border-b pb-3 flex items-center gap-3 text-primary"><Zap className="w-5 h-5" /> Logistique</h3>
-                  <FormField control={form.control} name="needsElectricity" render={({ field }) => (
-                    <FormItem className="flex items-start space-x-3 p-4 border rounded-xl"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div><FormLabel className="font-bold">Electricité ?</FormLabel><FormDescription>Supplément de {currentConfig?.priceElectricity ?? 1}€.</FormDescription></div></FormItem>
-                  )} />
+                  <div className="grid gap-4">
+                    <FormField control={form.control} name="needsElectricity" render={({ field }) => (
+                      <FormItem className="flex items-start space-x-3 p-4 border rounded-xl"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div><FormLabel className="font-bold">Electricité ?</FormLabel><FormDescription>Supplément de {currentConfig?.priceElectricity ?? 1}€.</FormDescription></div></FormItem>
+                    )} />
+                    <FormField control={form.control} name="needsGrid" render={({ field }) => (
+                      <FormItem className="flex items-start space-x-3 p-4 border rounded-xl"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div><FormLabel className="font-bold flex items-center gap-2"><LayoutGrid className="w-4 h-4" /> Besoin d'une grille d'exposition ?</FormLabel><FormDescription>Gratuit (sous réserve de disponibilité).</FormDescription></div></FormItem>
+                    )} />
+                  </div>
                 </div>
 
                 <div className="space-y-6">
@@ -219,7 +226,28 @@ export default function DetailsPage() {
 
                 <div className="p-6 bg-primary text-white rounded-2xl shadow-lg space-y-4">
                   <h3 className="text-lg font-bold flex items-center gap-3 border-b border-white/20 pb-3"><Calculator className="w-5 h-5" /> Récapitulatif</h3>
-                  <div className="flex justify-between items-center text-xl font-bold"><span>MONTANT TOTAL :</span><span className="text-3xl text-accent">{totalToPay} €</span></div>
+                  <div className="space-y-2 text-sm opacity-90">
+                    <div className="flex justify-between">
+                      <span>Emplacement ({exhibitor?.requestedTables === '1' ? '1.75m' : '3.50m'}) :</span>
+                      <span>{standPrice} €</span>
+                    </div>
+                    {watchNeedsElectricity && (
+                      <div className="flex justify-between">
+                        <span>Option Électricité :</span>
+                        <span>{electricityPrice} €</span>
+                      </div>
+                    )}
+                    {watchLunchCount > 0 && (
+                      <div className="flex justify-between">
+                        <span>Plateaux Repas ({watchLunchCount}) :</span>
+                        <span>{mealsPrice} €</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex justify-between items-center text-xl font-bold border-t border-white/20 pt-3">
+                    <span>MONTANT TOTAL :</span>
+                    <span className="text-3xl text-accent">{totalToPay} €</span>
+                  </div>
                 </div>
 
                 <Button type="submit" disabled={isSubmitting} className="w-full bg-secondary text-white h-16 text-xl font-bold">
