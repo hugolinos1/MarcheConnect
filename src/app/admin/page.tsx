@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
-import { sendAcceptanceEmail, sendRejectionEmail } from '@/app/actions/email-actions';
+import { sendAcceptanceEmail, sendRejectionEmail, testSmtpOrange } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useMemoFirebase, useCollection, useUser, useAuth, useDoc } from '@/firebase';
 import { collection, doc, query, orderBy, where } from 'firebase/firestore';
@@ -109,7 +109,7 @@ export default function AdminDashboard() {
     setAuthError('');
     setIsAuthLoading(true);
     initiateEmailSignIn(auth, email, password)
-      .catch(() => setAuthError("Erreur d'authentification : Vérifiez vos identifiants."))
+      .catch(() => setAuthError("Erreur d'authentification."))
       .finally(() => setIsAuthLoading(false));
   };
 
@@ -121,13 +121,13 @@ export default function AdminDashboard() {
 
   const handleAcceptAndSend = async () => {
     if (!actingExhibitor) return;
+    
+    // Fermeture immédiate du dialogue pour une interface fluide
+    setIsAcceptDialogOpen(false);
     setIsSending(true);
     
     // 1. Mise à jour Firestore IMMÉDIATE
     updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { status: 'accepted_form1' });
-    
-    // On ferme la boîte de dialogue tout de suite pour libérer l'UI
-    setIsAcceptDialogOpen(false);
 
     try {
       // 2. Tentative d'envoi de l'e-mail
@@ -139,7 +139,7 @@ export default function AdminDashboard() {
         toast({ 
           variant: "destructive", 
           title: "Email non envoyé", 
-          description: `Dossier accepté, mais l'e-mail a échoué (Erreur Orange SMTP).` 
+          description: `Dossier accepté en base, mais échec SMTP Orange (Antispam).` 
         });
       }
     } catch (err: any) {
@@ -153,6 +153,7 @@ export default function AdminDashboard() {
 
   const handleConfirmReject = async () => {
     if (!actingExhibitor) return;
+    setIsRejectDialogOpen(false);
     setIsSending(true);
     
     updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { 
@@ -160,14 +161,12 @@ export default function AdminDashboard() {
       rejectionJustification: justification 
     });
 
-    setIsRejectDialogOpen(false);
-
     try {
       const result = await sendRejectionEmail(actingExhibitor, justification, currentConfig);
       if (result.success) {
-        toast({ title: "Candidature refusée", description: "L'e-mail de refus a été envoyé." });
+        toast({ title: "Candidature refusée", description: "L'e-mail a été envoyé." });
       } else {
-        toast({ variant: "destructive", title: "Email non envoyé", description: "Refus enregistré mais échec SMTP Orange." });
+        toast({ variant: "destructive", title: "Email non envoyé", description: "Refus enregistré mais échec SMTP." });
       }
     } catch (err) {
       toast({ variant: "destructive", title: "Erreur technique" });
@@ -175,6 +174,16 @@ export default function AdminDashboard() {
       setIsSending(false);
       setActingExhibitor(null);
       setJustification('');
+    }
+  };
+
+  const handleTestSmtp = async () => {
+    toast({ title: "Test SMTP en cours..." });
+    const res = await testSmtpOrange();
+    if (res.success) {
+      toast({ title: "Test SMTP Réussi", description: "L'e-mail a bien été envoyé." });
+    } else {
+      toast({ variant: "destructive", title: "Test SMTP Échoué", description: res.error });
     }
   };
 
@@ -325,28 +334,31 @@ export default function AdminDashboard() {
                 </div>
                 <div className="space-y-2"><label className="text-xs font-bold">URL de l'Affiche</label><Input value={configForm.posterImageUrl} onChange={(e) => setConfigForm({...configForm, posterImageUrl: e.target.value})} /></div>
                 <div className="space-y-2"><label className="text-xs font-bold">Email Admin</label><Input value={configForm.notificationEmail} onChange={(e) => setConfigForm({...configForm, notificationEmail: e.target.value})} /></div>
-                <Button onClick={handleSaveConfig} className="w-full font-bold">Enregistrer la configuration</Button>
+                <div className="pt-4 space-y-4">
+                  <Button onClick={handleSaveConfig} className="w-full font-bold">Enregistrer la configuration</Button>
+                  <Button onClick={handleTestSmtp} variant="outline" className="w-full border-primary text-primary">Tester la connexion SMTP Orange</Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </main>
 
-      <Dialog open={isAcceptDialogOpen} onOpenChange={(open) => !open && setIsAcceptDialogOpen(false)}>
+      <Dialog open={isAcceptDialogOpen} onOpenChange={setIsAcceptDialogOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Accepter {actingExhibitor?.companyName}</DialogTitle></DialogHeader>
           <div className="py-4 space-y-4">
-            <p className="text-sm text-muted-foreground">Le candidat recevra l'e-mail d'acceptation avec le lien vers le dossier technique.</p>
-            <Textarea placeholder="Message personnel (optionnel)..." value={acceptanceMessage} onChange={(e) => setAcceptanceMessage(e.target.value)} rows={4} />
+            <p className="text-sm text-muted-foreground">L'email contiendra le lien vers le formulaire de finalisation.</p>
+            <Textarea placeholder="Message personnel (facultatif)..." value={acceptanceMessage} onChange={(e) => setAcceptanceMessage(e.target.value)} rows={4} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAcceptDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleAcceptAndSend} disabled={isSending}>{isSending ? <Loader2 className="animate-spin mr-2" /> : <Mail className="w-4 h-4 mr-2" />} Confirmer l'acceptation</Button>
+            <Button onClick={handleAcceptAndSend} disabled={isSending}>{isSending ? <Loader2 className="animate-spin mr-2" /> : <Mail className="w-4 h-4 mr-2" />} Confirmer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isRejectDialogOpen} onOpenChange={(open) => !open && setIsRejectDialogOpen(false)}>
+      <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Refuser la candidature</DialogTitle></DialogHeader>
           <div className="py-4 space-y-4">

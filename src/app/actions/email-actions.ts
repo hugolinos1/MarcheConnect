@@ -4,7 +4,7 @@ import nodemailer from 'nodemailer';
 import { headers } from 'next/headers';
 
 /**
- * Récupère la base URL de manière dynamique.
+ * Récupère la base URL de manière dynamique pour les liens dans les emails.
  */
 async function getBaseUrl() {
   try {
@@ -25,6 +25,17 @@ async function getBaseUrl() {
   }
 }
 
+/**
+ * Supprime les accents et caractères non-ASCII pour éviter les rejets SMTP Orange (OFR_997).
+ */
+function stripAccents(str: string = "") {
+  if (!str) return "";
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Supprime les accents
+    .replace(/[^\x00-\x7F]/g, "");    // Supprime tout caractère non-ASCII
+}
+
 function createTransporter() {
   return nodemailer.createTransport({
     host: "smtp.orange.fr",
@@ -34,7 +45,6 @@ function createTransporter() {
       user: "rabier.hugues@orange.fr",
       pass: "Ptmee52r2ora2!",
     },
-    // Timeouts optimisés pour Orange
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 20000,
@@ -42,7 +52,7 @@ function createTransporter() {
 }
 
 /**
- * Fonction de test SMTP simple qui a été confirmée comme fonctionnelle.
+ * Fonction de test simple.
  */
 export async function testSmtpOrange() {
   const transporter = createTransporter();
@@ -67,22 +77,25 @@ export async function sendAcceptanceEmail(exhibitor: any, customMessage: string,
   const baseUrl = await getBaseUrl();
   const detailsLink = `${baseUrl}/details/${exhibitor.id}`;
 
-  // Format ultra-simplifié sans accents dans les headers pour éviter le rejet OFR_997 d'Orange
+  const firstName = stripAccents(exhibitor.firstName);
+  const lastName = stripAccents(exhibitor.lastName);
+  const messagePerso = stripAccents(customMessage);
+
   const mailOptions = {
     from: `"Le Marche de Felix" <rabier.hugues@orange.fr>`,
     to: exhibitor.email,
     subject: `Candidature retenue - Marche de Noel ${year}`,
-    text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
+    text: `Bonjour ${firstName} ${lastName},
 
-Nous avons le plaisir de vous informer que votre candidature pour le Marche de Noel ${year} "Un jardin pour Felix" a ete acceptee !
+Nous avons le plaisir de vous informer que votre candidature pour le Marche de Noel ${year} a ete acceptee.
 
-${customMessage ? `Note de l'organisateur :\n---------------------------\n${customMessage}\n---------------------------\n` : ''}
+${messagePerso ? `Note de l'organisateur :\n---------------------------\n${messagePerso}\n---------------------------\n` : ''}
 
 Pour finaliser votre inscription, merci de completer votre dossier technique en cliquant sur le lien ci-dessous :
 
-Lien vers votre dossier : ${detailsLink}
+Lien : ${detailsLink}
 
-A tres bientot !
+A bientot !
 L'equipe "Un jardin pour Felix"`,
   };
 
@@ -98,24 +111,24 @@ L'equipe "Un jardin pour Felix"`,
 export async function sendRejectionEmail(exhibitor: any, justification: string, marketConfig: any) {
   const transporter = createTransporter();
   const year = marketConfig?.marketYear || '2026';
+  const firstName = stripAccents(exhibitor.firstName);
+  const lastName = stripAccents(exhibitor.lastName);
+  const reason = stripAccents(justification);
 
   const mailOptions = {
     from: `"Le Marche de Felix" <rabier.hugues@orange.fr>`,
     to: exhibitor.email,
     subject: `Candidature Marche de Noel ${year}`,
-    text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
+    text: `Bonjour ${firstName} ${lastName},
 
-Nous vous remercions de l'interet porte a notre marche solidaire.
-
-Apres etude de votre dossier, nous ne pouvons malheureusement pas retenir votre candidature pour l'edition ${year}.
+Nous ne pouvons malheureusement pas retenir votre candidature pour l'edition ${year}.
 
 Motif :
 ---------------------------
-${justification}
+${reason}
 ---------------------------
 
-Bonne continuation.
-L'equipe "Un jardin pour Felix"`,
+Bonne continuation.`,
   };
 
   try {
@@ -130,12 +143,13 @@ export async function sendApplicationNotification(exhibitorData: any, marketConf
   const transporter = createTransporter();
   const year = marketConfig?.marketYear || '2026';
   const notificationEmail = marketConfig?.notificationEmail || "lemarchedefelix2020@gmail.com";
+  const company = stripAccents(exhibitorData.companyName);
 
   const mailOptions = {
     from: `"MarcheConnect" <rabier.hugues@orange.fr>`,
     to: notificationEmail,
-    subject: `Nouvelle Candidature : ${exhibitorData.companyName}`,
-    text: `Nouvelle candidature pour le Marche de Noel ${year}.\n\nEnseigne : ${exhibitorData.companyName}\nContact : ${exhibitorData.firstName} ${exhibitorData.lastName}\nEmail : ${exhibitorData.email}`,
+    subject: `Nouvelle Candidature : ${company}`,
+    text: `Nouvelle candidature pour le Marche de Noel ${year}.\n\nEnseigne : ${company}\nContact : ${stripAccents(exhibitorData.firstName)} ${stripAccents(exhibitorData.lastName)}`,
   };
 
   try {
@@ -149,30 +163,19 @@ export async function sendApplicationNotification(exhibitorData: any, marketConf
 export async function sendFinalConfirmationEmail(exhibitor: any, details: any, marketConfig: any) {
   const transporter = createTransporter();
   const year = marketConfig?.marketYear || '2026';
-
-  const standPrice = exhibitor.requestedTables === '1' ? (marketConfig?.priceTable1 ?? 40) : (marketConfig?.priceTable2 ?? 60);
-  const total = standPrice + ((details.sundayLunchCount || 0) * (marketConfig?.priceMeal ?? 8));
+  const total = (exhibitor.requestedTables === '1' ? (marketConfig?.priceTable1 ?? 40) : (marketConfig?.priceTable2 ?? 60)) + ((details.sundayLunchCount || 0) * (marketConfig?.priceMeal ?? 8));
 
   const mailOptions = {
     from: `"Le Marche de Felix" <rabier.hugues@orange.fr>`,
     to: exhibitor.email,
-    subject: `Confirmation dossier technique - ${exhibitor.companyName}`,
-    text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
+    subject: `Confirmation dossier - ${stripAccents(exhibitor.companyName)}`,
+    text: `Bonjour ${stripAccents(exhibitor.firstName)} ${stripAccents(exhibitor.lastName)},
 
-Nous avons bien recu votre dossier technique final pour le Marche de Noel ${year}.
-
-Recapitulatif :
----------------------------
-Enseigne : ${exhibitor.companyName}
-Tables : ${exhibitor.requestedTables}
-Repas : ${details.sundayLunchCount}
-Electricite : ${details.needsElectricity ? 'Oui' : 'Non'}
+Dossier technique recu pour le Marche de Noel ${year}.
 
 MONTANT TOTAL A REGLER : ${total} EUR
 
-Merci d'envoyer votre cheque a l'ordre de "Association Un Jardin pour Felix" pour confirmer definitivement votre place.
-
-L'equipe "Un jardin pour Felix"`,
+Merci d'envoyer votre cheque pour confirmer definitivement votre place.`,
   };
 
   try {
