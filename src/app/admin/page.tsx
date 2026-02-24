@@ -122,24 +122,24 @@ export default function AdminDashboard() {
   const handleAcceptAndSend = async () => {
     if (!actingExhibitor) return;
     
-    // Fermeture immédiate du dialogue pour une interface fluide
+    const targetExhibitor = actingExhibitor;
     setIsAcceptDialogOpen(false);
     setIsSending(true);
     
-    // 1. Mise à jour Firestore IMMÉDIATE
-    updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { status: 'accepted_form1' });
+    // 1. Mise à jour Firestore IMMÉDIATE (avant l'email)
+    updateDocumentNonBlocking(doc(db, 'pre_registrations', targetExhibitor.id), { status: 'accepted_form1' });
 
     try {
-      // 2. Tentative d'envoi de l'e-mail
-      const result = await sendAcceptanceEmail(actingExhibitor, acceptanceMessage, currentConfig);
+      // 2. Envoi de l'e-mail (Gmail)
+      const result = await sendAcceptanceEmail(targetExhibitor, acceptanceMessage, currentConfig);
       
       if (result.success) {
-        toast({ title: "Candidature acceptée", description: "L'e-mail a été envoyé." });
+        toast({ title: "Candidature acceptée", description: "L'e-mail Gmail a été envoyé." });
       } else {
         toast({ 
           variant: "destructive", 
-          title: "Email non envoyé", 
-          description: `Dossier accepté en base, mais échec SMTP Orange (Antispam).` 
+          title: "Dossier validé, Email en échec", 
+          description: `Erreur : ${result.error}` 
         });
       }
     } catch (err: any) {
@@ -153,20 +153,21 @@ export default function AdminDashboard() {
 
   const handleConfirmReject = async () => {
     if (!actingExhibitor) return;
+    const targetExhibitor = actingExhibitor;
     setIsRejectDialogOpen(false);
     setIsSending(true);
     
-    updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { 
+    updateDocumentNonBlocking(doc(db, 'pre_registrations', targetExhibitor.id), { 
       status: 'rejected', 
       rejectionJustification: justification 
     });
 
     try {
-      const result = await sendRejectionEmail(actingExhibitor, justification, currentConfig);
+      const result = await sendRejectionEmail(targetExhibitor, justification, currentConfig);
       if (result.success) {
         toast({ title: "Candidature refusée", description: "L'e-mail a été envoyé." });
       } else {
-        toast({ variant: "destructive", title: "Email non envoyé", description: "Refus enregistré mais échec SMTP." });
+        toast({ variant: "destructive", title: "Email non envoyé", description: "Refus enregistré mais échec SMTP Gmail." });
       }
     } catch (err) {
       toast({ variant: "destructive", title: "Erreur technique" });
@@ -178,10 +179,10 @@ export default function AdminDashboard() {
   };
 
   const handleTestSmtp = async () => {
-    toast({ title: "Test SMTP en cours..." });
+    toast({ title: "Test SMTP Gmail en cours..." });
     const res = await testSmtpOrange();
     if (res.success) {
-      toast({ title: "Test SMTP Réussi", description: "L'e-mail a bien été envoyé." });
+      toast({ title: "Test SMTP Réussi", description: "L'e-mail Gmail a bien été envoyé." });
     } else {
       toast({ variant: "destructive", title: "Test SMTP Échoué", description: res.error });
     }
@@ -336,7 +337,7 @@ export default function AdminDashboard() {
                 <div className="space-y-2"><label className="text-xs font-bold">Email Admin</label><Input value={configForm.notificationEmail} onChange={(e) => setConfigForm({...configForm, notificationEmail: e.target.value})} /></div>
                 <div className="pt-4 space-y-4">
                   <Button onClick={handleSaveConfig} className="w-full font-bold">Enregistrer la configuration</Button>
-                  <Button onClick={handleTestSmtp} variant="outline" className="w-full border-primary text-primary">Tester la connexion SMTP Orange</Button>
+                  <Button onClick={handleTestSmtp} variant="outline" className="w-full border-primary text-primary">Tester la connexion SMTP Gmail</Button>
                 </div>
               </CardContent>
             </Card>
@@ -348,7 +349,10 @@ export default function AdminDashboard() {
         <DialogContent>
           <DialogHeader><DialogTitle>Accepter {actingExhibitor?.companyName}</DialogTitle></DialogHeader>
           <div className="py-4 space-y-4">
-            <p className="text-sm text-muted-foreground">L'email contiendra le lien vers le formulaire de finalisation.</p>
+            <p className="text-sm text-muted-foreground">L'email Gmail contiendra le lien vers le formulaire de finalisation.</p>
+            <div className="bg-primary/5 p-3 rounded text-xs italic">
+              Le dossier sera validé instantanément en base, l'e-mail suivra en tâche de fond.
+            </div>
             <Textarea placeholder="Message personnel (facultatif)..." value={acceptanceMessage} onChange={(e) => setAcceptanceMessage(e.target.value)} rows={4} />
           </div>
           <DialogFooter>

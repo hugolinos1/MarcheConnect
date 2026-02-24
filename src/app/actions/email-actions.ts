@@ -11,6 +11,7 @@ async function getBaseUrl() {
     const headersList = await headers();
     const host = headersList.get('x-forwarded-host') || headersList.get('host') || '';
     
+    // Si on détecte un environnement de production (non-local)
     if (host && !host.includes('127.0.0.1') && !host.includes('localhost') && !host.includes('9002')) {
       let protocol = headersList.get('x-forwarded-proto') || 'https';
       if (protocol.includes(',')) {
@@ -19,6 +20,7 @@ async function getBaseUrl() {
       return `${protocol}://${host}`;
     }
 
+    // Fallback par défaut vers l'URL de production
     return 'https://marche-connect.web.app';
   } catch (e) {
     return 'https://marche-connect.web.app';
@@ -26,47 +28,51 @@ async function getBaseUrl() {
 }
 
 /**
- * Supprime les accents et caractères non-ASCII pour éviter les rejets SMTP Orange (OFR_997).
+ * Nettoie les chaînes pour éviter les problèmes d'encodage (bien que Gmail soit plus souple qu'Orange).
  */
 function stripAccents(str: string = "") {
   if (!str) return "";
   return str
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // Supprime les accents
-    .replace(/[^\x00-\x7F]/g, "");    // Supprime tout caractère non-ASCII
+    .replace(/[\u0300-\u036f]/g, "") 
+    .replace(/[^\x00-\x7F]/g, "");    
 }
 
+/**
+ * Configuration du transporteur Gmail.
+ */
 function createTransporter() {
   return nodemailer.createTransport({
-    host: "smtp.orange.fr",
+    host: "smtp.gmail.com",
     port: 465,
-    secure: true,
+    secure: true, // Utilisation de SSL pour le port 465
     auth: {
-      user: "rabier.hugues@orange.fr",
-      pass: "Ptmee52r2ora2!",
+      user: "hugues.rabier@gmail.com",
+      pass: "Ptmee52r2gma", // Note : Nécessite un "Mot de passe d'application" si la 2FA est activée sur Gmail
     },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 20000,
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 30000,
   });
 }
 
 /**
- * Fonction de test simple.
+ * Fonction de test SMTP.
  */
 export async function testSmtpOrange() {
   const transporter = createTransporter();
   const mailOptions = {
-    from: `"Test MarcheConnect" <rabier.hugues@orange.fr>`,
+    from: `"Test MarcheConnect" <hugues.rabier@gmail.com>`,
     to: "hugues.rabier@gmail.com",
-    subject: "Test SMTP Orange Reussi",
-    text: "Ceci est un test de connexion SMTP depuis l'application MarcheConnect.",
+    subject: "Test SMTP Gmail Reussi",
+    text: "Ceci est un test de connexion SMTP Gmail depuis l'application MarcheConnect.",
   };
 
   try {
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error: any) {
+    console.error('SMTP Test Error:', error);
     return { success: false, error: error.message };
   }
 }
@@ -82,7 +88,7 @@ export async function sendAcceptanceEmail(exhibitor: any, customMessage: string,
   const messagePerso = stripAccents(customMessage);
 
   const mailOptions = {
-    from: `"Le Marche de Felix" <rabier.hugues@orange.fr>`,
+    from: `"Le Marche de Felix" <hugues.rabier@gmail.com>`,
     to: exhibitor.email,
     subject: `Candidature retenue - Marche de Noel ${year}`,
     text: `Bonjour ${firstName} ${lastName},
@@ -103,7 +109,7 @@ L'equipe "Un jardin pour Felix"`,
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error: any) {
-    console.error('SMTP Error details:', error);
+    console.error('SMTP Error:', error);
     return { success: false, error: error.message };
   }
 }
@@ -116,7 +122,7 @@ export async function sendRejectionEmail(exhibitor: any, justification: string, 
   const reason = stripAccents(justification);
 
   const mailOptions = {
-    from: `"Le Marche de Felix" <rabier.hugues@orange.fr>`,
+    from: `"Le Marche de Felix" <hugues.rabier@gmail.com>`,
     to: exhibitor.email,
     subject: `Candidature Marche de Noel ${year}`,
     text: `Bonjour ${firstName} ${lastName},
@@ -146,7 +152,7 @@ export async function sendApplicationNotification(exhibitorData: any, marketConf
   const company = stripAccents(exhibitorData.companyName);
 
   const mailOptions = {
-    from: `"MarcheConnect" <rabier.hugues@orange.fr>`,
+    from: `"MarcheConnect" <hugues.rabier@gmail.com>`,
     to: notificationEmail,
     subject: `Nouvelle Candidature : ${company}`,
     text: `Nouvelle candidature pour le Marche de Noel ${year}.\n\nEnseigne : ${company}\nContact : ${stripAccents(exhibitorData.firstName)} ${stripAccents(exhibitorData.lastName)}`,
@@ -166,7 +172,7 @@ export async function sendFinalConfirmationEmail(exhibitor: any, details: any, m
   const total = (exhibitor.requestedTables === '1' ? (marketConfig?.priceTable1 ?? 40) : (marketConfig?.priceTable2 ?? 60)) + ((details.sundayLunchCount || 0) * (marketConfig?.priceMeal ?? 8));
 
   const mailOptions = {
-    from: `"Le Marche de Felix" <rabier.hugues@orange.fr>`,
+    from: `"Le Marche de Felix" <hugues.rabier@gmail.com>`,
     to: exhibitor.email,
     subject: `Confirmation dossier - ${stripAccents(exhibitor.companyName)}`,
     text: `Bonjour ${stripAccents(exhibitor.firstName)} ${stripAccents(exhibitor.lastName)},
