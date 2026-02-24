@@ -1,3 +1,4 @@
+
 'use server';
 
 import nodemailer from 'nodemailer';
@@ -38,7 +39,7 @@ function stripAccents(str: string = "") {
 
 /**
  * Configuration du transporteur Gmail.
- * Note : Si la 2FA est activée, utilisez un "Mot de passe d'application".
+ * IMPORTANT : Utilisez un "Mot de passe d'application" généré dans votre compte Google.
  */
 function createTransporter() {
   return nodemailer.createTransport({
@@ -47,7 +48,7 @@ function createTransporter() {
     secure: true,
     auth: {
       user: "hugues.rabier@gmail.com",
-      pass: "Ptmee52r2gma",
+      pass: "Ptmee52r2gma", // REMPLACEZ PAR LE CODE DE 16 CARACTÈRES GÉNÉRÉ PAR GOOGLE
     },
     connectionTimeout: 15000,
     greetingTimeout: 15000,
