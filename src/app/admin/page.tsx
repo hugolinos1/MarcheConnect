@@ -4,9 +4,9 @@ import { Exhibitor } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, UserPlus, Users, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -21,6 +21,7 @@ import { updateDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlo
 import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import * as XLSX from 'xlsx';
 
 export default function AdminDashboard() {
@@ -45,6 +46,10 @@ export default function AdminDashboard() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
+
+  // Admin management state
+  const [newAdminUid, setNewAdminUid] = useState('');
+  const [isAdminAdding, setIsAdminAdding] = useState(false);
 
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
 
@@ -77,6 +82,10 @@ export default function AdminDashboard() {
   }, [db, isAuthorized, selectedConfigId]);
   
   const { data: exhibitorsData, isLoading: isExhibitorsLoading } = useCollection<Exhibitor>(exhibitorsQuery);
+
+  // Admin list query
+  const adminsQuery = useMemoFirebase(() => isSuperAdmin ? collection(db, 'roles_admin') : null, [db, isSuperAdmin]);
+  const { data: adminsList, isLoading: isAdminsLoading } = useCollection(adminsQuery);
 
   const [configForm, setConfigForm] = useState({
     marketYear: 2026,
@@ -117,6 +126,15 @@ export default function AdminDashboard() {
     const configId = selectedConfigId || `config-${configForm.marketYear}`;
     setDocumentNonBlocking(doc(db, 'market_configurations', configId), { ...configForm, id: configId, currentMarket: true }, { merge: true });
     toast({ title: "Paramètres enregistrés" });
+  };
+
+  const handleAddAdmin = () => {
+    if (!newAdminUid.trim()) return;
+    setIsAdminAdding(true);
+    setDocumentNonBlocking(doc(db, 'roles_admin', newAdminUid.trim()), { addedAt: new Date().toISOString() }, { merge: true });
+    setNewAdminUid('');
+    setIsAdminAdding(false);
+    toast({ title: "Accès administrateur ajouté" });
   };
 
   const handleAcceptAndSend = async () => {
@@ -265,7 +283,11 @@ export default function AdminDashboard() {
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         <Tabs defaultValue="exhibitors">
-          <TabsList className="mb-6"><TabsTrigger value="exhibitors">Candidatures</TabsTrigger><TabsTrigger value="settings">Configuration</TabsTrigger></TabsList>
+          <TabsList className="mb-6">
+            <TabsTrigger value="exhibitors">Candidatures</TabsTrigger>
+            <TabsTrigger value="settings">Configuration</TabsTrigger>
+            {isSuperAdmin && <TabsTrigger value="admins">Administrateurs</TabsTrigger>}
+          </TabsList>
 
           <TabsContent value="exhibitors" className="space-y-6">
             <div className="flex flex-col md:flex-row gap-4 items-center">
@@ -333,6 +355,14 @@ export default function AdminDashboard() {
                 </div>
                 <div className="space-y-2"><label className="text-xs font-bold">URL de l'Affiche</label><Input value={configForm.posterImageUrl} onChange={(e) => setConfigForm({...configForm, posterImageUrl: e.target.value})} /></div>
                 <div className="space-y-2"><label className="text-xs font-bold">Email Admin</label><Input value={configForm.notificationEmail} onChange={(e) => setConfigForm({...configForm, notificationEmail: e.target.value})} /></div>
+                
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                  <div className="space-y-2"><label className="text-xs font-bold">Prix 1 Table (€)</label><Input type="number" value={configForm.priceTable1} onChange={(e) => setConfigForm({...configForm, priceTable1: parseInt(e.target.value)})} /></div>
+                  <div className="space-y-2"><label className="text-xs font-bold">Prix 2 Tables (€)</label><Input type="number" value={configForm.priceTable2} onChange={(e) => setConfigForm({...configForm, priceTable2: parseInt(e.target.value)})} /></div>
+                  <div className="space-y-2"><label className="text-xs font-bold">Prix Repas (€)</label><Input type="number" value={configForm.priceMeal} onChange={(e) => setConfigForm({...configForm, priceMeal: parseInt(e.target.value)})} /></div>
+                  <div className="space-y-2"><label className="text-xs font-bold">Option Élec (€)</label><Input type="number" value={configForm.priceElectricity} onChange={(e) => setConfigForm({...configForm, priceElectricity: parseInt(e.target.value)})} /></div>
+                </div>
+
                 <div className="pt-4 space-y-4">
                   <Button onClick={handleSaveConfig} className="w-full font-bold">Enregistrer la configuration</Button>
                   <Button onClick={handleTestSmtp} variant="outline" className="w-full border-primary text-primary">Tester la connexion SMTP Gmail</Button>
@@ -340,6 +370,83 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {isSuperAdmin && (
+            <TabsContent value="admins" className="space-y-6">
+              <Card className="max-w-2xl mx-auto border-t-4 border-t-primary">
+                <CardHeader>
+                  <CardTitle className="text-primary flex items-center gap-2"><Users className="w-6 h-6" /> Gestion des Administrateurs</CardTitle>
+                  <CardDescription>Ajoutez ou supprimez des accès administratifs via l'UID Firebase.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <Alert variant="default" className="bg-amber-50 border-amber-200 text-amber-900">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Attention</AlertTitle>
+                    <AlertDescription>
+                      L'ajout d'un administrateur nécessite son <strong>UID Firebase</strong> unique. Vous pouvez le trouver dans la console Firebase Authentication.
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="flex gap-2">
+                    <Input 
+                      placeholder="Coller l'UID Firebase ici..." 
+                      value={newAdminUid} 
+                      onChange={(e) => setNewAdminUid(e.target.value)} 
+                    />
+                    <Button onClick={handleAddAdmin} disabled={isAdminAdding} className="gap-2">
+                      {isAdminAdding ? <Loader2 className="animate-spin w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+                      Ajouter
+                    </Button>
+                  </div>
+
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader className="bg-muted/50">
+                        <TableRow>
+                          <TableHead>UID Administrateur</TableHead>
+                          <TableHead className="text-right">Action</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {isAdminsLoading ? (
+                          <TableRow><TableCell colSpan={2} className="text-center py-4"><Loader2 className="animate-spin mx-auto" /></TableCell></TableRow>
+                        ) : adminsList?.length === 0 ? (
+                          <TableRow><TableCell colSpan={2} className="text-center py-4 text-muted-foreground italic">Aucun admin secondaire configuré.</TableCell></TableRow>
+                        ) : (
+                          adminsList?.map(admin => (
+                            <TableRow key={admin.id}>
+                              <TableCell className="font-mono text-xs">{admin.id}</TableCell>
+                              <TableCell className="text-right">
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10">
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Retirer les accès ?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        L'utilisateur avec l'UID <strong>{admin.id}</strong> n'aura plus accès à cet espace d'administration.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                      <AlertDialogAction className="bg-destructive" onClick={() => deleteDocumentNonBlocking(doc(db, 'roles_admin', admin.id))}>Confirmer le retrait</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </main>
 
@@ -404,6 +511,7 @@ export default function AdminDashboard() {
                     <h4 className="text-sm font-bold text-primary underline">DOSSIER TECHNIQUE FINAL</h4>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div><p className="text-[10px] font-bold">Electricité</p><p>{viewingExhibitor.detailedInfo.needsElectricity ? "OUI" : "NON"}</p></div>
+                      <div><p className="text-[10px] font-bold">Grille</p><p>{viewingExhibitor.detailedInfo.needsGrid ? "OUI" : "NON"}</p></div>
                       <div><p className="text-[10px] font-bold">Repas</p><p>{viewingExhibitor.detailedInfo.sundayLunchCount} plateaux</p></div>
                       <div className="col-span-2"><p className="text-[10px] font-bold">Assurance</p><p>{viewingExhibitor.detailedInfo.insuranceCompany} ({viewingExhibitor.detailedInfo.insurancePolicyNumber})</p></div>
                     </div>
