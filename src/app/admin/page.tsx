@@ -49,10 +49,6 @@ export default function AdminDashboard() {
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
-  const [newAdminUid, setNewAdminUid] = useState('');
-  const [isAdminAdding, setIsAdminAdding] = useState(false);
-  const [isRequestingAccess, setIsRequestingAccess] = useState(false);
-
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
 
   const userRoleRef = useMemoFirebase(() => {
@@ -140,14 +136,12 @@ export default function AdminDashboard() {
 
   const handleRequestAccess = () => {
     if (!user) return;
-    setIsRequestingAccess(true);
     setDocumentNonBlocking(doc(db, 'admin_requests', user.uid), {
       email: user.email,
       requestedAt: new Date().toISOString(),
       status: 'PENDING'
     }, { merge: true });
     toast({ title: "Demande envoyée" });
-    setIsRequestingAccess(false);
   };
 
   const handleApproveRequest = (requestId: string, requestEmail: string) => {
@@ -286,7 +280,7 @@ export default function AdminDashboard() {
             {pendingRequest ? (
               <Alert className="bg-amber-50 border-amber-200"><AlertTitle>Demande en cours</AlertTitle><AlertDescription>L'administrateur principal doit valider votre accès.</AlertDescription></Alert>
             ) : (
-              <Button onClick={handleRequestAccess} disabled={isRequestingAccess} className="w-full bg-primary gap-2">Demander l'accès</Button>
+              <Button onClick={handleRequestAccess} className="w-full bg-primary gap-2">Demander l'accès</Button>
             )}
             <div className="flex flex-col gap-2">
               <Button onClick={() => auth.signOut()} variant="outline" className="w-full">Se déconnecter</Button>
