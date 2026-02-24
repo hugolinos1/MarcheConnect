@@ -34,7 +34,7 @@ function createTransporter() {
       user: "rabier.hugues@orange.fr",
       pass: "Ptmee52r2ora2!",
     },
-    // Augmentation des timeouts pour éviter les coupures prématurées
+    // Timeouts optimisés pour Orange
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 20000,
@@ -42,7 +42,7 @@ function createTransporter() {
 }
 
 /**
- * Fonction de test SMTP simple
+ * Fonction de test SMTP simple qui a été confirmée comme fonctionnelle.
  */
 export async function testSmtpOrange() {
   const transporter = createTransporter();
@@ -67,14 +67,10 @@ export async function sendAcceptanceEmail(exhibitor: any, customMessage: string,
   const baseUrl = await getBaseUrl();
   const detailsLink = `${baseUrl}/details/${exhibitor.id}`;
 
-  // Simplification du CC pour éviter les rejets SMTP si l'email n'est pas valide
-  const notificationEmail = marketConfig?.notificationEmail || "lemarchedefelix2020@gmail.com";
-  const ccAddress = (notificationEmail && notificationEmail !== exhibitor.email) ? notificationEmail : undefined;
-
+  // Format simplifié au maximum pour éviter le rejet OFR_997 d'Orange (plus de CC)
   const mailOptions = {
     from: `"Le Marché de Félix" <rabier.hugues@orange.fr>`,
     to: exhibitor.email,
-    cc: ccAddress,
     subject: `Candidature retenue - Marché de Noël ${year}`,
     text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 

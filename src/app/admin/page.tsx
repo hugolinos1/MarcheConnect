@@ -123,27 +123,29 @@ export default function AdminDashboard() {
     if (!actingExhibitor) return;
     setIsSending(true);
     
-    // Mise à jour de la base de données immédiate (Non-bloquant)
+    // 1. Mise à jour Firestore IMMÉDIATE
     updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { status: 'accepted_form1' });
     
+    // On ferme la boîte de dialogue tout de suite pour libérer l'UI
+    setIsAcceptDialogOpen(false);
+
     try {
-      // Tentative d'envoi de l'e-mail
+      // 2. Tentative d'envoi de l'e-mail
       const result = await sendAcceptanceEmail(actingExhibitor, acceptanceMessage, currentConfig);
       
       if (result.success) {
-        toast({ title: "Candidature acceptée", description: "L'e-mail a été envoyé avec succès." });
+        toast({ title: "Candidature acceptée", description: "L'e-mail a été envoyé." });
       } else {
         toast({ 
           variant: "destructive", 
           title: "Email non envoyé", 
-          description: `Dossier accepté, mais l'e-mail a échoué : ${result.error}` 
+          description: `Dossier accepté, mais l'e-mail a échoué (Erreur Orange SMTP).` 
         });
       }
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Erreur lors de l'envoi", description: err.message });
+      toast({ variant: "destructive", title: "Erreur technique e-mail" });
     } finally {
       setIsSending(false);
-      setIsAcceptDialogOpen(false);
       setActingExhibitor(null);
       setAcceptanceMessage('');
     }
@@ -158,22 +160,19 @@ export default function AdminDashboard() {
       rejectionJustification: justification 
     });
 
+    setIsRejectDialogOpen(false);
+
     try {
       const result = await sendRejectionEmail(actingExhibitor, justification, currentConfig);
       if (result.success) {
         toast({ title: "Candidature refusée", description: "L'e-mail de refus a été envoyé." });
       } else {
-        toast({ 
-          variant: "destructive", 
-          title: "Email non envoyé", 
-          description: "Refus enregistré, mais l'e-mail a échoué." 
-        });
+        toast({ variant: "destructive", title: "Email non envoyé", description: "Refus enregistré mais échec SMTP Orange." });
       }
     } catch (err) {
       toast({ variant: "destructive", title: "Erreur technique" });
     } finally {
       setIsSending(false);
-      setIsRejectDialogOpen(false);
       setActingExhibitor(null);
       setJustification('');
     }
