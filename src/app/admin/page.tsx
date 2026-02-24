@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, UserPlus, Users, AlertTriangle, ExternalLink } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, UserPlus, Users, AlertTriangle, ExternalLink, UserCheck, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -17,9 +17,9 @@ import Link from 'next/link';
 import { sendAcceptanceEmail, sendRejectionEmail, testSmtpGmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useMemoFirebase, useCollection, useUser, useAuth, useDoc } from '@/firebase';
-import { collection, doc, query, orderBy, where } from 'firebase/firestore';
+import { collection, doc, query, orderBy, where, deleteDoc } from 'firebase/firestore';
 import { updateDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
+import { initiateEmailSignIn, initiateEmailSignUp } from '@/firebase/non-blocking-login';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -33,6 +33,7 @@ export default function AdminDashboard() {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [isSigningUp, setIsSigningUp] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [justification, setJustification] = useState('');
@@ -51,6 +52,7 @@ export default function AdminDashboard() {
   // Admin management state
   const [newAdminUid, setNewAdminUid] = useState('');
   const [isAdminAdding, setIsAdminAdding] = useState(false);
+  const [isRequestingAccess, setIsRequestingAccess] = useState(false);
 
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
 
@@ -59,6 +61,12 @@ export default function AdminDashboard() {
     return doc(db, 'roles_admin', user.uid);
   }, [db, user]);
   const { data: userRoleDoc, isLoading: isRoleLoading } = useDoc(userRoleRef);
+
+  const userRequestRef = useMemoFirebase(() => {
+    if (!user || !user.uid) return null;
+    return doc(db, 'admin_requests', user.uid);
+  }, [db, user]);
+  const { data: pendingRequest } = useDoc(userRequestRef);
 
   const isSuperAdmin = user?.email === "hugues.rabier@gmail.com";
   const isAuthorized = isSuperAdmin || !!userRoleDoc;
@@ -87,6 +95,10 @@ export default function AdminDashboard() {
   // Admin list query
   const adminsQuery = useMemoFirebase(() => isSuperAdmin ? collection(db, 'roles_admin') : null, [db, isSuperAdmin]);
   const { data: adminsList, isLoading: isAdminsLoading } = useCollection(adminsQuery);
+
+  // Admin requests query
+  const adminRequestsQuery = useMemoFirebase(() => isSuperAdmin ? collection(db, 'admin_requests') : null, [db, isSuperAdmin]);
+  const { data: adminRequestsList } = useCollection(adminRequestsQuery);
 
   const [configForm, setConfigForm] = useState({
     marketYear: 2026,
@@ -118,9 +130,39 @@ export default function AdminDashboard() {
     e.preventDefault();
     setAuthError('');
     setIsAuthLoading(true);
-    initiateEmailSignIn(auth, email, password)
-      .catch(() => setAuthError("Erreur d'authentification."))
+    
+    const authPromise = isSigningUp 
+      ? initiateEmailSignUp(auth, email, password)
+      : initiateEmailSignIn(auth, email, password);
+
+    authPromise
+      .catch((err: any) => {
+        if (err.code === 'auth/email-already-in-use') setAuthError("Cet email est déjà utilisé.");
+        else if (err.code === 'auth/weak-password') setAuthError("Le mot de passe est trop court.");
+        else setAuthError("Erreur d'authentification.");
+      })
       .finally(() => setIsAuthLoading(false));
+  };
+
+  const handleRequestAccess = () => {
+    if (!user) return;
+    setIsRequestingAccess(true);
+    setDocumentNonBlocking(doc(db, 'admin_requests', user.uid), {
+      email: user.email,
+      requestedAt: new Date().toISOString(),
+      status: 'PENDING'
+    }, { merge: true });
+    toast({ title: "Demande envoyée", description: "L'administrateur principal va examiner votre demande." });
+    setIsRequestingAccess(false);
+  };
+
+  const handleApproveRequest = (requestId: string, requestEmail: string) => {
+    setDocumentNonBlocking(doc(db, 'roles_admin', requestId), {
+      addedAt: new Date().toISOString(),
+      email: requestEmail
+    }, { merge: true });
+    deleteDocumentNonBlocking(doc(db, 'admin_requests', requestId));
+    toast({ title: "Demande approuvée", description: `Accès accordé à ${requestEmail}` });
   };
 
   const handleSaveConfig = () => {
@@ -248,18 +290,76 @@ export default function AdminDashboard() {
 
   if (isUserLoading || isRoleLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
-  if (!user || !isAuthorized) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardHeader><CardTitle className="text-center text-primary">Administration</CardTitle></CardHeader>
+        <Card className="max-w-md w-full border-t-4 border-t-primary shadow-xl">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+               <ShieldCheck className="w-6 h-6 text-primary" />
+            </div>
+            <CardTitle className="text-primary">{isSigningUp ? "Créer un compte" : "Administration"}</CardTitle>
+            <CardDescription>Accédez à l'espace de gestion du marché</CardDescription>
+          </CardHeader>
           <CardContent>
             <form onSubmit={handleAuth} className="space-y-4">
               <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
               <Input type="password" placeholder="Mot de passe" value={password} onChange={(e) => setPassword(e.target.value)} required />
               {authError && <p className="text-xs text-destructive text-center font-bold">{authError}</p>}
-              <Button type="submit" disabled={isAuthLoading} className="w-full">{isAuthLoading ? <Loader2 className="animate-spin" /> : "Connexion"}</Button>
+              <Button type="submit" disabled={isAuthLoading} className="w-full">
+                {isAuthLoading ? <Loader2 className="animate-spin" /> : (isSigningUp ? "S'inscrire" : "Connexion")}
+              </Button>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                className="w-full text-xs" 
+                onClick={() => setIsSigningUp(!isSigningUp)}
+              >
+                {isSigningUp ? "Déjà un compte ? Connectez-vous" : "Pas encore de compte ? Inscrivez-vous"}
+              </Button>
             </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full border-t-4 border-t-amber-500 shadow-xl">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4">
+               <Clock className="w-8 h-8 text-amber-600 animate-pulse" />
+            </div>
+            <CardTitle className="text-amber-600">Accès restreint</CardTitle>
+            <CardDescription>Votre compte ({user.email}) n'est pas encore autorisé à accéder à l'administration.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {pendingRequest ? (
+              <Alert className="bg-amber-50 border-amber-200">
+                <Clock className="h-4 w-4" />
+                <AlertTitle>Demande en cours</AlertTitle>
+                <AlertDescription>
+                  Votre demande d'accès a été envoyée le {new Date(pendingRequest.requestedAt).toLocaleDateString()}. L'administrateur principal doit la valider.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-center text-muted-foreground">
+                  Souhaitez-vous demander un accès administrateur à Hugues Rabier ?
+                </p>
+                <Button onClick={handleRequestAccess} disabled={isRequestingAccess} className="w-full bg-primary gap-2">
+                  {isRequestingAccess ? <Loader2 className="animate-spin w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+                  Demander l'accès
+                </Button>
+              </div>
+            )}
+            <div className="pt-4 border-t text-center">
+              <p className="text-[10px] text-muted-foreground uppercase font-bold mb-2">Vos identifiants techniques</p>
+              <code className="text-[10px] bg-muted p-2 rounded block break-all font-mono">UID: {user.uid}</code>
+            </div>
+            <Button onClick={() => auth.signOut()} variant="outline" className="w-full">Se déconnecter</Button>
           </CardContent>
         </Card>
       </div>
@@ -374,51 +474,85 @@ export default function AdminDashboard() {
 
           {isSuperAdmin && (
             <TabsContent value="admins" className="space-y-6">
-              <Card className="max-w-2xl mx-auto border-t-4 border-t-primary">
+              {/* Demandes en attente */}
+              {adminRequestsList && adminRequestsList.length > 0 && (
+                <Card className="max-w-4xl mx-auto border-t-4 border-t-amber-500 shadow-md mb-8">
+                  <CardHeader>
+                    <CardTitle className="text-amber-600 flex items-center gap-2"><Clock className="w-6 h-6" /> Demandes d'accès en attente</CardTitle>
+                    <CardDescription>Approuvez les demandes de connexion des nouveaux collaborateurs.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="border rounded-lg overflow-hidden">
+                      <Table>
+                        <TableHeader className="bg-amber-50">
+                          <TableRow>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {adminRequestsList.map(req => (
+                            <TableRow key={req.id}>
+                              <TableCell className="font-medium">{req.email}</TableCell>
+                              <TableCell className="text-xs">{new Date(req.requestedAt).toLocaleDateString()}</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button 
+                                    size="sm" 
+                                    className="bg-green-600 hover:bg-green-700"
+                                    onClick={() => handleApproveRequest(req.id, req.email)}
+                                  >
+                                    <UserCheck className="w-4 h-4 mr-2" /> Approuver
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="text-destructive"
+                                    onClick={() => deleteDocumentNonBlocking(doc(db, 'admin_requests', req.id))}
+                                  >
+                                    Refuser
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Liste des admins actuels */}
+              <Card className="max-w-4xl mx-auto border-t-4 border-t-primary">
                 <CardHeader>
-                  <CardTitle className="text-primary flex items-center gap-2"><Users className="w-6 h-6" /> Gestion des Administrateurs</CardTitle>
-                  <CardDescription>Ajoutez ou supprimez des accès administratifs via l'UID Firebase.</CardDescription>
+                  <CardTitle className="text-primary flex items-center gap-2"><Users className="w-6 h-6" /> Administrateurs confirmés</CardTitle>
+                  <CardDescription>Utilisateurs ayant un accès complet à la gestion.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <Alert variant="default" className="bg-amber-50 border-amber-200 text-amber-900">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Comment faire ?</AlertTitle>
-                    <AlertDescription className="space-y-2">
-                      <p>1. Le futur administrateur doit d'abord créer un compte sur le site (via le bouton Connexion).</p>
-                      <p>2. Récupérez son <strong>UID Firebase</strong> unique dans la console <a href="https://console.firebase.google.com/" target="_blank" className="underline font-bold inline-flex items-center gap-1">Authentication <ExternalLink className="w-3 h-3" /></a>.</p>
-                      <p>3. Collez l'UID ci-dessous et validez.</p>
-                    </AlertDescription>
-                  </Alert>
-
-                  <div className="flex gap-2">
-                    <Input 
-                      placeholder="Coller l'UID Firebase ici..." 
-                      value={newAdminUid} 
-                      onChange={(e) => setNewAdminUid(e.target.value)} 
-                    />
-                    <Button onClick={handleAddAdmin} disabled={isAdminAdding} className="gap-2">
-                      {isAdminAdding ? <Loader2 className="animate-spin w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-                      Ajouter
-                    </Button>
-                  </div>
-
                   <div className="border rounded-lg overflow-hidden">
                     <Table>
                       <TableHeader className="bg-muted/50">
                         <TableRow>
-                          <TableHead>UID Administrateur</TableHead>
+                          <TableHead>Email / UID</TableHead>
+                          <TableHead>Ajouté le</TableHead>
                           <TableHead className="text-right">Action</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {isAdminsLoading ? (
-                          <TableRow><TableCell colSpan={2} className="text-center py-4"><Loader2 className="animate-spin mx-auto" /></TableCell></TableRow>
+                          <TableRow><TableCell colSpan={3} className="text-center py-4"><Loader2 className="animate-spin mx-auto" /></TableCell></TableRow>
                         ) : adminsList?.length === 0 ? (
-                          <TableRow><TableCell colSpan={2} className="text-center py-4 text-muted-foreground italic">Aucun admin secondaire configuré.</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={3} className="text-center py-4 text-muted-foreground italic">Aucun admin secondaire.</TableCell></TableRow>
                         ) : (
                           adminsList?.map(admin => (
                             <TableRow key={admin.id}>
-                              <TableCell className="font-mono text-xs">{admin.id}</TableCell>
+                              <TableCell>
+                                <div className="font-bold">{admin.email || "Utilisateur sans email"}</div>
+                                <div className="text-[10px] font-mono text-muted-foreground">{admin.id}</div>
+                              </TableCell>
+                              <TableCell className="text-xs">{admin.addedAt ? new Date(admin.addedAt).toLocaleDateString() : "Inconnu"}</TableCell>
                               <TableCell className="text-right">
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
@@ -430,7 +564,7 @@ export default function AdminDashboard() {
                                     <AlertDialogHeader>
                                       <AlertDialogTitle>Retirer les accès ?</AlertDialogTitle>
                                       <AlertDialogDescription>
-                                        L'utilisateur avec l'UID <strong>{admin.id}</strong> n'aura plus accès à cet espace d'administration.
+                                        L'utilisateur <strong>{admin.email || admin.id}</strong> n'aura plus accès à cet espace d'administration.
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
@@ -445,6 +579,21 @@ export default function AdminDashboard() {
                         )}
                       </TableBody>
                     </Table>
+                  </div>
+
+                  <div className="pt-8 border-t">
+                    <h4 className="text-sm font-bold mb-4 flex items-center gap-2"><UserPlus className="w-4 h-4" /> Ajout manuel (Expert)</h4>
+                    <div className="flex gap-2">
+                      <Input 
+                        placeholder="Coller l'UID Firebase ici..." 
+                        value={newAdminUid} 
+                        onChange={(e) => setNewAdminUid(e.target.value)} 
+                      />
+                      <Button onClick={handleAddAdmin} disabled={isAdminAdding} className="gap-2">
+                        {isAdminAdding ? <Loader2 className="animate-spin w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+                        Ajouter par UID
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

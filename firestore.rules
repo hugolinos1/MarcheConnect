@@ -14,7 +14,6 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // Accès autorisé si l'utilisateur est l'admin principal ou présent dans roles_admin
       return isSignedIn() && (
         request.auth.token.email == "hugues.rabier@gmail.com" ||
         exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
@@ -24,33 +23,30 @@ service cloud.firestore {
     // --- Collection Rules ---
 
     match /roles_admin/{adminId} {
-      // Un utilisateur peut voir son propre statut d'admin, sinon il faut être admin
       allow get: if isSignedIn() && (request.auth.uid == adminId || isAdmin());
-      // Seuls les admins confirmés peuvent lister et gérer tous les accès
       allow list: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
 
+    match /admin_requests/{requestId} {
+      allow create: if isSignedIn() && request.auth.uid == requestId;
+      allow get: if isSignedIn() && (request.auth.uid == requestId || isAdmin());
+      allow list, update, delete: if isAdmin();
+    }
+
     match /market_configurations/{marketConfigId} {
-      // Lecture publique pour l'affiche et l'année
       allow get, list: if true;
-      // Modification réservée aux admins
       allow create, update, delete: if isAdmin();
     }
 
     match /pre_registrations/{preRegistrationId} {
-      // Tout le monde peut créer une candidature (Form 1)
       allow create: if true;
-      // Permettre la lecture individuelle pour le formulaire de finalisation (Form 2) via le lien direct
       allow get: if true;
-      // Seuls les admins peuvent lister et gérer massivement les candidatures
       allow list, update, delete: if isAdmin();
     }
 
     match /exhibitor_details/{exhibitorDetailId} {
-      // Les exposants peuvent créer/modifier et lire leur propre dossier via leur lien (Form 2)
       allow create, update, get: if true;
-      // Consultation de liste et suppression réservée aux admins
       allow list, delete: if isAdmin();
     }
   }

@@ -146,105 +146,6 @@
         "status"
       ]
     },
-    "ExhibitorDetail": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ExhibitorDetail",
-      "type": "object",
-      "description": "Contains comprehensive detailed information provided by an exhibitor after their initial pre-registration has been accepted (Form 2).",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the ExhibitorDetail entity."
-        },
-        "preRegistrationId": {
-          "type": "string",
-          "description": "Reference to PreRegistration. (Relationship: PreRegistration 1:1 ExhibitorDetail)"
-        },
-        "companyRegistrationNumber": {
-          "type": "string",
-          "description": "Official company registration number (e.g., SIRET for French companies)."
-        },
-        "vatNumber": {
-          "type": "string",
-          "description": "Value Added Tax (VAT) identification number of the company, if applicable."
-        },
-        "address": {
-          "type": "string",
-          "description": "The street address of the exhibitor's company."
-        },
-        "city": {
-          "type": "string",
-          "description": "The city of the exhibitor's company."
-        },
-        "postalCode": {
-          "type": "string",
-          "description": "The postal code of the exhibitor's company."
-        },
-        "country": {
-          "type": "string",
-          "description": "The country of the exhibitor's company."
-        },
-        "websiteUrl": {
-          "type": "string",
-          "description": "The official website URL of the exhibitor's company.",
-          "format": "uri"
-        },
-        "socialMediaLinks": {
-          "type": "array",
-          "description": "An array of URLs to the exhibitor's social media profiles.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "productDescription": {
-          "type": "string",
-          "description": "A comprehensive, detailed description of the products or services the exhibitor will offer at the market."
-        },
-        "specificRequirements": {
-          "type": "string",
-          "description": "Any specific logistical or technical requirements for the exhibitor's booth (e.g., electrical outlets, water access, specific location requests, security needs)."
-        },
-        "numberOfStaff": {
-          "type": "number",
-          "description": "The estimated number of staff members the exhibitor plans to have present at their booth."
-        },
-        "insuranceDetails": {
-          "type": "string",
-          "description": "Details about the exhibitor's liability insurance policy pertinent to participating in the market."
-        },
-        "paymentConfirmedAt": {
-          "type": "string",
-          "description": "The date and time when the payment for the stand or participation fees was confirmed.",
-          "format": "date-time"
-        },
-        "submissionDate": {
-          "type": "string",
-          "description": "The date and time when the detailed information form (Form 2) was submitted by the exhibitor.",
-          "format": "date-time"
-        },
-        "adminValidationStatus": {
-          "type": "string",
-          "description": "The administrative validation status of the detailed exhibitor information (e.g., 'PENDING_REVIEW', 'VALIDATED', 'REQUIRES_CORRECTION')."
-        },
-        "finalConfirmationEmailSentAt": {
-          "type": "string",
-          "description": "The date and time when the final confirmation email, signaling complete approval for participation, was sent to the exhibitor.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "preRegistrationId",
-        "companyRegistrationNumber",
-        "address",
-        "city",
-        "postalCode",
-        "country",
-        "productDescription",
-        "submissionDate",
-        "adminValidationStatus"
-      ]
-    },
     "AdminRole": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "AdminRole",
@@ -256,6 +157,17 @@
           "description": "The date and time when the administrator access was granted.",
           "format": "date-time"
         }
+      }
+    },
+    "AdminRequest": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AdminRequest",
+      "type": "object",
+      "description": "A request from a user to become an administrator.",
+      "properties": {
+        "email": { "type": "string" },
+        "requestedAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] }
       }
     }
   },
@@ -274,11 +186,27 @@
           "schema": {
             "$ref": "#/backend/entities/AdminRole"
           },
-          "description": "Dedicated collection for storing UIDs of users granted administrative privileges. Access is determined by document existence, not content. Read by security rules.",
+          "description": "Dedicated collection for storing UIDs of users granted administrative privileges.",
           "params": [
             {
               "name": "adminId",
               "description": "The unique Firebase Authentication UID of an administrator."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/admin_requests/{requestId}",
+        "definition": {
+          "entityName": "AdminRequest",
+          "schema": {
+            "$ref": "#/backend/entities/AdminRequest"
+          },
+          "description": "Requests for admin access.",
+          "params": [
+            {
+              "name": "requestId",
+              "description": "The UID of the user requesting access."
             }
           ]
         }
@@ -290,11 +218,11 @@
           "schema": {
             "$ref": "#/backend/entities/MarketConfiguration"
           },
-          "description": "Annual configurations for the market, including dates, edition number, and poster image URL. Publicly readable for the active market (where 'currentMarket' is true), fully editable by administrators. Documents include a 'currentMarket' flag.",
+          "description": "Annual configurations for the market.",
           "params": [
             {
               "name": "marketConfigId",
-              "description": "The unique identifier for a specific market configuration (e.g., '2024-edition')."
+              "description": "The unique identifier for a specific market configuration."
             }
           ]
         }
@@ -306,7 +234,7 @@
           "schema": {
             "$ref": "#/backend/entities/PreRegistration"
           },
-          "description": "Initial pre-registration applications submitted by potential exhibitors. Writable by anonymous users during the open pre-registration period. Includes `marketConfigurationId` for context. Full read/write access for administrators. Applicant-specific access (e.g., for Form 2 link) is mediated by Cloud Functions using `detailedFormLinkHash`.",
+          "description": "Initial pre-registration applications.",
           "params": [
             {
               "name": "preRegistrationId",
@@ -322,7 +250,7 @@
           "schema": {
             "$ref": "#/backend/entities/ExhibitorDetail"
           },
-          "description": "Comprehensive detailed information submitted by accepted exhibitors, linked to their initial pre-registration. Includes denormalized `marketConfigurationId` for authorization independence and efficient admin querying. Full read/write access for administrators. Applicant-specific updates are mediated by Cloud Functions.",
+          "description": "Comprehensive detailed information submitted by accepted exhibitors.",
           "params": [
             {
               "name": "exhibitorDetailId",
@@ -331,7 +259,6 @@
           ]
         }
       }
-    ],
-    "reasoning": "The Firestore structure for MarchéConnect prioritizes annual market variability, secure application workflows, and clear administrative control. It achieves **Authorization Independence** primarily through careful denormalization and structural segregation, minimizing reliance on `get()` calls in security rules.\n\n1.  **MarketConfiguration (`/market_configurations/{marketConfigId}`):** This collection is central to supporting yearly variability. Each document represents a distinct market edition, allowing administrators to configure parameters such as `marketYear`, `editionNumber`, `posterImageUrl`, and key application dates. The `currentMarket` boolean flag is critical: it enables public read access for the *currently active* market configuration directly from the rules, supporting **QAPs (Rules are not Filters)** for public visibility. By having this config denormalized at the top level, applications can determine the active market without complex queries.\n\n2.  **PreRegistration (`/pre_registrations/{preRegistrationId}`):** This collection stores the initial exhibitor applications. Each document includes `marketConfigurationId`, directly linking it to a specific market edition. This denormalization ensures that rules can easily associate a pre-registration with its market without requiring a `get()` on the parent `MarketConfiguration`. Anonymous users can create these documents, and administrators have full read/write access. This design also supports **QAPs** for administrators, allowing them to list all pre-registrations for a given `marketConfigurationId` efficiently.\n\n3.  **ExhibitorDetail (`/exhibitor_details/{exhibitorDetailId}`):** This collection holds the comprehensive details submitted by accepted exhibitors. Crucially, it denormalizes `marketConfigurationId` (in addition to `preRegistrationId`). This is a key application of **Authorization Independence (Strategy A)**. By including `marketConfigurationId` directly in `ExhibitorDetail`, administrators can query and secure access to exhibitor details based on the market they belong to, without performing expensive and rule-breaking `get()` operations through the `PreRegistration` document. This allows for simple rules like 'only admins of market X can view exhibitor details for market X', and enables efficient **QAPs** for listing all detailed exhibitor information for a particular market.\n\n4.  **Admin Roles (`/roles_admin/{adminId}`):** This collection implements the **DBAC** principle using 'Existence over Content'. An administrator's UID existing as a document ID in this collection grants them admin privileges across the application. Security rules simply check for the existence of `request.auth.uid` within this collection, ensuring clear and debuggable authorization without custom claims.\n\n**Overall, this structure enables robust and simple security rules by:**\n*   **Eliminating hierarchical `get()` calls for authorization:** Denormalized `marketConfigurationId` in `PreRegistration` and `ExhibitorDetail` removes the need to traverse parents in rules for authorization decisions.\n*   **Clear Authorization Intent:** Paths explicitly state the entity and its context. Admin roles are segregated for clarity.\n*   **Supporting QAPs:** Public data (current market config) is directly queryable. Admin data for `PreRegistration` and `ExhibitorDetail` can be listed efficiently by `marketConfigurationId` without rules acting as filters.\n*   **Structural Segregation:** Data with different security postures (public config vs. private applications vs. admin roles) are in separate collections, simplifying rules logic."
+    ]
   }
 }
