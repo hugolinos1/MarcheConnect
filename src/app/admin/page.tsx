@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, UserPlus, Users, AlertTriangle, ExternalLink, UserCheck, Clock } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, UserPlus, Users, AlertTriangle, ExternalLink, UserCheck, Clock, ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -139,6 +139,7 @@ export default function AdminDashboard() {
       .catch((err: any) => {
         if (err.code === 'auth/email-already-in-use') setAuthError("Cet email est déjà utilisé.");
         else if (err.code === 'auth/weak-password') setAuthError("Le mot de passe est trop court.");
+        else if (err.code === 'auth/invalid-credential') setAuthError("Identifiants incorrects.");
         else setAuthError("Erreur d'authentification.");
       })
       .finally(() => setIsAuthLoading(false));
@@ -292,8 +293,8 @@ export default function AdminDashboard() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full border-t-4 border-t-primary shadow-xl">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <Card className="max-w-md w-full border-t-4 border-t-primary shadow-xl mb-4">
           <CardHeader className="text-center">
             <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                <ShieldCheck className="w-6 h-6 text-primary" />
@@ -320,6 +321,9 @@ export default function AdminDashboard() {
             </form>
           </CardContent>
         </Card>
+        <Button asChild variant="ghost" className="text-muted-foreground gap-2">
+          <Link href="/"><ArrowLeft className="w-4 h-4" /> Retour à l'accueil</Link>
+        </Button>
       </div>
     );
   }
@@ -359,7 +363,12 @@ export default function AdminDashboard() {
               <p className="text-[10px] text-muted-foreground uppercase font-bold mb-2">Vos identifiants techniques</p>
               <code className="text-[10px] bg-muted p-2 rounded block break-all font-mono">UID: {user.uid}</code>
             </div>
-            <Button onClick={() => auth.signOut()} variant="outline" className="w-full">Se déconnecter</Button>
+            <div className="flex flex-col gap-2">
+              <Button onClick={() => auth.signOut()} variant="outline" className="w-full">Se déconnecter</Button>
+              <Button asChild variant="ghost" className="w-full">
+                <Link href="/">Retour à l'accueil</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
