@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Users, ExternalLink, UserCheck, Clock, ArrowLeft, Phone, MapPin, Globe, CreditCard, Heart, TrendingUp, Wallet, ClipboardList, Filter, LayoutGrid, Info, Camera, MessageSquare } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Users, ExternalLink, UserCheck, Clock, ArrowLeft, Phone, MapPin, Globe, CreditCard, Heart, TrendingUp, Wallet, ClipboardList, Filter, LayoutGrid, Info, Camera, MessageSquare, Calculator } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -86,6 +86,15 @@ export default function AdminDashboard() {
   }, [db, isAuthorized, selectedConfigId]);
   
   const { data: exhibitorsData, isLoading: isExhibitorsLoading } = useCollection<Exhibitor>(exhibitorsQuery);
+
+  // Individual exhibitor total calculation for the preview dialog
+  const viewingExhibitorTotal = useMemo(() => {
+    if (!viewingExhibitor || !currentConfig) return 0;
+    const stand = viewingExhibitor.requestedTables === '1' ? (currentConfig.priceTable1 ?? 40) : (currentConfig.priceTable2 ?? 60);
+    const meals = (viewingExhibitor.detailedInfo?.sundayLunchCount || 0) * (currentConfig.priceMeal ?? 8);
+    const elec = viewingExhibitor.detailedInfo?.needsElectricity ? (currentConfig.priceElectricity ?? 1) : 0;
+    return stand + meals + elec;
+  }, [viewingExhibitor, currentConfig]);
 
   // Statistics
   const stats = useMemo(() => {
@@ -567,9 +576,37 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                     
-                    <div className="pt-4 border-t flex justify-between items-center bg-primary/5 p-4 rounded-xl">
-                      <p className="text-sm font-bold text-primary">Nombre de tables demandées :</p>
-                      <Badge className="text-lg px-4 py-1">{viewingExhibitor.requestedTables} table(s)</Badge>
+                    <div className="pt-6 mt-6 border-t-2 border-dashed border-primary/20 bg-primary/5 p-6 rounded-2xl space-y-4">
+                      <div className="flex items-center gap-2 text-primary font-bold">
+                        <Calculator className="w-5 h-5" />
+                        <h5 className="text-sm uppercase tracking-wider">Récapitulatif Financier</h5>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between items-center text-muted-foreground">
+                          <span>Emplacement ({viewingExhibitor.requestedTables} table(s)) :</span>
+                          <span className="font-medium text-foreground">
+                            {viewingExhibitor.requestedTables === '1' ? (currentConfig?.priceTable1 ?? 40) : (currentConfig?.priceTable2 ?? 60)}€
+                          </span>
+                        </div>
+                        {viewingExhibitor.detailedInfo.needsElectricity && (
+                          <div className="flex justify-between items-center text-muted-foreground">
+                            <span>Option Électricité :</span>
+                            <span className="font-medium text-foreground">{currentConfig?.priceElectricity ?? 1}€</span>
+                          </div>
+                        )}
+                        {viewingExhibitor.detailedInfo.sundayLunchCount > 0 && (
+                          <div className="flex justify-between items-center text-muted-foreground">
+                            <span>Repas ({viewingExhibitor.detailedInfo.sundayLunchCount} x {currentConfig?.priceMeal ?? 8}€) :</span>
+                            <span className="font-medium text-foreground">{(viewingExhibitor.detailedInfo.sundayLunchCount || 0) * (currentConfig?.priceMeal ?? 8)}€</span>
+                          </div>
+                        )}
+                        <Separator className="my-2" />
+                        <div className="flex justify-between items-center text-lg font-bold text-primary">
+                          <span>MONTANT TOTAL :</span>
+                          <Badge className="text-lg px-4 py-1 bg-secondary text-white">{viewingExhibitorTotal}€</Badge>
+                        </div>
+                      </div>
                     </div>
                   </section>
                 ) : (
