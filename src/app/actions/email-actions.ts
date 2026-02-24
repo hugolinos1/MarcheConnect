@@ -5,14 +5,12 @@ import { headers } from 'next/headers';
 
 /**
  * Récupère la base URL de manière dynamique et robuste pour la production.
- * Évite le retour vers localhost ou 127.0.0.1 si on est sur le domaine réel.
  */
 async function getBaseUrl() {
   try {
     const headersList = await headers();
     const host = headersList.get('x-forwarded-host') || headersList.get('host') || '';
     
-    // Si on détecte un domaine de production connu ou un domaine personnalisé
     if (host && !host.includes('127.0.0.1') && !host.includes('localhost') && !host.includes('9002')) {
       let protocol = headersList.get('x-forwarded-proto') || 'https';
       if (protocol.includes(',')) {
@@ -21,7 +19,6 @@ async function getBaseUrl() {
       return `${protocol}://${host}`;
     }
 
-    // Fallback par défaut sur le domaine Firebase
     return 'https://marche-connect.web.app';
   } catch (e) {
     return 'https://marche-connect.web.app';
@@ -29,17 +26,44 @@ async function getBaseUrl() {
 }
 
 function createTransporter() {
-  // Configuration explicite pour Orange SMTP
+  // Configuration pour Orange SMTP (Port 465 avec SSL)
   return nodemailer.createTransport({
     host: "smtp.orange.fr",
     port: 465,
-    secure: true, // SSL pour le port 465
+    secure: true,
     auth: {
       user: "rabier.hugues@orange.fr",
       pass: "Ptmee52r2ora2!",
     },
-    connectionTimeout: 10000, 
+    connectionTimeout: 15000, // Augmentation du timeout pour Cloud Run
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
   });
+}
+
+/**
+ * Fonction de test dédiée demandée par l'utilisateur
+ */
+export async function testSmtpConnection() {
+  const transporter = createTransporter();
+  const mailOptions = {
+    from: `"Test MarchéConnect" <rabier.hugues@orange.fr>`,
+    to: "hugues.rabier@gmail.com",
+    subject: "[Test] Diagnostic SMTP Orange",
+    text: `Ceci est un test de connexion SMTP envoyé depuis l'application MarchéConnect.
+    
+Si vous recevez cet email sur hugues.rabier@gmail.com, cela signifie que la configuration SMTP avec Orange est valide.
+Date du test : ${new Date().toLocaleString('fr-FR')}`,
+  };
+
+  try {
+    await transporter.verify(); // Vérifie la connexion d'abord
+    await transporter.sendMail(mailOptions);
+    return { success: true };
+  } catch (error: any) {
+    console.error('Erreur Test SMTP:', error.message);
+    return { success: false, error: error.message };
+  }
 }
 
 export async function sendApplicationNotification(exhibitorData: any, marketConfig: any) {
@@ -58,7 +82,6 @@ export async function sendApplicationNotification(exhibitorData: any, marketConf
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error: any) {
-    console.error('Erreur SMTP Notification:', error.message);
     return { success: false, error: error.message };
   }
 }
@@ -96,7 +119,6 @@ L'équipe "Un jardin pour Félix"
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error: any) {
-    console.error('Erreur SMTP Acceptation:', error.message);
     return { success: false, error: error.message };
   }
 }
@@ -131,7 +153,6 @@ L'équipe "Un jardin pour Félix"
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error: any) {
-    console.error('Erreur SMTP Refus:', error.message);
     return { success: false, error: error.message };
   }
 }
@@ -177,7 +198,6 @@ L'équipe "Un jardin pour Félix"
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error: any) {
-    console.error('Erreur SMTP Confirmation Finale:', error.message);
     return { success: false, error: error.message };
   }
 }

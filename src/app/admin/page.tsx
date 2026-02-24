@@ -6,14 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
-import { sendAcceptanceEmail, sendRejectionEmail } from '@/app/actions/email-actions';
+import { sendAcceptanceEmail, sendRejectionEmail, testSmtpConnection } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useMemoFirebase, useCollection, useUser, useAuth, useDoc } from '@/firebase';
 import { collection, doc, query, orderBy, where } from 'firebase/firestore';
@@ -33,6 +33,7 @@ export default function AdminDashboard() {
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isTestingSmtp, setIsTestingSmtp] = useState(false);
   const [justification, setJustification] = useState('');
   const [acceptanceMessage, setAcceptanceMessage] = useState('');
   const [selectedConfigId, setSelectedConfigId] = useState<string>('');
@@ -119,25 +120,46 @@ export default function AdminDashboard() {
     toast({ title: "Paramètres enregistrés" });
   };
 
+  const handleTestSmtp = async () => {
+    setIsTestingSmtp(true);
+    try {
+      const result = await testSmtpConnection();
+      if (result.success) {
+        toast({ title: "Test réussi !", description: "L'e-mail a été envoyé à hugues.rabier@gmail.com." });
+      } else {
+        toast({ 
+          variant: "destructive", 
+          title: "Échec du test SMTP", 
+          description: result.error || "Une erreur est survenue lors de l'envoi." 
+        });
+      }
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erreur technique", description: err.message });
+    } finally {
+      setIsTestingSmtp(false);
+    }
+  };
+
   const handleAcceptAndSend = async () => {
     if (!actingExhibitor) return;
     setIsSending(true);
     try {
-      const result = await sendAcceptanceEmail(actingExhibitor, acceptanceMessage, currentConfig);
-      
+      // On met à jour le statut avant tout pour ne pas bloquer si l'email échoue
       updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { status: 'accepted_form1' });
+      
+      const result = await sendAcceptanceEmail(actingExhibitor, acceptanceMessage, currentConfig);
       
       if (result.success) {
         toast({ title: "Dossier accepté", description: "L'e-mail a été envoyé au candidat." });
       } else {
         toast({ 
           variant: "destructive", 
-          title: "Email non envoyé", 
-          description: "Le dossier est passé en 'Accepté', mais l'e-mail a échoué. Vérifiez vos réglages SMTP." 
+          title: "Attention", 
+          description: `Le dossier a été accepté dans la base, mais l'e-mail n'a pas pu partir : ${result.error}` 
         });
       }
     } catch (err) {
-      toast({ variant: "destructive", title: "Erreur technique", description: "Impossible de finaliser l'opération." });
+      toast({ variant: "destructive", title: "Erreur technique", description: "Problème lors de la validation." });
     } finally {
       setIsSending(false);
       setIsAcceptDialogOpen(false);
@@ -149,20 +171,20 @@ export default function AdminDashboard() {
     if (!actingExhibitor) return;
     setIsSending(true);
     try {
-      const result = await sendRejectionEmail(actingExhibitor, justification, currentConfig);
-      
       updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { 
         status: 'rejected', 
         rejectionJustification: justification 
       });
+
+      const result = await sendRejectionEmail(actingExhibitor, justification, currentConfig);
       
       if (result.success) {
         toast({ title: "Candidature refusée", description: "L'e-mail de refus a été envoyé." });
       } else {
         toast({ 
           variant: "destructive", 
-          title: "Refus enregistré (Email échoué)", 
-          description: "Le statut est mis à jour mais l'e-mail n'est pas parti." 
+          title: "Statut mis à jour", 
+          description: `Le refus est enregistré, mais l'e-mail a échoué : ${result.error}` 
         });
       }
     } catch (err) {
@@ -286,22 +308,17 @@ export default function AdminDashboard() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button variant="outline" size="sm" onClick={() => setViewingExhibitor(exhibitor)} className="text-primary border-primary/30"><Eye className="w-4 h-4" /></Button>
+                            <Button variant="outline" size="sm" title="Voir les détails" onClick={() => setViewingExhibitor(exhibitor)} className="text-primary border-primary/30"><Eye className="w-4 h-4" /></Button>
                             
-                            {(exhibitor.status === 'pending' || exhibitor.status === 'rejected') && (
-                              <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => { setActingExhibitor(exhibitor); setIsAcceptDialogOpen(true); }}><CheckCircle className="w-4 h-4" /></Button>
-                            )}
-
-                            {(exhibitor.status === 'pending' || exhibitor.status === 'accepted_form1') && (
-                              <Button variant="destructive" size="sm" onClick={() => { setActingExhibitor(exhibitor); setIsRejectDialogOpen(true); }}><XCircle className="w-4 h-4" /></Button>
-                            )}
+                            <Button size="sm" title="Accepter" className="bg-green-600 hover:bg-green-700" onClick={() => { setActingExhibitor(exhibitor); setIsAcceptDialogOpen(true); }}><CheckCircle className="w-4 h-4" /></Button>
+                            <Button variant="destructive" size="sm" title="Refuser" onClick={() => { setActingExhibitor(exhibitor); setIsRejectDialogOpen(true); }}><XCircle className="w-4 h-4" /></Button>
 
                             {exhibitor.status === 'submitted_form2' && (
                               <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => updateDocumentNonBlocking(doc(db, 'pre_registrations', exhibitor.id), { status: 'validated' })}><ShieldCheck className="w-4 h-4 mr-1" /> Valider</Button>
                             )}
 
                             <AlertDialog>
-                              <AlertDialogTrigger asChild><Button variant="outline" size="sm" className="text-destructive"><Trash2 className="w-4 h-4" /></Button></AlertDialogTrigger>
+                              <AlertDialogTrigger asChild><Button variant="outline" size="sm" title="Supprimer" className="text-destructive"><Trash2 className="w-4 h-4" /></Button></AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader><AlertDialogTitle>Supprimer ?</AlertDialogTitle><AlertDialogDescription>Effacer définitivement le dossier de {exhibitor.companyName}.</AlertDialogDescription></AlertDialogHeader>
                                 <AlertDialogFooter><AlertDialogCancel>Annuler</AlertDialogCancel><AlertDialogAction className="bg-destructive" onClick={() => deleteDocumentNonBlocking(doc(db, 'pre_registrations', exhibitor.id))}>Supprimer</AlertDialogAction></AlertDialogFooter>
@@ -316,9 +333,9 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="settings">
+          <TabsContent value="settings" className="space-y-6">
             <Card className="max-w-2xl mx-auto border-t-4 border-t-primary">
-              <CardHeader><CardTitle className="text-primary">Paramètres du Marché</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-primary flex items-center gap-2"><Settings className="w-6 h-6" /> Paramètres du Marché</CardTitle></CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2"><label className="text-xs font-bold">Année</label><Input type="number" value={configForm.marketYear} onChange={(e) => setConfigForm({...configForm, marketYear: parseInt(e.target.value)})} /></div>
@@ -326,7 +343,16 @@ export default function AdminDashboard() {
                 </div>
                 <div className="space-y-2"><label className="text-xs font-bold">URL de l'Affiche</label><Input value={configForm.posterImageUrl} onChange={(e) => setConfigForm({...configForm, posterImageUrl: e.target.value})} /></div>
                 <div className="space-y-2"><label className="text-xs font-bold">Email Admin</label><Input value={configForm.notificationEmail} onChange={(e) => setConfigForm({...configForm, notificationEmail: e.target.value})} /></div>
-                <Button onClick={handleSaveConfig} className="w-full font-bold">Enregistrer</Button>
+                <Button onClick={handleSaveConfig} className="w-full font-bold">Enregistrer la configuration</Button>
+                
+                <div className="pt-8 border-t">
+                  <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">Diagnostic SMTP</h3>
+                  <p className="text-xs text-muted-foreground mb-4">Cliquez sur ce bouton pour envoyer un email de test à <strong>hugues.rabier@gmail.com</strong> et vérifier vos identifiants Orange.</p>
+                  <Button variant="outline" onClick={handleTestSmtp} disabled={isTestingSmtp} className="w-full text-secondary border-secondary/50 hover:bg-secondary/5">
+                    {isTestingSmtp ? <Loader2 className="animate-spin mr-2" /> : <Mail className="w-4 h-4 mr-2" />} 
+                    Lancer le test SMTP Orange
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -342,7 +368,7 @@ export default function AdminDashboard() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAcceptDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleAcceptAndSend} disabled={isSending}>{isSending ? <Loader2 className="animate-spin mr-2" /> : <Mail className="w-4 h-4 mr-2" />} Confirmer</Button>
+            <Button onClick={handleAcceptAndSend} disabled={isSending}>{isSending ? <Loader2 className="animate-spin mr-2" /> : <Mail className="w-4 h-4 mr-2" />} Confirmer l'acceptation</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
