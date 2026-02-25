@@ -93,7 +93,7 @@ export default function AdminDashboard() {
     }
   }, [user]);
 
-  // Email Templates - Only query if authorized
+  // Email Templates
   const templatesQuery = useMemoFirebase(() => {
     if (!isAuthorized) return null;
     return query(collection(db, 'email_templates'), orderBy('createdAt', 'desc'));
@@ -108,7 +108,7 @@ export default function AdminDashboard() {
   const adminRolesQuery = useMemoFirebase(() => isSuperAdmin ? collection(db, 'roles_admin') : null, [db, isSuperAdmin]);
   const { data: adminRoles } = useCollection(adminRolesQuery);
 
-  // Exhibitors Data - Only query if authorized
+  // Exhibitors Data
   const exhibitorsQuery = useMemoFirebase(() => {
     if (!isAuthorized || !selectedConfigId) return null;
     return query(collection(db, 'pre_registrations'), where('marketConfigurationId', '==', selectedConfigId));
@@ -158,7 +158,6 @@ export default function AdminDashboard() {
     };
   }, [exhibitorsData, currentConfig]);
 
-  // Config Form
   const [configForm, setConfigForm] = useState({
     marketYear: 2026,
     editionNumber: "6ème",
@@ -197,7 +196,6 @@ export default function AdminDashboard() {
     }
   }, [currentConfig]);
 
-  // Template Form
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
   const [templateForm, setTemplateForm] = useState({ name: '', subject: '', body: '' });
 
@@ -247,8 +245,6 @@ export default function AdminDashboard() {
     }
 
     setTemplateForm(prev => ({ ...prev, body: newText }));
-    
-    // Reposition cursor
     setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(start + tag.length + 2, start + tag.length + 2 + selected.length);
@@ -266,8 +262,6 @@ export default function AdminDashboard() {
 
     const newText = `${before}${snippet}${after}`;
     setTemplateForm(prev => ({ ...prev, body: newText }));
-    
-    // Reposition cursor at the end of the snippet
     setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(start + snippet.length, start + snippet.length);
@@ -289,7 +283,7 @@ export default function AdminDashboard() {
     setIsSending(false);
   };
 
-  const handleAuth = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent, forceRequest: boolean = false) => {
     e.preventDefault();
     setAuthError('');
     setIsAuthLoading(true);
@@ -299,28 +293,26 @@ export default function AdminDashboard() {
         const userCred = await initiateEmailSignUp(auth, email, password);
         const uid = userCred.user.uid;
         
-        // Check code immediately during signup
         const masterCode = currentConfig?.signupCode || "FELIX2026";
-        if (signupCodeInput === masterCode) {
+        if (signupCodeInput === masterCode && !forceRequest) {
           setDocumentNonBlocking(doc(db, 'roles_admin', uid), { 
             addedAt: new Date().toISOString(),
             email: email 
           }, { merge: true });
           toast({ title: "Accès activé immédiatement !" });
         } else {
-          // If no code or wrong code, create request
           setDocumentNonBlocking(doc(db, 'admin_requests', uid), { 
             email: email, 
             requestedAt: new Date().toISOString(), 
             status: 'PENDING' 
           }, { merge: true });
-          toast({ title: "Compte créé", description: "Demande d'accès envoyée à l'administrateur." });
+          toast({ title: "Demande envoyée", description: "Votre compte a été créé et votre demande d'accès est en attente de validation." });
         }
       } else {
         await initiateEmailSignIn(auth, email, password);
       }
     } catch (err: any) {
-      setAuthError("Erreur d'authentification. Vérifiez vos identifiants.");
+      setAuthError("Erreur d'authentification. Vérifiez vos identifiants ou si l'e-mail est déjà utilisé.");
     } finally {
       setIsAuthLoading(false);
     }
@@ -361,7 +353,7 @@ export default function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleAuth} className="space-y-4">
+            <form className="space-y-4">
               <div className="space-y-2">
                 <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
               </div>
@@ -386,22 +378,30 @@ export default function AdminDashboard() {
               {isSigningUp && (
                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                   <Input 
-                    placeholder="Code de création (optionnel)" 
+                    placeholder="Code de création" 
                     value={signupCodeInput} 
                     onChange={(e) => setSignupCodeInput(e.target.value)}
                     className="bg-primary/5 border-primary/20 font-mono"
                   />
                   <p className="text-[10px] text-muted-foreground italic px-1">
-                    Si vous n'avez pas de code, une demande d'accès sera envoyée à l'administrateur après l'inscription.
+                    Saisissez ici le code reçu pour activer votre compte immédiatement.
                   </p>
                 </div>
               )}
               
               {authError && <p className="text-xs text-destructive text-center font-bold">{authError}</p>}
               
-              <Button type="submit" disabled={isAuthLoading} className="w-full">
-                {isAuthLoading ? <Loader2 className="animate-spin" /> : (isSigningUp ? "S'inscrire" : "Connexion")}
-              </Button>
+              <div className="space-y-3">
+                <Button onClick={(e) => handleAuth(e)} disabled={isAuthLoading} className="w-full">
+                  {isAuthLoading ? <Loader2 className="animate-spin" /> : (isSigningUp ? "S'inscrire" : "Connexion")}
+                </Button>
+                
+                {isSigningUp && (
+                  <Button type="button" variant="outline" onClick={(e) => handleAuth(e, true)} disabled={isAuthLoading} className="w-full text-xs h-10 border-amber-200 text-amber-700 hover:bg-amber-50">
+                    Faire une demande de code de création
+                  </Button>
+                )}
+              </div>
               
               {!isSigningUp ? (
                 <Button type="button" variant="link" className="w-full text-xs text-muted-foreground" onClick={() => { setIsSigningUp(true); setAuthError(''); }}>
@@ -489,7 +489,6 @@ export default function AdminDashboard() {
       </div>
 
       <main className="container mx-auto px-4 py-8 space-y-8">
-        {/* Stats Summary */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="border-l-4 border-l-primary shadow-sm"><CardContent className="p-4"><p className="text-xs text-muted-foreground font-bold uppercase">Total</p><p className="text-2xl font-bold">{stats.total}</p></CardContent></Card>
           <Card className="border-l-4 border-l-amber-500 shadow-sm"><CardContent className="p-4"><p className="text-xs text-muted-foreground font-bold uppercase">À Étudier</p><p className="text-2xl font-bold">{stats.pending}</p></CardContent></Card>
@@ -594,19 +593,17 @@ export default function AdminDashboard() {
                       placeholder="Ex: FELIX2026"
                       className="bg-white font-mono"
                     />
-                    <p className="text-[10px] text-muted-foreground italic">Ce code peut être saisi lors de l'inscription pour un accès instantané, ou plus tard sur l'écran d'attente.</p>
+                    <p className="text-[10px] text-muted-foreground italic">Ce code peut être saisi lors de l'inscription pour un accès instantané.</p>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-2"><ImageIcon className="w-3 h-3" /> URL de l'image de l'affiche</label>
                   <Input value={configForm.posterImageUrl} onChange={(e) => setConfigForm({...configForm, posterImageUrl: e.target.value})} placeholder="https://..." />
-                  <p className="text-[10px] text-muted-foreground">Cette image sera affichée sur la page d'accueil.</p>
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-2"><Mail className="w-3 h-3" /> Email de notification</label>
                   <Input value={configForm.notificationEmail} onChange={(e) => setConfigForm({...configForm, notificationEmail: e.target.value})} placeholder="email@exemple.com" />
-                  <p className="text-[10px] text-muted-foreground">Email recevant les notifications de nouvelles candidatures.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4 border-y py-4">
                   <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Samedi : Date</label><Input value={configForm.saturdayDate} onChange={(e) => setConfigForm({...configForm, saturdayDate: e.target.value})} /></div>
@@ -623,38 +620,14 @@ export default function AdminDashboard() {
                    <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Prix Électricité</label><Input type="number" value={configForm.priceElectricity} onChange={(e) => setConfigForm({...configForm, priceElectricity: parseInt(e.target.value)})} /></div>
                    <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Prix Tombola</label><Input type="number" value={configForm.priceTombola} onChange={(e) => setConfigForm({...configForm, priceTombola: parseInt(e.target.value)})} /></div>
                 </div>
-                <div className="flex gap-2">
-                  <Button onClick={() => setDocumentNonBlocking(doc(db, 'market_configurations', currentConfig!.id), { ...configForm }, { merge: true })} className="flex-1">Sauvegarder</Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive"><Trash2 className="w-4 h-4" /></Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Supprimer l'édition {currentConfig?.marketYear} ?</AlertDialogTitle>
-                        <AlertDialogDescription>Cette action est irréversible et supprimera toutes les candidatures associées.</AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Annuler</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => {
-                          if (configs && configs.length > 1) {
-                            deleteDocumentNonBlocking(doc(db, 'market_configurations', currentConfig!.id));
-                            toast({ title: "Édition supprimée" });
-                          } else {
-                            toast({ variant: "destructive", title: "Impossible", description: "Vous devez garder au moins une édition." });
-                          }
-                        }}>Supprimer définitivement</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
+                <Button onClick={() => setDocumentNonBlocking(doc(db, 'market_configurations', currentConfig!.id), { ...configForm }, { merge: true })} className="w-full">Sauvegarder</Button>
                 
                 <Separator />
                 
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-bold text-primary flex items-center gap-2"><Mail className="w-5 h-5" /> Templates d'Email</h3>
-                    <Button onClick={() => { setEditingTemplateId(null); setTemplateForm({ name: '', subject: '', body: '' }); setIsTemplateFormVisible(true); setIsPreviewMode(false); }} size="sm" variant="outline" className="gap-2"><Plus className="w-4 h-4" /> Nouveau</Button>
+                    <Button onClick={() => { setEditingTemplateId(null); setTemplateForm({ name: '', subject: '', body: '' }); setIsTemplateFormVisible(true); }} size="sm" variant="outline" className="gap-2"><Plus className="w-4 h-4" /> Nouveau</Button>
                   </div>
                   
                   <div className="grid gap-4">
@@ -669,7 +642,6 @@ export default function AdminDashboard() {
                             setEditingTemplateId(t.id); 
                             setTemplateForm({ name: t.name, subject: t.subject, body: t.body }); 
                             setIsTemplateFormVisible(true); 
-                            setIsPreviewMode(false); 
                           }}><Settings className="w-4 h-4" /></Button>
                           <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteDocumentNonBlocking(doc(db, 'email_templates', t.id))}><Trash2 className="w-4 h-4" /></Button>
                         </div>
@@ -694,18 +666,17 @@ export default function AdminDashboard() {
                         {!isPreviewMode ? (
                           <>
                             <div className="flex flex-wrap gap-1 p-1 bg-muted rounded-md mb-1">
-                              <Button variant="ghost" size="sm" onClick={() => insertTag('b', 'b')} title="Gras"><Bold className="w-4 h-4" /></Button>
-                              <Button variant="ghost" size="sm" onClick={() => insertTag('i', 'i')} title="Italique"><Italic className="w-4 h-4" /></Button>
-                              <Button variant="ghost" size="sm" onClick={() => insertTag('u', 'u')} title="Souligné"><Underline className="w-4 h-4" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => insertTag('b', 'b')}><Bold className="w-4 h-4" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => insertTag('i', 'i')}><Italic className="w-4 h-4" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => insertTag('u', 'u')}><Underline className="w-4 h-4" /></Button>
                               <Separator orientation="vertical" className="h-8 mx-1" />
-                              <Button variant="ghost" size="sm" onClick={() => insertTag('p', 'p')} title="Paragraphe"><Type className="w-4 h-4" /></Button>
-                              <Button variant="ghost" size="sm" onClick={() => insertTag('br')} title="Saut de ligne"><WrapText className="w-4 h-4" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => insertTag('p', 'p')}><Type className="w-4 h-4" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => insertTag('br')}><WrapText className="w-4 h-4" /></Button>
                               <Separator orientation="vertical" className="h-8 mx-1" />
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
                                 onClick={() => insertCustomSnippet(`<a href="${currentConfig?.posterImageUrl || ''}" target="_blank" style="color: #2E3192; font-weight: bold; text-decoration: underline;">Voir l'affiche du Marché</a>`)} 
-                                title="Insérer le lien vers l'affiche"
                                 className="text-primary hover:text-primary font-bold"
                               >
                                 <LucideLink className="w-4 h-4 mr-1" /> Lien Affiche
@@ -726,9 +697,7 @@ export default function AdminDashboard() {
 
                       <div className="flex gap-2 items-end border-t pt-4 mt-4 bg-white/50 p-3 rounded-lg border border-primary/10">
                         <div className="flex-1 space-y-1">
-                          <label className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1">
-                            <Mail className="w-3 h-3" /> Envoyer un test à :
-                          </label>
+                          <label className="text-[10px] font-bold uppercase text-muted-foreground">Envoyer un test à :</label>
                           <Input 
                             placeholder="votre@email.com" 
                             value={testEmailAddress} 
@@ -741,7 +710,7 @@ export default function AdminDashboard() {
                           size="sm" 
                           onClick={handleSendTestEmail}
                           disabled={isSendingTest || !testEmailAddress || !templateForm.subject}
-                          className="h-8 gap-2 border-primary/20 text-primary hover:bg-primary/5"
+                          className="h-8 gap-2"
                         >
                           {isSendingTest ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
                           Tester
@@ -749,8 +718,8 @@ export default function AdminDashboard() {
                       </div>
                       
                       <div className="flex gap-2">
-                        <Button onClick={handleSaveTemplate} className="flex-1">Sauvegarder Template</Button>
-                        <Button variant="ghost" onClick={() => { setEditingTemplateId(null); setIsTemplateFormVisible(false); setTemplateForm({ name: '', subject: '', body: '' }); }}>Annuler</Button>
+                        <Button onClick={handleSaveTemplate} className="flex-1">Sauvegarder</Button>
+                        <Button variant="ghost" onClick={() => { setIsTemplateFormVisible(false); setEditingTemplateId(null); }}>Annuler</Button>
                       </div>
                     </div>
                   )}
@@ -762,84 +731,40 @@ export default function AdminDashboard() {
           {isSuperAdmin && (
             <TabsContent value="admins" className="space-y-6">
               <div className="grid md:grid-cols-2 gap-8">
-                {/* Pending Requests */}
                 <Card className="border-t-4 border-t-amber-500 shadow-md">
                   <CardHeader><CardTitle className="text-lg flex items-center gap-2 text-amber-600"><Clock className="w-5 h-5" /> Demandes en attente</CardTitle></CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {adminRequests?.filter(r => r.status === 'PENDING').length === 0 ? (
-                        <p className="text-sm text-muted-foreground italic">Aucune demande en attente.</p>
-                      ) : (
-                        adminRequests?.filter(r => r.status === 'PENDING').map(request => (
-                          <div key={request.id} className="p-4 border rounded-xl flex justify-between items-center bg-amber-50/30">
-                            <div>
-                              <p className="font-bold">{request.email}</p>
-                              <p className="text-[10px] text-muted-foreground">Demandé le {new Date(request.requestedAt).toLocaleDateString()}</p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button size="sm" className="bg-green-600" onClick={() => {
-                                setDocumentNonBlocking(doc(db, 'roles_admin', request.id), { 
-                                  addedAt: new Date().toISOString(),
-                                  email: request.email 
-                                }, { merge: true });
-                                updateDocumentNonBlocking(doc(db, 'admin_requests', request.id), { status: 'APPROVED' });
-                                toast({ title: "Accès approuvé" });
-                              }}><CheckCircle className="w-4 h-4" /></Button>
-                              <Button size="sm" variant="destructive" onClick={() => {
-                                updateDocumentNonBlocking(doc(db, 'admin_requests', request.id), { status: 'REJECTED' });
-                                toast({ title: "Demande refusée" });
-                              }}><XCircle className="w-4 h-4" /></Button>
-                            </div>
+                      {adminRequests?.filter(r => r.status === 'PENDING').map(request => (
+                        <div key={request.id} className="p-4 border rounded-xl flex justify-between items-center bg-amber-50/30">
+                          <div><p className="font-bold">{request.email}</p><p className="text-[10px] text-muted-foreground">Demandé le {new Date(request.requestedAt).toLocaleDateString()}</p></div>
+                          <div className="flex gap-2">
+                            <Button size="sm" className="bg-green-600" onClick={() => {
+                              setDocumentNonBlocking(doc(db, 'roles_admin', request.id), { addedAt: new Date().toISOString(), email: request.email }, { merge: true });
+                              updateDocumentNonBlocking(doc(db, 'admin_requests', request.id), { status: 'APPROVED' });
+                              toast({ title: "Accès approuvé" });
+                            }}><CheckCircle className="w-4 h-4" /></Button>
+                            <Button size="sm" variant="destructive" onClick={() => updateDocumentNonBlocking(doc(db, 'admin_requests', request.id), { status: 'REJECTED' })}><XCircle className="w-4 h-4" /></Button>
                           </div>
-                        ))
-                      )}
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Current Admins */}
                 <Card className="border-t-4 border-t-primary shadow-md">
                   <CardHeader><CardTitle className="text-lg flex items-center gap-2 text-primary"><ShieldCheck className="w-5 h-5" /> Administrateurs Actuels</CardTitle></CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {adminRoles?.map(admin => {
-                        const originalRequest = adminRequests?.find(r => r.id === admin.id);
-                        const adminEmail = admin.email || originalRequest?.email;
-                        
-                        return (
-                          <div key={admin.id} className="p-4 border rounded-xl flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                                {adminEmail ? adminEmail.charAt(0).toUpperCase() : 'A'}
-                              </div>
-                              <div>
-                                <p className="font-bold text-sm">{adminEmail || `ID: ${admin.id.substring(0, 8)}...`}</p>
-                                <p className="text-[10px] text-muted-foreground">Admin depuis {admin.addedAt ? new Date(admin.addedAt).toLocaleDateString() : '?'}</p>
-                              </div>
-                            </div>
-                            {admin.id !== user.uid && (
-                               <AlertDialog>
-                                 <AlertDialogTrigger asChild>
-                                   <Button size="sm" variant="ghost" className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
-                                 </AlertDialogTrigger>
-                                 <AlertDialogContent>
-                                   <AlertDialogHeader>
-                                     <AlertDialogTitle>Retirer les droits ?</AlertDialogTitle>
-                                     <AlertDialogDescription>Cet utilisateur n'aura plus accès au tableau de bord.</AlertDialogDescription>
-                                   </AlertDialogHeader>
-                                   <AlertDialogFooter>
-                                     <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                     <AlertDialogAction onClick={() => {
-                                       deleteDocumentNonBlocking(doc(db, 'roles_admin', admin.id));
-                                       toast({ title: "Accès retiré" });
-                                     }}>Confirmer</AlertDialogAction>
-                                   </AlertDialogFooter>
-                                 </AlertDialogContent>
-                               </AlertDialog>
-                            )}
+                      {adminRoles?.map(admin => (
+                        <div key={admin.id} className="p-4 border rounded-xl flex justify-between items-center">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">{(admin.email || 'A').charAt(0).toUpperCase()}</div>
+                            <div><p className="font-bold text-sm">{admin.email}</p><p className="text-[10px] text-muted-foreground">Depuis {new Date(admin.addedAt).toLocaleDateString()}</p></div>
                           </div>
-                        );
-                      })}
+                          {admin.id !== user.uid && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteDocumentNonBlocking(doc(db, 'roles_admin', admin.id))}><Trash2 className="w-4 h-4" /></Button>}
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
@@ -849,56 +774,33 @@ export default function AdminDashboard() {
         </Tabs>
       </main>
 
-      {/* Bulk Email Dialog */}
       <Dialog open={isBulkEmailDialogOpen} onOpenChange={setIsBulkEmailDialogOpen}>
         <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Send className="w-6 h-6" /> Envoi de message groupé</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Send className="w-6 h-6" /> Message groupé</DialogTitle></DialogHeader>
           <div className="py-6 space-y-6">
             <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm">
               <p className="font-bold text-amber-800">Destinataires : {confirmedExhibitors.length} exposants</p>
-              <p className="text-xs text-amber-700 mt-1">L'email sera envoyé à tous les exposants ayant le statut "Confirmé" pour l'édition {currentConfig?.marketYear}.</p>
             </div>
-            
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Choisir un template</label>
-              <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-                <SelectTrigger className="w-full bg-white"><SelectValue placeholder="Sélectionner un modèle..." /></SelectTrigger>
-                <SelectContent>
-                  {templates?.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-
+            <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+              <SelectTrigger className="w-full"><SelectValue placeholder="Sélectionner un modèle..." /></SelectTrigger>
+              <SelectContent>{templates?.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+            </Select>
             {selectedTemplateId && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <p className="text-xs font-bold uppercase text-muted-foreground">Aperçu du message</p>
-                  <Button variant="ghost" size="sm" onClick={() => setIsPreviewMode(!isPreviewMode)} className="h-6 text-[10px]">
-                    {isPreviewMode ? "Voir Code" : "Voir Rendu"}
-                  </Button>
-                </div>
-                <div className="p-4 border rounded-xl bg-muted/20 max-h-60 overflow-y-auto">
-                  <p className="text-sm font-bold mb-2">Objet : {templates?.find(t => t.id === selectedTemplateId)?.subject}</p>
-                  <Separator className="my-2" />
-                  {isPreviewMode ? (
-                    <div className="text-sm prose prose-sm max-w-none bg-white p-2 rounded border" dangerouslySetInnerHTML={{ __html: templates?.find(t => t.id === selectedTemplateId)?.body || "" }} />
-                  ) : (
-                    <p className="text-xs whitespace-pre-wrap italic font-mono">"{templates?.find(t => t.id === selectedTemplateId)?.body}"</p>
-                  )}
-                </div>
+              <div className="p-4 border rounded-xl bg-muted/20 max-h-60 overflow-y-auto">
+                <p className="text-sm font-bold mb-2">Objet : {templates?.find(t => t.id === selectedTemplateId)?.subject}</p>
+                <div className="text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: templates?.find(t => t.id === selectedTemplateId)?.body || "" }} />
               </div>
             )}
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setIsBulkEmailDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleBulkEmailSend} disabled={isSending || !selectedTemplateId || confirmedExhibitors.length === 0} className="gap-2">
-              {isSending ? <Loader2 className="animate-spin" /> : <><Send className="w-4 h-4" /> Envoyer à {confirmedExhibitors.length} personnes</>}
+            <Button onClick={handleBulkEmailSend} disabled={isSending || !selectedTemplateId} className="gap-2">
+              {isSending ? <Loader2 className="animate-spin" /> : <><Send className="w-4 h-4" /> Envoyer</>}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Other Dialogs */}
       <Dialog open={!!viewingExhibitor} onOpenChange={o => !o && setViewingExhibitor(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader><DialogTitle>Dossier de {viewingExhibitor?.companyName}</DialogTitle></DialogHeader>
