@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Users, UserCheck, Clock, ArrowLeft, Phone, Globe, LayoutGrid, Calculator, TrendingUp, Wallet, ClipboardList, Filter, Send, Plus, Image as ImageIcon, Bold, Italic, Underline, List, Type, WrapText, EyeOff } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Users, UserCheck, Clock, ArrowLeft, Phone, Globe, LayoutGrid, Calculator, TrendingUp, Wallet, ClipboardList, Filter, Send, Plus, Image as ImageIcon, Bold, Italic, Underline, List, Type, WrapText, EyeOff, Link as LucideLink } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -209,6 +209,25 @@ export default function AdminDashboard() {
     setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(start + tag.length + 2, start + tag.length + 2 + selected.length);
+    }, 0);
+  };
+
+  const insertCustomSnippet = (snippet: string) => {
+    if (!textareaRef.current) return;
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const before = text.substring(0, start);
+    const after = text.substring(end);
+
+    const newText = `${before}${snippet}${after}`;
+    setTemplateForm(prev => ({ ...prev, body: newText }));
+    
+    // Reposition cursor at the end of the snippet
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + snippet.length, start + snippet.length);
     }, 0);
   };
 
@@ -481,6 +500,16 @@ export default function AdminDashboard() {
                               <Separator orientation="vertical" className="h-8 mx-1" />
                               <Button variant="ghost" size="sm" onClick={() => insertTag('p', 'p')} title="Paragraphe"><Type className="w-4 h-4" /></Button>
                               <Button variant="ghost" size="sm" onClick={() => insertTag('br')} title="Saut de ligne"><WrapText className="w-4 h-4" /></Button>
+                              <Separator orientation="vertical" className="h-8 mx-1" />
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => insertCustomSnippet(`<a href="${currentConfig?.posterImageUrl || ''}" target="_blank" style="color: #2E3192; font-weight: bold; text-decoration: underline;">Voir l'affiche du Marché</a>`)} 
+                                title="Insérer le lien vers l'affiche"
+                                className="text-primary hover:text-primary font-bold"
+                              >
+                                <LucideLink className="w-4 h-4 mr-1" /> Lien Affiche
+                              </Button>
                             </div>
                             <Textarea 
                               ref={textareaRef}
@@ -583,8 +612,12 @@ export default function AdminDashboard() {
       <Dialog open={isAcceptDialogOpen} onOpenChange={setIsAcceptDialogOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Accepter {actingExhibitor?.companyName}</DialogTitle></DialogHeader>
-          <Textarea placeholder="Mot personnel..." value={acceptanceMessage} onChange={e => setAcceptanceMessage(e.target.value)} rows={4} className="mt-4" />
+          <div className="space-y-4 mt-4">
+            <p className="text-sm text-muted-foreground">L'acceptation enverra automatiquement un e-mail avec un lien vers le dossier technique.</p>
+            <Textarea placeholder="Mot personnel optionnel..." value={acceptanceMessage} onChange={e => setAcceptanceMessage(e.target.value)} rows={4} />
+          </div>
           <DialogFooter className="mt-6">
+            <Button variant="ghost" onClick={() => setIsAcceptDialogOpen(false)}>Annuler</Button>
             <Button onClick={async () => {
               if (!actingExhibitor) return;
               setIsSending(true);
@@ -592,7 +625,7 @@ export default function AdminDashboard() {
               await sendAcceptanceEmail(actingExhibitor, acceptanceMessage, currentConfig);
               setIsAcceptDialogOpen(false); setIsSending(false); setAcceptanceMessage('');
               toast({ title: "Candidature acceptée et email envoyé" });
-            }} disabled={isSending}>{isSending ? <Loader2 className="animate-spin" /> : "Confirmer"}</Button>
+            }} disabled={isSending}>{isSending ? <Loader2 className="animate-spin" /> : "Confirmer l'acceptation"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -615,6 +648,7 @@ export default function AdminDashboard() {
             <Textarea value={justification} onChange={e => setJustification(e.target.value)} placeholder="Motif du refus..." rows={6} />
           </div>
           <DialogFooter className="mt-6">
+            <Button variant="ghost" onClick={() => setIsRejectDialogOpen(false)}>Annuler</Button>
             <Button variant="destructive" onClick={async () => {
               if (!actingExhibitor) return;
               setIsSending(true);
@@ -622,7 +656,7 @@ export default function AdminDashboard() {
               await sendRejectionEmail(actingExhibitor, justification, currentConfig);
               setIsRejectDialogOpen(false); setIsSending(false); setJustification('');
               toast({ title: "Candidature refusée" });
-            }} disabled={isSending || !justification}>Refuser</Button>
+            }} disabled={isSending || !justification}>Confirmer le refus</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
