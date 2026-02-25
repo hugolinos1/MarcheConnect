@@ -1,13 +1,13 @@
 
 "use client"
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Exhibitor } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Users, UserCheck, Clock, ArrowLeft, Phone, Globe, LayoutGrid, Calculator, TrendingUp, Wallet, ClipboardList, Filter, Send, Plus, Image as ImageIcon } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Users, UserCheck, Clock, ArrowLeft, Phone, Globe, LayoutGrid, Calculator, TrendingUp, Wallet, ClipboardList, Filter, Send, Plus, Image as ImageIcon, Bold, Italic, Underline, List, Type, WrapText, EyeOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -31,6 +31,7 @@ export default function AdminDashboard() {
   const db = useFirestore();
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [isAuthLoading, setIsAuthLoading] = useState(false);
@@ -47,6 +48,7 @@ export default function AdminDashboard() {
   
   const [isBulkEmailDialogOpen, setIsBulkEmailDialogOpen] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -182,6 +184,32 @@ export default function AdminDashboard() {
     setIsTemplateFormVisible(false);
     setTemplateForm({ name: '', subject: '', body: '' });
     toast({ title: "Template enregistré" });
+  };
+
+  const insertTag = (tag: string, closeTag?: string) => {
+    if (!textareaRef.current) return;
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selected = text.substring(start, end);
+    const before = text.substring(0, start);
+    const after = text.substring(end);
+
+    let newText = "";
+    if (closeTag) {
+      newText = `${before}<${tag}>${selected}</${closeTag || tag}>${after}`;
+    } else {
+      newText = `${before}<${tag}/>${after}`;
+    }
+
+    setTemplateForm(prev => ({ ...prev, body: newText }));
+    
+    // Reposition cursor
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + tag.length + 2, start + tag.length + 2 + selected.length);
+    }, 0);
   };
 
   const handleBulkEmailSend = async () => {
@@ -412,7 +440,7 @@ export default function AdminDashboard() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-bold text-primary flex items-center gap-2"><Mail className="w-5 h-5" /> Templates d'Email</h3>
-                    <Button onClick={() => { setEditingTemplateId(null); setTemplateForm({ name: '', subject: '', body: '' }); setIsTemplateFormVisible(true); }} size="sm" variant="outline" className="gap-2"><Plus className="w-4 h-4" /> Nouveau</Button>
+                    <Button onClick={() => { setEditingTemplateId(null); setTemplateForm({ name: '', subject: '', body: '' }); setIsTemplateFormVisible(true); setIsPreviewMode(false); }} size="sm" variant="outline" className="gap-2"><Plus className="w-4 h-4" /> Nouveau</Button>
                   </div>
                   
                   <div className="grid gap-4">
@@ -423,7 +451,7 @@ export default function AdminDashboard() {
                           <p className="text-xs text-muted-foreground">Sujet: {t.subject}</p>
                         </div>
                         <div className="flex gap-2">
-                          <Button size="sm" variant="ghost" onClick={() => { setEditingTemplateId(t.id); setTemplateForm({ name: t.name, subject: t.subject, body: t.body }); setIsTemplateFormVisible(true); }}><Settings className="w-4 h-4" /></Button>
+                          <Button size="sm" variant="ghost" onClick={() => { setEditingTemplateId(t.id); setTemplateForm({ name: t.name, subject: t.subject, body: t.body }); setIsTemplateFormVisible(true); setIsPreviewMode(false); }}><Settings className="w-4 h-4" /></Button>
                           <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteDocumentNonBlocking(doc(db, 'email_templates', t.id))}><Trash2 className="w-4 h-4" /></Button>
                         </div>
                       </div>
@@ -432,10 +460,41 @@ export default function AdminDashboard() {
 
                   {isTemplateFormVisible && (
                     <div className="p-6 border-2 border-primary/20 rounded-2xl bg-primary/5 space-y-4">
-                      <h4 className="font-bold">{editingTemplateId ? "Modifier" : "Créer"} le template</h4>
+                      <div className="flex justify-between items-center">
+                        <h4 className="font-bold">{editingTemplateId ? "Modifier" : "Créer"} le template</h4>
+                        <Button variant="ghost" size="sm" onClick={() => setIsPreviewMode(!isPreviewMode)} className="gap-2">
+                          {isPreviewMode ? <><Type className="w-4 h-4" /> Édition</> : <><Eye className="w-4 h-4" /> Aperçu</>}
+                        </Button>
+                      </div>
+                      
                       <div className="space-y-2"><label className="text-xs font-bold uppercase">Nom interne</label><Input value={templateForm.name} onChange={e => setTemplateForm({...templateForm, name: e.target.value})} /></div>
                       <div className="space-y-2"><label className="text-xs font-bold uppercase">Objet de l'email</label><Input value={templateForm.subject} onChange={e => setTemplateForm({...templateForm, subject: e.target.value})} /></div>
-                      <div className="space-y-2"><label className="text-xs font-bold uppercase">Corps du message</label><Textarea rows={6} value={templateForm.body} onChange={e => setTemplateForm({...templateForm, body: e.target.value})} /></div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold uppercase">Corps du message (HTML autorisé)</label>
+                        {!isPreviewMode ? (
+                          <>
+                            <div className="flex flex-wrap gap-1 p-1 bg-muted rounded-md mb-1">
+                              <Button variant="ghost" size="sm" onClick={() => insertTag('b', 'b')} title="Gras"><Bold className="w-4 h-4" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => insertTag('i', 'i')} title="Italique"><Italic className="w-4 h-4" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => insertTag('u', 'u')} title="Souligné"><Underline className="w-4 h-4" /></Button>
+                              <Separator orientation="vertical" className="h-8 mx-1" />
+                              <Button variant="ghost" size="sm" onClick={() => insertTag('p', 'p')} title="Paragraphe"><Type className="w-4 h-4" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => insertTag('br')} title="Saut de ligne"><WrapText className="w-4 h-4" /></Button>
+                            </div>
+                            <Textarea 
+                              ref={textareaRef}
+                              rows={10} 
+                              value={templateForm.body} 
+                              onChange={e => setTemplateForm({...templateForm, body: e.target.value})} 
+                              className="font-mono text-sm"
+                            />
+                          </>
+                        ) : (
+                          <div className="min-h-[200px] p-4 bg-white border rounded-md prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: templateForm.body }} />
+                        )}
+                      </div>
+                      
                       <div className="flex gap-2">
                         <Button onClick={handleSaveTemplate} className="flex-1">Sauvegarder Template</Button>
                         <Button variant="ghost" onClick={() => { setEditingTemplateId(null); setIsTemplateFormVisible(false); setTemplateForm({ name: '', subject: '', body: '' }); }}>Annuler</Button>
@@ -448,11 +507,6 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </main>
-
-      {/* Bulk Email Dialog */}
-      <div className="hidden">
-        {/* Placeholder for Bulk Email Dialog logic if needed */}
-      </div>
 
       {/* Bulk Email Dialog */}
       <Dialog open={isBulkEmailDialogOpen} onOpenChange={setIsBulkEmailDialogOpen}>
@@ -475,9 +529,22 @@ export default function AdminDashboard() {
             </div>
 
             {selectedTemplateId && (
-              <div className="space-y-4 p-4 border rounded-xl bg-muted/20">
-                <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Aperçu Objet</p><p className="text-sm font-bold">{templates?.find(t => t.id === selectedTemplateId)?.subject}</p></div>
-                <div><p className="text-[10px] font-bold uppercase text-muted-foreground">Aperçu Corps</p><p className="text-xs whitespace-pre-wrap italic">"{templates?.find(t => t.id === selectedTemplateId)?.body}"</p></div>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <p className="text-xs font-bold uppercase text-muted-foreground">Aperçu du message</p>
+                  <Button variant="ghost" size="xs" onClick={() => setIsPreviewMode(!isPreviewMode)} className="h-6 text-[10px]">
+                    {isPreviewMode ? "Voir Code" : "Voir Rendu"}
+                  </Button>
+                </div>
+                <div className="p-4 border rounded-xl bg-muted/20 max-h-60 overflow-y-auto">
+                  <p className="text-sm font-bold mb-2">Objet : {templates?.find(t => t.id === selectedTemplateId)?.subject}</p>
+                  <Separator className="my-2" />
+                  {isPreviewMode ? (
+                    <div className="text-sm prose prose-sm max-w-none bg-white p-2 rounded border" dangerouslySetInnerHTML={{ __html: templates?.find(t => t.id === selectedTemplateId)?.body || "" }} />
+                  ) : (
+                    <p className="text-xs whitespace-pre-wrap italic font-mono">"{templates?.find(t => t.id === selectedTemplateId)?.body}"</p>
+                  )}
+                </div>
               </div>
             )}
           </div>

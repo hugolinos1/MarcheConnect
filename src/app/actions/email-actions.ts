@@ -28,6 +28,7 @@ async function getBaseUrl() {
 
 /**
  * Nettoie les chaînes pour éviter les problèmes d'encodage avec Gmail.
+ * On garde une version plus souple pour le contenu HTML.
  */
 function stripAccents(str: string = "") {
   if (!str) return "";
@@ -64,7 +65,7 @@ export async function testSmtpGmail() {
     from: `"Test MarcheConnect" <hugues.rabier@gmail.com>`,
     to: "hugues.rabier@gmail.com",
     subject: "Test SMTP Gmail Reussi",
-    text: "Ceci est un test de connexion SMTP Gmail depuis l'application MarcheConnect avec le nouveau mot de passe d'application.",
+    text: "Ceci est un test de connexion SMTP Gmail depuis l'application MarcheConnect.",
   };
 
   try {
@@ -214,19 +215,22 @@ L'equipe "Un jardin pour Felix"`;
 }
 
 /**
- * Envoie un email groupé à une liste de destinataires.
+ * Envoie un email groupé à une liste de destinataires avec support HTML.
  */
 export async function sendBulkEmailAction(emails: string[], subject: string, body: string) {
   const transporter = createTransporter();
   const cleanedSubject = stripAccents(subject);
-  const cleanedBody = stripAccents(body);
+  
+  // Création d'une version texte brut simple en enlevant les balises HTML pour la compatibilité
+  const plainTextBody = body.replace(/<[^>]*>?/gm, '');
 
   const results = await Promise.all(emails.map(async (email) => {
     const mailOptions = {
       from: `"Le Marche de Felix" <hugues.rabier@gmail.com>`,
       to: email,
       subject: cleanedSubject,
-      text: cleanedBody,
+      text: plainTextBody,
+      html: body, // On envoie le corps tel quel pour le HTML
     };
     try {
       await transporter.sendMail(mailOptions);
