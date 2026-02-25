@@ -1,4 +1,4 @@
-"use client"
+["use client"
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -45,8 +45,8 @@ export default function DetailsPage() {
       sundayLunchCount: z.coerce.number().min(0).max(10),
       tombolaLot: z.boolean().default(true),
       tombolaLotDescription: z.string().optional(),
-      insuranceCompany: z.string().min(2, "Compagnie requise"),
-      insurancePolicyNumber: z.string().min(5, "N° requis"),
+      insuranceCompany: z.string().optional(),
+      insurancePolicyNumber: z.string().optional(),
       agreedToImageRights: z.boolean().refine(val => val === true, "Requis"),
       agreedToTerms: z.boolean().refine(val => val === true, "Requis"),
       additionalComments: z.string().optional(),
@@ -259,10 +259,10 @@ export default function DetailsPage() {
                   <h3 className="text-lg font-bold border-b pb-3 flex items-center gap-3 text-primary"><ShieldCheck className="w-5 h-5" /> Assurance RC</h3>
                   <div className="grid md:grid-cols-2 gap-4">
                     <FormField control={form.control} name="insuranceCompany" render={({ field }) => (
-                      <FormItem><FormLabel>Compagnie *</FormLabel><Input {...field} /></FormItem>
+                      <FormItem><FormLabel>Compagnie</FormLabel><Input {...field} /></FormItem>
                     )} />
                     <FormField control={form.control} name="insurancePolicyNumber" render={({ field }) => (
-                      <FormItem><FormLabel>N° Contrat *</FormLabel><Input {...field} /></FormItem>
+                      <FormItem><FormLabel>N° Contrat</FormLabel><Input {...field} /></FormItem>
                     )} />
                   </div>
                 </div>
@@ -327,3 +327,5 @@ export default function DetailsPage() {
     </div>
   );
 }
+
+    
