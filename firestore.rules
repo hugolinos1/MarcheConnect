@@ -13,6 +13,7 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Vérification de l'administrateur sans récursion
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email == "hugues.rabier@gmail.com" ||
@@ -23,9 +24,10 @@ service cloud.firestore {
     // --- Collection Rules ---
 
     match /roles_admin/{adminId} {
-      allow get: if isSignedIn() && (request.auth.uid == adminId || isAdmin());
-      allow list: if isAdmin();
-      allow create, update, delete: if isAdmin();
+      // On évite d'appeler isAdmin() ici pour ne pas créer de récursion avec exists()
+      allow get: if isSignedIn() && (request.auth.uid == adminId || request.auth.token.email == "hugues.rabier@gmail.com");
+      allow list: if isSignedIn() && request.auth.token.email == "hugues.rabier@gmail.com";
+      allow create, update, delete: if isSignedIn() && request.auth.token.email == "hugues.rabier@gmail.com";
     }
 
     match /admin_requests/{requestId} {
@@ -35,6 +37,7 @@ service cloud.firestore {
     }
 
     match /market_configurations/{marketConfigId} {
+      // Lecture toujours autorisée pour le bon fonctionnement du site
       allow get, list: if true;
       allow create, update, delete: if isAdmin();
     }
