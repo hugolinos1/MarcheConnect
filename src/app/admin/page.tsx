@@ -60,11 +60,12 @@ export default function AdminDashboard() {
   const [testEmailAddress, setTestEmailAddress] = useState('');
 
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
-  const isSuperAdmin = user?.email === "hugues.rabier@gmail.com";
-
+  
   // Auth check
   const userRoleRef = useMemoFirebase(() => user ? doc(db, 'roles_admin', user.uid) : null, [db, user]);
   const { data: userRoleDoc, isLoading: isRoleLoading } = useDoc(userRoleRef);
+  
+  const isSuperAdmin = user?.email === "hugues.rabier@gmail.com" || !!userRoleDoc?.isSuperAdmin;
   const isAuthorized = isSuperAdmin || !!userRoleDoc;
 
   // Personal Request Check
@@ -331,7 +332,7 @@ export default function AdminDashboard() {
           const masterCode = currentConfig?.signupCode || "FELIX2026";
           if (signupCodeInput === masterCode) {
             if (email === "hugues.rabier@gmail.com") {
-              setDocumentNonBlocking(doc(db, 'roles_admin', uid), { addedAt: new Date().toISOString(), email: email }, { merge: true });
+              setDocumentNonBlocking(doc(db, 'roles_admin', uid), { addedAt: new Date().toISOString(), email: email, isSuperAdmin: true }, { merge: true });
               toast({ title: "Accès activé immédiatement !" });
             } else {
               setDocumentNonBlocking(doc(db, 'admin_requests', uid), { 
@@ -773,7 +774,7 @@ export default function AdminDashboard() {
                             <div><p className="font-bold">{request.email}</p><p className="text-[10px] text-muted-foreground">Demandé le {new Date(request.requestedAt).toLocaleDateString()}</p></div>
                             <div className="flex gap-2">
                               <Button size="sm" className="bg-green-600" onClick={() => {
-                                setDocumentNonBlocking(doc(db, 'roles_admin', request.id), { addedAt: new Date().toISOString(), email: request.email }, { merge: true });
+                                setDocumentNonBlocking(doc(db, 'roles_admin', request.id), { addedAt: new Date().toISOString(), email: request.email, isSuperAdmin: false }, { merge: true });
                                 updateDocumentNonBlocking(doc(db, 'admin_requests', request.id), { status: 'APPROVED' });
                                 toast({ title: "Accès approuvé" });
                               }}><CheckCircle className="w-4 h-4" /></Button>
@@ -798,9 +799,29 @@ export default function AdminDashboard() {
                         <div key={admin.id} className="p-4 border rounded-xl flex justify-between items-center">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">{(admin.email || 'A').charAt(0).toUpperCase()}</div>
-                            <div><p className="font-bold text-sm">{admin.email}</p><p className="text-[10px] text-muted-foreground">Depuis {new Date(admin.addedAt).toLocaleDateString()}</p></div>
+                            <div>
+                              <p className="font-bold text-sm flex items-center gap-2">
+                                {admin.email}
+                                {admin.isSuperAdmin && <Badge variant="secondary" className="text-[10px] h-4">Super Admin</Badge>}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">Depuis {new Date(admin.addedAt).toLocaleDateString()}</p>
+                            </div>
                           </div>
-                          {admin.id !== user.uid && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteDocumentNonBlocking(doc(db, 'roles_admin', admin.id))}><Trash2 className="w-4 h-4" /></Button>}
+                          <div className="flex gap-2">
+                            {/* Toggle Super Admin - Only by other Super Admins, and not on self */}
+                            {isSuperAdmin && admin.id !== user.uid && (
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className={admin.isSuperAdmin ? "text-amber-600 border-amber-200" : "text-muted-foreground"}
+                                onClick={() => updateDocumentNonBlocking(doc(db, 'roles_admin', admin.id), { isSuperAdmin: !admin.isSuperAdmin })}
+                              >
+                                <ShieldCheck className="w-4 h-4 mr-1" />
+                                {admin.isSuperAdmin ? "Rétrograder" : "Promouvoir"}
+                              </Button>
+                            )}
+                            {admin.id !== user.uid && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteDocumentNonBlocking(doc(db, 'roles_admin', admin.id))}><Trash2 className="w-4 h-4" /></Button>}
+                          </div>
                         </div>
                       ))}
                     </div>

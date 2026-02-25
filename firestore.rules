@@ -16,6 +16,14 @@ service cloud.firestore {
       );
     }
 
+    function isSuperAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == "hugues.rabier@gmail.com" ||
+        (exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.isSuperAdmin == true)
+      );
+    }
+
     // --- Règles des collections ---
 
     match /market_configurations/{marketConfigId} {
@@ -39,17 +47,20 @@ service cloud.firestore {
     }
 
     match /roles_admin/{adminId} {
-      allow read: if isSignedIn() && (request.auth.uid == adminId || request.auth.token.email == "hugues.rabier@gmail.com");
-      allow write: if isSignedIn() && request.auth.token.email == "hugues.rabier@gmail.com";
+      // Un admin peut lire ses propres droits, un super admin peut tout voir/écrire
+      allow read: if isSignedIn() && (request.auth.uid == adminId || isSuperAdmin());
+      allow write: if isSuperAdmin();
     }
 
     match /admin_requests/{requestId} {
-      // Lecture pour l'intéressé ou l'admin
-      allow read: if isSignedIn() && (request.auth.uid == requestId || isAdmin());
-      // Création et mise à jour autorisées pour le propriétaire
-      allow create, update: if isSignedIn() && request.auth.uid == requestId;
-      // Seul l'admin peut tout faire
-      allow write: if isAdmin();
+      // Lecture pour l'intéressé ou le super admin
+      allow read: if isSignedIn() && (request.auth.uid == requestId || isSuperAdmin());
+      // Création autorisée pour tout le monde (pour faire sa demande)
+      // Mise à jour autorisée pour le propriétaire ou le super admin
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (request.auth.uid == requestId || isSuperAdmin());
+      // Seul le super admin peut tout faire
+      allow write: if isSuperAdmin();
     }
   }
 }

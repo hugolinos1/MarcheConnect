@@ -181,6 +181,10 @@
           "type": "string",
           "description": "The date and time when the administrator access was granted.",
           "format": "date-time"
+        },
+        "isSuperAdmin": {
+          "type": "boolean",
+          "description": "Whether this admin has super privileges (can manage other admins)."
         }
       }
     },
