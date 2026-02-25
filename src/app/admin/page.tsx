@@ -168,6 +168,7 @@ export default function AdminDashboard() {
 
   // Template Form
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
+  const [isTemplateFormVisible, setIsTemplateFormVisible] = useState(false);
   const [templateForm, setTemplateForm] = useState({ name: '', subject: '', body: '' });
 
   const handleSaveTemplate = () => {
@@ -178,6 +179,7 @@ export default function AdminDashboard() {
       addDocumentNonBlocking(collection(db, 'email_templates'), { ...templateForm, createdAt: new Date().toISOString() });
     }
     setEditingTemplateId(null);
+    setIsTemplateFormVisible(false);
     setTemplateForm({ name: '', subject: '', body: '' });
     toast({ title: "Template enregistré" });
   };
@@ -400,7 +402,7 @@ export default function AdminDashboard() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-bold text-primary flex items-center gap-2"><Mail className="w-5 h-5" /> Templates d'Email</h3>
-                    <Button onClick={() => { setEditingTemplateId(null); setTemplateForm({ name: '', subject: '', body: '' }); }} size="sm" variant="outline" className="gap-2"><Plus className="w-4 h-4" /> Nouveau</Button>
+                    <Button onClick={() => { setEditingTemplateId(null); setTemplateForm({ name: '', subject: '', body: '' }); setIsTemplateFormVisible(true); }} size="sm" variant="outline" className="gap-2"><Plus className="w-4 h-4" /> Nouveau</Button>
                   </div>
                   
                   <div className="grid gap-4">
@@ -411,14 +413,14 @@ export default function AdminDashboard() {
                           <p className="text-xs text-muted-foreground">Sujet: {t.subject}</p>
                         </div>
                         <div className="flex gap-2">
-                          <Button size="sm" variant="ghost" onClick={() => { setEditingTemplateId(t.id); setTemplateForm({ name: t.name, subject: t.subject, body: t.body }); }}><Settings className="w-4 h-4" /></Button>
+                          <Button size="sm" variant="ghost" onClick={() => { setEditingTemplateId(t.id); setTemplateForm({ name: t.name, subject: t.subject, body: t.body }); setIsTemplateFormVisible(true); }}><Settings className="w-4 h-4" /></Button>
                           <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteDocumentNonBlocking(doc(db, 'email_templates', t.id))}><Trash2 className="w-4 h-4" /></Button>
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  {(editingTemplateId !== null || templateForm.name !== '') && (
+                  {isTemplateFormVisible && (
                     <div className="p-6 border-2 border-primary/20 rounded-2xl bg-primary/5 space-y-4">
                       <h4 className="font-bold">{editingTemplateId ? "Modifier" : "Créer"} le template</h4>
                       <div className="space-y-2"><label className="text-xs font-bold uppercase">Nom interne</label><Input value={templateForm.name} onChange={e => setTemplateForm({...templateForm, name: e.target.value})} /></div>
@@ -426,7 +428,7 @@ export default function AdminDashboard() {
                       <div className="space-y-2"><label className="text-xs font-bold uppercase">Corps du message</label><Textarea rows={6} value={templateForm.body} onChange={e => setTemplateForm({...templateForm, body: e.target.value})} /></div>
                       <div className="flex gap-2">
                         <Button onClick={handleSaveTemplate} className="flex-1">Sauvegarder Template</Button>
-                        <Button variant="ghost" onClick={() => { setEditingTemplateId(null); setTemplateForm({ name: '', subject: '', body: '' }); }}>Annuler</Button>
+                        <Button variant="ghost" onClick={() => { setEditingTemplateId(null); setIsTemplateFormVisible(false); setTemplateForm({ name: '', subject: '', body: '' }); }}>Annuler</Button>
                       </div>
                     </div>
                   )}
