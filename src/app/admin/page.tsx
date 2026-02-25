@@ -135,6 +135,7 @@ export default function AdminDashboard() {
     priceTable2: 60,
     priceMeal: 8,
     priceElectricity: 1,
+    priceTombola: 2,
     saturdayDate: "5/12/2026",
     saturdayHours: "14h à 19h",
     sundayDate: "06/12/2026",
@@ -152,6 +153,7 @@ export default function AdminDashboard() {
         priceTable2: currentConfig.priceTable2 ?? 60,
         priceMeal: currentConfig.priceMeal ?? 8,
         priceElectricity: currentConfig.priceElectricity ?? 1,
+        priceTombola: currentConfig.priceTombola ?? 2,
         saturdayDate: currentConfig.saturdayDate || "5/12/2026",
         saturdayHours: currentConfig.saturdayHours || "14h à 19h",
         sundayDate: currentConfig.sundayDate || "06/12/2026",
@@ -428,9 +430,10 @@ export default function AdminDashboard() {
                   <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Prix 1 Table</label><Input type="number" value={configForm.priceTable1} onChange={(e) => setConfigForm({...configForm, priceTable1: parseInt(e.target.value)})} /></div>
                   <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Prix 2 Tables</label><Input type="number" value={configForm.priceTable2} onChange={(e) => setConfigForm({...configForm, priceTable2: parseInt(e.target.value)})} /></div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Prix Repas</label><Input type="number" value={configForm.priceMeal} onChange={(e) => setConfigForm({...configForm, priceMeal: parseInt(e.target.value)})} /></div>
                   <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Prix Élec</label><Input type="number" value={configForm.priceElectricity} onChange={(e) => setConfigForm({...configForm, priceElectricity: parseInt(e.target.value)})} /></div>
+                  <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Prix Tombola</label><Input type="number" value={configForm.priceTombola} onChange={(e) => setConfigForm({...configForm, priceTombola: parseInt(e.target.value)})} /></div>
                 </div>
                 <Button onClick={handleSaveConfig} className="w-full font-bold h-12">Mettre à jour cette édition</Button>
                 <Separator />

@@ -64,6 +64,10 @@
           "type": "number",
           "description": "Price for electricity option."
         },
+        "priceTombola": {
+          "type": "number",
+          "description": "Price for one tombola ticket."
+        },
         "saturdayDate": {
           "type": "string",
           "description": "La date du samedi (ex: 5/12/2026)"

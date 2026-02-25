@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -66,6 +67,7 @@ export default function RegisterPage() {
 
   const priceTable1 = currentConfig?.priceTable1 ?? 40;
   const priceTable2 = currentConfig?.priceTable2 ?? 60;
+  const priceTombola = currentConfig?.priceTombola ?? 2;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -227,7 +229,7 @@ export default function RegisterPage() {
                         <p>L’installation des exposants (artisans/créateurs exclusivement) aura lieu le samedi entre 11h et 13h. Les emplacements seront attribués à l’arrivée de chaque exposant. Grilles, tables et chaises sont fournies et installées préalablement, en fonction des besoins exprimés.</p>
                         <p>Nous pourrons fournir en électricité 8 à 10 stands maximum, merci d’en faire la demande lors de l’inscription. Nous ne garantirons pas de pouvoir répondre à toutes les demandes, priorité sera donnée aux produits alimentaires. Les rallonges sont à prévoir par l'exposant.</p>
                         <p>Nous vous préviendrons début novembre de l’attribution du point électrique. Le jour du marché, nous vous indiquerons l’emplacement avec l’électricité pour un supplément de 1€. </p>
-                        <p>Il est essentiel de respecter les horaires d’installation pour ne pas retarder l’ouverture du marché de Noël. Si vous pensez avoir du retard ou avez un empêchement de minute à la suite d’une contrainte familiale ou médicale, merci de me prévenir au 06 81 14 77 76 (Cécile Rabier).</p>
+                        <p>Il est essentiel de respecter les horaires d’installation pour ne pas retarder l’ouverture du marché de Noël. Si vous pensez avoir du retard ou avez un empêchement de dernière minute à la suite d’une contrainte familiale ou médicale, merci de me prévenir au 06 81 14 77 76 (Cécile Rabier).</p>
                         <p>Merci de prendre en compte le temps d’installation de votre stand pour qu’il soit prêt à l’ouverture au public.</p>
                         <p>Le démontage du stand ne pourra se faire que le dimanche après la fermeture du marché soit 17h30.</p>
                         <p>Nous ne prévoyons pas de bénévoles pour vous aider à ranger, nos bénévoles sont là pour l’organisation du marché en priorité.</p>
@@ -249,7 +251,7 @@ export default function RegisterPage() {
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 6 :</h4>
                       <div className="space-y-2">
-                        <p>Nous organisons cette année une tombola avec une vente de ticket à 2€, que nous proposerons en amont de l’évènement lors de la foulée des jeunes, la course annuelle des 9 clochers de Chazay d'Azergues. </p>
+                        <p>Nous organisons cette année une tombola avec une vente de ticket à {priceTombola}€, que nous proposerons en amont de l’évènement lors de la foulée des jeunes, la course annuelle des 9 clochers de Chazay d'Azergues.</p>
                         <p>Nous allons démarcher des acteurs locaux afin de récolter de lots qui mettent en avant la gastronomie, les animations locales, le savoir-faire artisanal du département et de la région.</p>
                         <p>Nous vous sollicitons également pour faire un lot, à cet effet vous pourrez cocher la case en fin de bulletin et peut-être préciser la nature de votre don. </p>
                         <p>Il n’y a pas d’obligation, c’est au bon vouloir de chacun. N’hésitez pas à mettre votre carte de visite afin de faire connaître votre marque à l’heureux gagnant. </p>
@@ -266,7 +268,7 @@ export default function RegisterPage() {
                     </div>
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 9 :</h4>
-                      <p>OBLIGATIONS DE L’EXPOSANT : l’exposant s’engage à être conforme à la législation en vigueur et assume l’entière responsabilité de ses ventes. l’organisateur décline toute responsabilité relative aux déclarations légales vis-à-vis de l’administration fiscale.</p>
+                      <p>OBLIGATIONS DE L’EXPOSANT : l’exposant s’engage à être conforme à la législation en vigueur et assume l’entière responsabilité de ses ventes. L’organisateur décline toute responsabilité relative aux déclarations légales vis-à-vis de l’Administration fiscale.</p>
                     </div>
                   </div>
                 </ScrollArea>
