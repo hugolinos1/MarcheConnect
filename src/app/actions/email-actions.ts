@@ -173,23 +173,34 @@ export async function sendFinalConfirmationEmail(exhibitor: any, details: any, m
   const mealsPrice = (details.sundayLunchCount || 0) * (marketConfig?.priceMeal ?? 8);
   const total = standPrice + electricityPrice + mealsPrice;
 
-  const mailOptions = {
-    from: `"Le Marche de Felix" <hugues.rabier@gmail.com>`,
-    to: exhibitor.email,
-    subject: `Confirmation dossier - ${stripAccents(exhibitor.companyName)}`,
-    text: `Bonjour ${stripAccents(exhibitor.firstName)} ${stripAccents(exhibitor.lastName)},
+  const satDate = stripAccents(marketConfig?.saturdayDate || "5/12/2026");
+  const satHours = stripAccents(marketConfig?.saturdayHours || "14h à 19h");
+  const sunDate = stripAccents(marketConfig?.sundayDate || "06/12/2026");
+  const sunHours = stripAccents(marketConfig?.sundayHours || "10h à 17h30");
+
+  const mailText = `Bonjour ${stripAccents(exhibitor.firstName)} ${stripAccents(exhibitor.lastName)},
 
 Dossier technique recu pour le Marche de Noel ${year}.
 
 DETAIL DU REGLEMENT :
-- Emplacement : ${standPrice} EUR
+- Emplacement : ${standPrice} EUR (${exhibitor.requestedTables} table(s))
 - Electricite : ${electricityPrice} EUR
 - Repas : ${mealsPrice} EUR
 
 MONTANT TOTAL A REGLER : ${total} EUR
 
-Merci d'envoyer votre cheque pour confirmer definitivement votre place.
-L'equipe "Un jardin pour Felix"`,
+Pour confirmer definitivement votre place, merci d'envoyer votre cheque libelle a l'ordre de "Les amis d'un Jardin pour Felix" a l'adresse suivante : 30 rue du Colombier 69380 CHAZAY D'AZERGUES.
+Le cheque doit nous parvenir dans les 15 jours apres la reception de cet email. Il sera encaisse 15 jours avant l'evenement.
+
+Rappel des dates et heures : samedi ${satDate} de ${satHours} et le dimanche ${sunDate} de ${sunHours} a la salle Maurice Baquet, rue Pierre Coubertin
+
+L'equipe "Un jardin pour Felix"`;
+
+  const mailOptions = {
+    from: `"Le Marche de Felix" <hugues.rabier@gmail.com>`,
+    to: exhibitor.email,
+    subject: `Confirmation dossier - ${stripAccents(exhibitor.companyName)}`,
+    text: mailText,
   };
 
   try {
