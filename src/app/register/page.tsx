@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { TreePine, ArrowLeft, Send, FileText, Star, Camera, X, MapPin, Loader2, ShieldCheck } from 'lucide-react';
+import { TreePine, ArrowLeft, Send, FileText, Star, Camera, X, MapPin, Loader2, ShieldCheck, Info } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
@@ -188,8 +188,8 @@ export default function RegisterPage() {
         </Link>
         
         <div className="grid gap-4 mb-8">
-          <Accordion type="single" collapsible className="bg-white rounded-lg shadow-sm border overflow-hidden">
-            <AccordionItem value="reglement" className="border-none">
+          <Accordion type="multiple" className="bg-white rounded-lg shadow-sm border overflow-hidden">
+            <AccordionItem value="reglement" className="border-b">
               <AccordionTrigger className="px-6 hover:no-underline hover:bg-muted/50 text-left">
                 <span className="flex items-center gap-2 font-bold text-primary">
                   <FileText className="w-5 h-5" /> Règlement du Marché {marketYear}
@@ -208,7 +208,7 @@ export default function RegisterPage() {
                     </div>
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 3 : Sélection des exposants</h4>
-                      <p>Le comité de sélection répondra à toutes les candidatures dans un délai de 15 semaines. Nous privilégions exclusivement les articles et produits artisanaux ou le fait-main. La revente de produits industriels est strictement interdite.</p>
+                      <p>Le comité de sélection répondra à toutes les candidatures dans un délai de 15 semaines maximum. Nous privilégions exclusivement les articles et produits artisanaux ou le fait-main. La revente de produits industriels est strictement interdite.</p>
                     </div>
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 4 : Matériel et emplacement</h4>
@@ -216,7 +216,7 @@ export default function RegisterPage() {
                     </div>
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 5 : Tarifs et règlement</h4>
-                      <p>Tarif {marketYear} : {priceTable1}€ pour 1 table (1m75) et {priceTable2}€ pour 2 tables (3m50). Le paiement doit être effectué par chèque après acceptation définitive de la candidature.</p>
+                      <p>Tarif {marketYear} : {priceTable1}€ pour 1 table (1m75) et {priceTable2}€ pour 2 tables (3m50). Le paiement doit être effectué par chèque à l'ordre de "Un jardin pour Félix" après acceptation définitive de la candidature.</p>
                     </div>
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 6 : Tombola solidaire</h4>
@@ -224,8 +224,33 @@ export default function RegisterPage() {
                     </div>
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 7 : Responsabilité et assurance</h4>
-                      <p>L'exposant doit être couvert par une assurance Responsabilité Civile Professionnelle. L'association décline toute responsabilité en cas de vol ou de dégradation du matériel de l'exposant.</p>
+                      <p>L'exposant doit être couvert par une assurance Responsabilité Civile Professionnelle. L'association décline toute responsabilité en cas de vol ou de dégradation du matériel de l'exposant. Les stands ne doivent jamais être laissés sans surveillance pendant les heures d'ouverture au public.</p>
                     </div>
+                  </div>
+                </ScrollArea>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="rgpd" className="border-none">
+              <AccordionTrigger className="px-6 hover:no-underline hover:bg-muted/50 text-left">
+                <span className="flex items-center gap-2 font-bold text-primary">
+                  <ShieldCheck className="w-5 h-5" /> Protection des données (RGPD)
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-6">
+                <ScrollArea className="h-64 pr-4 text-xs text-muted-foreground">
+                  <div className="space-y-4 pb-8">
+                    <p className="font-bold text-foreground">Finalité du traitement</p>
+                    <p>Les informations recueillies dans ce formulaire sont nécessaires pour la gestion des candidatures et l'organisation logistique du Marché de Noël solidaire. Elles sont destinées exclusivement à l'association "Un jardin pour Félix".</p>
+                    
+                    <p className="font-bold text-foreground">Conservation des données</p>
+                    <p>Vos données personnelles (Nom, Prénom, Email, Téléphone, Adresse, Photos) sont conservées pendant une durée de 3 ans à compter de votre dernière interaction avec l'association, afin de vous informer des éditions futures.</p>
+                    
+                    <p className="font-bold text-foreground">Vos droits</p>
+                    <p>Conformément au Règlement Général sur la Protection des Données (RGPD), vous disposez d'un droit d'accès, de rectification, de portabilité et de suppression de vos données. Vous pouvez exercer ces droits à tout moment en contactant notre équipe par email à : <span className="font-bold">lemarchedefelix2020@gmail.com</span>.</p>
+                    
+                    <p className="font-bold text-foreground">Droit à l'image</p>
+                    <p>En participant au marché, vous consentez à ce que des photographies ou vidéos de votre stand puissent être utilisées pour la communication de l'association (réseaux sociaux, site web), sauf mention contraire explicite de votre part lors de la finalisation technique.</p>
                   </div>
                 </ScrollArea>
               </AccordionContent>
@@ -440,9 +465,11 @@ export default function RegisterPage() {
                             <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                           </FormControl>
                           <div className="space-y-1 leading-none">
-                            <FormLabel className="font-bold text-primary text-xs">Protection des données (RGPD) *</FormLabel>
+                            <FormLabel className="font-bold text-primary text-xs flex items-center gap-2">
+                              Protection des données (RGPD) *
+                            </FormLabel>
                             <FormDescription className="text-[11px] leading-relaxed">
-                              J'accepte que les informations saisies dans ce formulaire soient stockées et utilisées par l'association "Un jardin pour Félix" pour l'étude de ma candidature et l'organisation du marché de Noël {marketYear}.
+                              J'ai pris connaissance de la politique de protection des données (disponible en haut de page) et j'accepte que mes informations soient utilisées pour l'organisation du marché de Noël {marketYear}.
                             </FormDescription>
                             <FormMessage />
                           </div>
