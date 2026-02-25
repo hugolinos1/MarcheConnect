@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Exhibitor } from '@/lib/types';
@@ -500,7 +501,12 @@ export default function AdminDashboard() {
                           <p className="text-xs text-muted-foreground">Sujet: {t.subject}</p>
                         </div>
                         <div className="flex gap-2">
-                          <Button size="sm" variant="ghost" onClick={() => { setEditingTemplateId(t.id); setTemplateForm({ name: t.name, subject: t.subject, body: t.body }); setIsTemplateFormVisible(true); setIsPreviewMode(false); }}><Settings className="w-4 h-4" /></Button>
+                          <Button size="sm" variant="ghost" onClick={() => { 
+                            setEditingTemplateId(t.id); 
+                            setTemplateForm({ name: t.name, subject: t.subject, body: t.body }); 
+                            setIsTemplateFormVisible(true); 
+                            setIsPreviewMode(false); 
+                          }}><Settings className="w-4 h-4" /></Button>
                           <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteDocumentNonBlocking(doc(db, 'email_templates', t.id))}><Trash2 className="w-4 h-4" /></Button>
                         </div>
                       </div>
@@ -608,7 +614,6 @@ export default function AdminDashboard() {
                             </div>
                             <div className="flex gap-2">
                               <Button size="sm" className="bg-green-600" onClick={() => {
-                                // Stocker l'email directement dans le rôle pour un affichage rapide
                                 setDocumentNonBlocking(doc(db, 'roles_admin', request.id), { 
                                   addedAt: new Date().toISOString(),
                                   email: request.email 
@@ -704,7 +709,7 @@ export default function AdminDashboard() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <p className="text-xs font-bold uppercase text-muted-foreground">Aperçu du message</p>
-                  <Button variant="ghost" size="xs" onClick={() => setIsPreviewMode(!isPreviewMode)} className="h-6 text-[10px]">
+                  <Button variant="ghost" size="sm" onClick={() => setIsPreviewMode(!isPreviewMode)} className="h-6 text-[10px]">
                     {isPreviewMode ? "Voir Code" : "Voir Rendu"}
                   </Button>
                 </div>

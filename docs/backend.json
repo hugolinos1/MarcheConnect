@@ -186,6 +186,10 @@
       "type": "object",
       "description": "Represents a user with administrative privileges in the system.",
       "properties": {
+        "email": {
+          "type": "string",
+          "description": "The email of the administrator."
+        },
         "addedAt": {
           "type": "string",
           "description": "The date and time when the administrator access was granted.",
