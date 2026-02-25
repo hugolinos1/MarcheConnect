@@ -63,6 +63,22 @@
         "priceElectricity": {
           "type": "number",
           "description": "Price for electricity option."
+        },
+        "saturdayDate": {
+          "type": "string",
+          "description": "La date du samedi (ex: 5/12/2026)"
+        },
+        "saturdayHours": {
+          "type": "string",
+          "description": "Les horaires du samedi (ex: 14h à 19h)"
+        },
+        "sundayDate": {
+          "type": "string",
+          "description": "La date du dimanche (ex: 06/12/2026)"
+        },
+        "sundayHours": {
+          "type": "string",
+          "description": "Les horaires du dimanche (ex: 10h à 17h30)"
         }
       },
       "required": [

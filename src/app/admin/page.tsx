@@ -1,12 +1,13 @@
+
 "use client"
 import React, { useEffect, useState, useMemo } from 'react';
 import { Exhibitor } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Users, ExternalLink, UserCheck, Clock, ArrowLeft, Phone, MapPin, Globe, CreditCard, Heart, TrendingUp, Wallet, ClipboardList, Filter, LayoutGrid, Info, Camera, MessageSquare, Calculator } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Users, UserCheck, Clock, ArrowLeft, Phone, Globe, LayoutGrid, Calculator, TrendingUp, Wallet, ClipboardList, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -21,7 +22,6 @@ import { updateDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlo
 import { initiateEmailSignIn, initiateEmailSignUp } from '@/firebase/non-blocking-login';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import * as XLSX from 'xlsx';
@@ -86,7 +86,7 @@ export default function AdminDashboard() {
   
   const { data: exhibitorsData, isLoading: isExhibitorsLoading } = useCollection<Exhibitor>(exhibitorsQuery);
 
-  // Individual exhibitor total calculation for the preview dialog
+  // Individual exhibitor total calculation
   const viewingExhibitorTotal = useMemo(() => {
     if (!viewingExhibitor || !currentConfig) return 0;
     const stand = viewingExhibitor.requestedTables === '1' ? (currentConfig.priceTable1 ?? 40) : (currentConfig.priceTable2 ?? 60);
@@ -134,7 +134,11 @@ export default function AdminDashboard() {
     priceTable1: 40,
     priceTable2: 60,
     priceMeal: 8,
-    priceElectricity: 1
+    priceElectricity: 1,
+    saturdayDate: "5/12/2026",
+    saturdayHours: "14h à 19h",
+    sundayDate: "06/12/2026",
+    sundayHours: "10h à 17h30"
   });
 
   useEffect(() => {
@@ -147,7 +151,11 @@ export default function AdminDashboard() {
         priceTable1: currentConfig.priceTable1 ?? 40,
         priceTable2: currentConfig.priceTable2 ?? 60,
         priceMeal: currentConfig.priceMeal ?? 8,
-        priceElectricity: currentConfig.priceElectricity ?? 1
+        priceElectricity: currentConfig.priceElectricity ?? 1,
+        saturdayDate: currentConfig.saturdayDate || "5/12/2026",
+        saturdayHours: currentConfig.saturdayHours || "14h à 19h",
+        sundayDate: currentConfig.sundayDate || "06/12/2026",
+        sundayHours: currentConfig.sundayHours || "10h à 17h30"
       });
     }
   }, [currentConfig]);
@@ -395,6 +403,26 @@ export default function AdminDashboard() {
                   <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Année</label><Input type="number" value={configForm.marketYear} onChange={(e) => setConfigForm({...configForm, marketYear: parseInt(e.target.value)})} /></div>
                   <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Nom Édition</label><Input value={configForm.editionNumber} onChange={(e) => setConfigForm({...configForm, editionNumber: e.target.value})} /></div>
                 </div>
+                
+                <div className="grid grid-cols-2 gap-4 border-y py-4 my-2">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase text-muted-foreground">Samedi : Date</label>
+                    <Input value={configForm.saturdayDate} onChange={(e) => setConfigForm({...configForm, saturdayDate: e.target.value})} placeholder="5/12/2026" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase text-muted-foreground">Samedi : Horaires</label>
+                    <Input value={configForm.saturdayHours} onChange={(e) => setConfigForm({...configForm, saturdayHours: e.target.value})} placeholder="14h à 19h" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase text-muted-foreground">Dimanche : Date</label>
+                    <Input value={configForm.sundayDate} onChange={(e) => setConfigForm({...configForm, sundayDate: e.target.value})} placeholder="06/12/2026" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase text-muted-foreground">Dimanche : Horaires</label>
+                    <Input value={configForm.sundayHours} onChange={(e) => setConfigForm({...configForm, sundayHours: e.target.value})} placeholder="10h à 17h30" />
+                  </div>
+                </div>
+
                 <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">E-mail Notifications Admin</label><Input type="email" value={configForm.notificationEmail} onChange={(e) => setConfigForm({...configForm, notificationEmail: e.target.value})} /></div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Prix 1 Table</label><Input type="number" value={configForm.priceTable1} onChange={(e) => setConfigForm({...configForm, priceTable1: parseInt(e.target.value)})} /></div>
@@ -461,7 +489,7 @@ export default function AdminDashboard() {
                       <p className="flex items-center gap-2"><Phone className="w-3 h-3 text-primary" /> {viewingExhibitor.phone}</p>
                       <div className="flex items-center gap-2 font-bold text-secondary">
                         <LayoutGrid className="w-3 h-3" /> 
-                        Emplacement : {viewingExhibitor.requestedTables === '1' ? '1 table (1.75m)' : '2 tables (3.50m)'}
+                        Emplacement : {viewingExhibitor.requestedTables} table(s) ({viewingExhibitor.requestedTables === '1' ? '1.75m' : '3.50m'})
                       </div>
                       {viewingExhibitor.websiteUrl && (
                         <p className="flex items-center gap-2 text-primary hover:underline">

@@ -1,15 +1,16 @@
+
 "use client"
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { TreePine, ArrowLeft, Send, FileText, Star, Camera, X, MapPin, Loader2, ShieldCheck, Info } from 'lucide-react';
+import { TreePine, ArrowLeft, Send, FileText, Star, Camera, X, MapPin, Loader2, ShieldCheck } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
@@ -58,6 +59,11 @@ export default function RegisterPage() {
   const { data: configs } = useCollection(marketConfigRef);
   const currentConfig = configs?.find(c => c.currentMarket) || configs?.[0];
   const marketYear = currentConfig?.marketYear || 2026;
+
+  const satDate = currentConfig?.saturdayDate || "5/12/2026";
+  const satHours = currentConfig?.saturdayHours || "14h à 19h";
+  const sunDate = currentConfig?.sundayDate || "06/12/2026";
+  const sunHours = currentConfig?.sundayHours || "10h à 17h30";
 
   const priceTable1 = currentConfig?.priceTable1 ?? 40;
   const priceTable2 = currentConfig?.priceTable2 ?? 60;
@@ -200,7 +206,7 @@ export default function RegisterPage() {
                   <div className="space-y-6 pb-12 leading-relaxed">
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 1 :</h4>
-                      <p>Le marché aura lieu le samedi 5/12/2026 de 14h à 19h et le dimanche 06/12/2026 de 10h à 17h30 à la salle Maurice Baquet, rue Pierre Coubertin (à droite de l’entrée du stade de foot) à Chazay d’Azergues (69380).</p>
+                      <p>Le marché aura lieu le samedi {satDate} de {satHours} et le dimanche {sunDate} de {sunHours} à la salle Maurice Baquet, rue Pierre Coubertin (à droite de l’entrée du stade de foot) à Chazay d’Azergues (69380).</p>
                     </div>
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 2 :</h4>
@@ -231,8 +237,8 @@ export default function RegisterPage() {
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 5 :</h4>
                       <div className="space-y-2">
-                        <p>- Un chèque correspondant au nombre de tables souhaité (1 table = 1m75 ou 2 tables = 3m50) est demandé après validation de votre inscription. Sans ce versement, l’inscription ne sera pas prise en compte. Tarif 2026 : 40€ pour 1 table et 60€ pour 2 tables (les tables sont fournies / mesures de la table : 1m75x0.8m).</p>
-                        <p>- Chèque à l’ordre de « Les amis d’un jardin pour Félix » association locale de Chazay d’Azergues. Le chèque sera encaissé à partir du 20 novembre 2026.</p>
+                        <p>- Un chèque correspondant au nombre de tables souhaité (1 table = 1m75 ou 2 tables = 3m50) est demandé après validation de votre inscription. Sans ce versement, l’inscription ne sera pas prise en compte. Tarif {marketYear} : {priceTable1}€ pour 1 table et {priceTable2}€ pour 2 tables (les tables sont fournies / mesures de la table : 1m75x0.8m).</p>
+                        <p>- Chèque à l’ordre de « Les amis d’un jardin pour Félix » association locale de Chazay d’Azergues. Le chèque sera encaissé à partir du 20 novembre {marketYear}.</p>
                         <p>- Toute annulation à partir du 20 novembre ne donnera pas lieu à remboursement.</p>
                         <p>- Restauration : nous proposons aux exposants un plateau repas le dimanche midi. Si vous êtes intéressés, la réservation (+ paiement) est demandée en même temps que l’inscription. Il s’agit d’un plateau repas fait maison : salade composée maison, part de quiche (différentes recettes), fromage avec une tranche de pain, une clémentine et une part de gâteau à choisir au bar et une bouteille d’eau. Le prix du repas/personne est de 8€, toujours le même tarif depuis 2023. </p>
                         <p>- Un café, un thé ou une boisson fraîche vous sera offert le samedi contre remise d’un ticket qui vous sera attribué à votre arrivée (nous n’offrons pas de chocolat chaud, ni de vin chaud, ni tout autre boisson autre que celles énoncées ci-dessus).</p>
@@ -260,8 +266,8 @@ export default function RegisterPage() {
                       <p>RESPONSABILITE – ASSURANCE : les organisateurs ne sont pas dépositaires des œuvres au sens donné à ce terme par le code civil, mais seulement détenteurs précaires des œuvres/marchandises exposées. Ils ne pourront donc en aucun cas encourir de responsabilité en cas de vol ou dégradations en tout genre et circonstance. Outre l’assurance couvrant les objets exposés et plus généralement tous les éléments lui appartenant, l’exposant est tenu de souscrire, à ses frais, toutes assurances couvrant les risques que lui-même, les personnes qui l’accompagnent et son matériel encourent ou font courir à des tiers. L’organisateur est dégagé de toute responsabilité à cet égard, notamment en cas d’accident, de perte, vol, incendie, dégât naturel, ou dommage quelconque. L’organisateur se réserve le droit d’annuler la manifestation en cas de force majeure.</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 9 :</h4>
-                      <p>OBLIGATIONS DE L’EXPOSANT : l’exposant s’engage à être conforme à la législation en vigueur et assume l’entière responsabilité de ses ventes. L’organisateur décline toute responsabilité relative aux déclarations légales vis-à-vis de l’Administration fiscale.</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 10 :</h4>
+                      <p>OBLIGATIONS DE L’EXPOSANT : l’exposant s’engage à être conforme à la législation en vigueur et assume l’entière responsabilité de ses ventes. l’organisateur décline toute responsabilité relative aux déclarations légales vis-à-vis de l’administration fiscale.</p>
                     </div>
                   </div>
                 </ScrollArea>
