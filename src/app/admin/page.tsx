@@ -202,6 +202,22 @@ export default function AdminDashboard() {
     toast({ title: "Paramètres mis à jour" });
   };
 
+  const handleDeleteConfig = () => {
+    if (!currentConfig) return;
+    if (configs && configs.length <= 1) {
+      toast({ 
+        variant: "destructive", 
+        title: "Action impossible", 
+        description: "Vous ne pouvez pas supprimer la seule édition existante." 
+      });
+      return;
+    }
+    
+    deleteDocumentNonBlocking(doc(db, 'market_configurations', currentConfig.id));
+    toast({ title: "Édition supprimée" });
+    setSelectedConfigId(''); // Réinitialiser pour basculer sur une autre config
+  };
+
   const handleExportExcel = () => {
     if (!exhibitorsData) return;
     const exportData = filteredExhibitors.map(e => ({
@@ -436,8 +452,33 @@ export default function AdminDashboard() {
                   <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Prix Tombola</label><Input type="number" value={configForm.priceTombola} onChange={(e) => setConfigForm({...configForm, priceTombola: parseInt(e.target.value)})} /></div>
                 </div>
                 <Button onClick={handleSaveConfig} className="w-full font-bold h-12">Mettre à jour cette édition</Button>
-                <Separator />
-                <Button onClick={() => testSmtpGmail().then(r => toast({ title: r.success ? "Gmail OK" : "Erreur Gmail", variant: r.success ? "default" : "destructive" }))} variant="outline" className="w-full">Tester la connexion Gmail</Button>
+                
+                <div className="pt-6 mt-6 border-t space-y-4">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" className="w-full gap-2">
+                        <Trash2 className="w-4 h-4" /> Supprimer définitivement cette édition
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Êtes-vous sûr de vouloir supprimer l'édition {currentConfig?.marketYear} ? 
+                          Cette action est irréversible. Les pré-inscriptions liées ne seront pas supprimées mais ne seront plus accessibles via ce tableau de bord si l'ID de configuration disparaît.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteConfig} className="bg-destructive hover:bg-destructive/90 text-white">
+                          Supprimer
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  
+                  <Button onClick={() => testSmtpGmail().then(r => toast({ title: r.success ? "Gmail OK" : "Erreur Gmail", variant: r.success ? "default" : "destructive" }))} variant="outline" className="w-full">Tester la connexion Gmail</Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -629,7 +670,7 @@ export default function AdminDashboard() {
                         )}
                         {viewingExhibitor.detailedInfo.sundayLunchCount > 0 && (
                           <div className="flex justify-between items-center text-muted-foreground">
-                            <span>Repas ({viewingExhibitor.detailedInfo.sundayLunchCount} x {currentConfig?.priceMeal ?? 8}€) :</span>
+                            <span>Plateaux Repas ({viewingExhibitor.detailedInfo.sundayLunchCount} x {currentConfig?.priceMeal ?? 8}€) :</span>
                             <span className="font-medium text-foreground">{(viewingExhibitor.detailedInfo.sundayLunchCount || 0) * (currentConfig?.priceMeal ?? 8)}€</span>
                           </div>
                         )}
