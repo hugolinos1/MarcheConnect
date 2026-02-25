@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { TreePine, ArrowLeft, Send, FileText, Star, Camera, X, MapPin, Loader2 } from 'lucide-react';
+import { TreePine, ArrowLeft, Send, FileText, Star, Camera, X, MapPin, Loader2, ShieldCheck } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
@@ -147,7 +147,6 @@ export default function RegisterPage() {
     }
     setIsSubmitting(true);
     
-    // Nettoyage de l'URL pour assurer qu'elle commence par http
     let finalWebsiteUrl = values.websiteUrl?.trim() || "";
     if (finalWebsiteUrl && !finalWebsiteUrl.startsWith('http')) {
       finalWebsiteUrl = `https://${finalWebsiteUrl}`;
@@ -198,22 +197,34 @@ export default function RegisterPage() {
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6">
                 <ScrollArea className="h-96 pr-4 text-xs text-muted-foreground">
-                  <div className="space-y-4 pb-12">
+                  <div className="space-y-6 pb-12">
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 1 :</h4>
-                      <p>Le marché aura lieu le samedi 05/12/{marketYear} de 14h à 19h et le dimanche 06/12/{marketYear} de 10h à 17h30 à la salle Maurice Baquet, rue Pierre Coubertin à Chazay d’Azergues (69380).</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 1 : Dates et lieu</h4>
+                      <p>Le marché aura lieu le samedi de 14h à 19h et le dimanche de 10h à 17h30 à la salle Maurice Baquet, rue Pierre Coubertin à Chazay d’Azergues (69380). L'installation se fait le samedi matin.</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 2 :</h4>
-                      <p>L’inscription n’est possible que sur les 2 jours. Pas de dérogation possible.</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 2 : Durée de l'engagement</h4>
+                      <p>L’inscription n’est possible que sur les 2 jours consécutifs. Aucune dérogation ne sera acceptée pour une présence partielle.</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 3 :</h4>
-                      <p>Nous répondrons à toutes les candidatures dans les 15 semaines. Nous privilégions les articles et produits artisanaux. Nous n’acceptons pas la revente.</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 3 : Sélection des exposants</h4>
+                      <p>Le comité de sélection répondra à toutes les candidatures dans un délai de 15 semaines. Nous privilégions exclusivement les articles et produits artisanaux ou le fait-main. La revente de produits industriels est strictement interdite.</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 5 :</h4>
-                      <p>Tarif {marketYear} : {priceTable1}€ pour 1 table (1m75) et {priceTable2}€ pour 2 tables (3m50).</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 4 : Matériel et emplacement</h4>
+                      <p>L'association fournit les tables. Les nappages et décorations de stand sont à la charge de l'exposant et doivent respecter l'esprit de Noël. Des grilles d'exposition peuvent être prêtées sur demande et selon disponibilité.</p>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 5 : Tarifs et règlement</h4>
+                      <p>Tarif {marketYear} : {priceTable1}€ pour 1 table (1m75) et {priceTable2}€ pour 2 tables (3m50). Le paiement doit être effectué par chèque après acceptation définitive de la candidature.</p>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 6 : Tombola solidaire</h4>
+                      <p>Chaque exposant est invité à offrir un lot de sa création pour la tombola au profit de l'association. Ce lot sera collecté par les bénévoles durant le week-end.</p>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 7 : Responsabilité et assurance</h4>
+                      <p>L'exposant doit être couvert par une assurance Responsabilité Civile Professionnelle. L'association décline toute responsabilité en cas de vol ou de dégradation du matériel de l'exposant.</p>
                     </div>
                   </div>
                 </ScrollArea>
@@ -382,6 +393,7 @@ export default function RegisterPage() {
                       </label>
                     )}
                   </div>
+                  <p className="text-[10px] text-muted-foreground">Merci de fournir 3 photos illustrant vos créations et la décoration de votre stand.</p>
                 </div>
 
                 <div className="p-4 bg-muted/30 rounded-lg">
@@ -409,24 +421,58 @@ export default function RegisterPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Nature de votre stand / Description des produits</FormLabel>
-                      <FormControl><Textarea placeholder="Détaillez vos créations..." className="min-h-[120px]" {...field} /></FormControl>
+                      <FormControl><Textarea placeholder="Détaillez vos créations et votre univers..." className="min-h-[120px]" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <div className="space-y-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                  <FormField control={form.control} name="agreedToGdpr" render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1 leading-none"><FormLabel className="font-bold text-primary">Consentement RGPD</FormLabel><FormDescription className="text-xs">J'accepte que les informations saisies soient utilisées pour l'organisation.</FormDescription><FormMessage /></div></FormItem>
-                  )} />
-                  <FormField control={form.control} name="agreedToTerms" render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 border-t pt-4"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1 leading-none"><FormLabel className="font-bold text-primary">Règlement du Marché</FormLabel><FormDescription className="text-xs">J'ai lu et j'accepte l'intégralité du règlement.</FormDescription><FormMessage /></div></FormItem>
-                  )} />
+                <div className="space-y-6 pt-6">
+                  <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 space-y-4 shadow-inner">
+                    <h3 className="text-sm font-bold text-primary flex items-center gap-2 uppercase tracking-wider">
+                      <ShieldCheck className="w-4 h-4" /> Consentements et validations
+                    </h3>
+                    
+                    <div className="space-y-4">
+                      <FormField control={form.control} name="agreedToGdpr" render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="font-bold text-primary text-xs">Protection des données (RGPD) *</FormLabel>
+                            <FormDescription className="text-[11px] leading-relaxed">
+                              J'accepte que les informations saisies dans ce formulaire soient stockées et utilisées par l'association "Un jardin pour Félix" pour l'étude de ma candidature et l'organisation du marché de Noël {marketYear}.
+                            </FormDescription>
+                            <FormMessage />
+                          </div>
+                        </FormItem>
+                      )} />
+                      
+                      <FormField control={form.control} name="agreedToTerms" render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 border-t border-primary/10 pt-4">
+                          <FormControl>
+                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="font-bold text-primary text-xs">Règlement du Marché *</FormLabel>
+                            <FormDescription className="text-[11px] leading-relaxed">
+                              J'ai lu et j'accepte l'intégralité du règlement du marché présenté en haut de cette page. Je m'engage à être présent les deux jours de l'événement.
+                            </FormDescription>
+                            <FormMessage />
+                          </div>
+                        </FormItem>
+                      )} />
+                    </div>
+                  </div>
                 </div>
 
-                <Button type="submit" disabled={isSubmitting} className="w-full bg-primary hover:bg-primary/90 text-white gold-glow h-12 text-lg font-semibold gap-2">
-                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />} Envoyer ma candidature
+                <Button type="submit" disabled={isSubmitting} className="w-full bg-primary hover:bg-primary/90 text-white gold-glow h-16 text-xl font-bold gap-2 mt-8">
+                  {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />} Envoyer ma candidature
                 </Button>
+                <p className="text-[10px] text-center text-muted-foreground italic">
+                  Les champs marqués d'une * sont obligatoires pour la validation de votre dossier.
+                </p>
               </form>
             </Form>
           </CardContent>
