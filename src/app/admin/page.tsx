@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Exhibitor } from '@/lib/types';
@@ -14,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
-import { sendAcceptanceEmail, sendRejectionEmail, sendBulkEmailAction } from '@/app/actions/email-actions';
+import { sendAcceptanceEmail, sendRejectionEmail, sendBulkEmailAction, sendTestEmailAction } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useMemoFirebase, useCollection, useUser, useAuth, useDoc } from '@/firebase';
 import { collection, doc, query, orderBy, where } from 'firebase/firestore';
@@ -37,6 +36,7 @@ export default function AdminDashboard() {
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isSendingTest, setIsSendingTest] = useState(false);
   const [justification, setJustification] = useState('');
   const [acceptanceMessage, setAcceptanceMessage] = useState('');
   const [selectedConfigId, setSelectedConfigId] = useState<string>('');
@@ -53,6 +53,7 @@ export default function AdminDashboard() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
+  const [testEmailAddress, setTestEmailAddress] = useState('');
 
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
   const isSuperAdmin = user?.email === "hugues.rabier@gmail.com";
@@ -76,6 +77,12 @@ export default function AdminDashboard() {
       setSelectedConfigId(currentConfig.id);
     }
   }, [currentConfig, selectedConfigId]);
+
+  useEffect(() => {
+    if (user?.email) {
+      setTestEmailAddress(user.email);
+    }
+  }, [user]);
 
   // Email Templates
   const templatesQuery = useMemoFirebase(() => query(collection(db, 'email_templates'), orderBy('createdAt', 'desc')), [db]);
@@ -184,6 +191,21 @@ export default function AdminDashboard() {
     setIsTemplateFormVisible(false);
     setTemplateForm({ name: '', subject: '', body: '' });
     toast({ title: "Template enregistré" });
+  };
+
+  const handleSendTestEmail = async () => {
+    if (!testEmailAddress || !templateForm.subject || !templateForm.body) {
+      toast({ variant: "destructive", title: "Champs manquants", description: "Veuillez remplir le sujet et le corps du message." });
+      return;
+    }
+    setIsSendingTest(true);
+    const res = await sendTestEmailAction(testEmailAddress, templateForm.subject, templateForm.body);
+    if (res.success) {
+      toast({ title: "Email de test envoyé !" });
+    } else {
+      toast({ variant: "destructive", title: "Échec de l'envoi", description: res.error });
+    }
+    setIsSendingTest(false);
   };
 
   const insertTag = (tag: string, closeTag?: string) => {
@@ -522,6 +544,31 @@ export default function AdminDashboard() {
                         ) : (
                           <div className="min-h-[200px] p-4 bg-white border rounded-md prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: templateForm.body }} />
                         )}
+                      </div>
+
+                      {/* Section de Test d'Email */}
+                      <div className="flex gap-2 items-end border-t pt-4 mt-4 bg-white/50 p-3 rounded-lg border border-primary/10">
+                        <div className="flex-1 space-y-1">
+                          <label className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1">
+                            <Mail className="w-3 h-3" /> Envoyer un test à :
+                          </label>
+                          <Input 
+                            placeholder="votre@email.com" 
+                            value={testEmailAddress} 
+                            onChange={e => setTestEmailAddress(e.target.value)}
+                            className="h-8 text-xs bg-white"
+                          />
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={handleSendTestEmail}
+                          disabled={isSendingTest || !testEmailAddress || !templateForm.subject}
+                          className="h-8 gap-2 border-primary/20 text-primary hover:bg-primary/5"
+                        >
+                          {isSendingTest ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                          Tester
+                        </Button>
                       </div>
                       
                       <div className="flex gap-2">

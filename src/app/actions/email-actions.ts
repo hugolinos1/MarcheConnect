@@ -1,4 +1,3 @@
-
 'use server';
 
 import nodemailer from 'nodemailer';
@@ -248,4 +247,29 @@ export async function sendBulkEmailAction(emails: string[], subject: string, bod
     totalFailed: failed.length,
     failedEmails: failed.map(f => f.email)
   };
+}
+
+/**
+ * Envoie un email de test à un destinataire unique.
+ */
+export async function sendTestEmailAction(to: string, subject: string, body: string) {
+  const transporter = createTransporter();
+  const cleanedSubject = `[TEST] ${stripAccents(subject)}`;
+  const plainTextBody = body.replace(/<[^>]*>?/gm, '');
+
+  const mailOptions = {
+    from: `"Le Marche de Felix" <hugues.rabier@gmail.com>`,
+    to: to,
+    subject: cleanedSubject,
+    text: plainTextBody,
+    html: body,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return { success: true };
+  } catch (error: any) {
+    console.error(`Test Email Error:`, error);
+    return { success: false, error: error.message };
+  }
 }
