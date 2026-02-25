@@ -49,6 +49,7 @@ export default function AdminDashboard() {
   const [isBulkEmailDialogOpen, setIsBulkEmailDialogOpen] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isTemplateFormVisible, setIsTemplateFormVisible] = useState(false);
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -87,6 +88,14 @@ export default function AdminDashboard() {
   // Email Templates
   const templatesQuery = useMemoFirebase(() => query(collection(db, 'email_templates'), orderBy('createdAt', 'desc')), [db]);
   const { data: templates } = useCollection(templatesQuery);
+
+  // Admin Requests (SuperAdmin Only)
+  const adminRequestsQuery = useMemoFirebase(() => isSuperAdmin ? query(collection(db, 'admin_requests'), orderBy('requestedAt', 'desc')) : null, [db, isSuperAdmin]);
+  const { data: adminRequests } = useCollection(adminRequestsQuery);
+
+  // Current Admins (SuperAdmin Only)
+  const adminRolesQuery = useMemoFirebase(() => isSuperAdmin ? collection(db, 'roles_admin') : null, [db, isSuperAdmin]);
+  const { data: adminRoles } = useCollection(adminRolesQuery);
 
   // Exhibitors Data
   const exhibitorsQuery = useMemoFirebase(() => {
@@ -177,7 +186,6 @@ export default function AdminDashboard() {
 
   // Template Form
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
-  const [isTemplateFormVisible, setIsTemplateFormVisible] = useState(false);
   const [templateForm, setTemplateForm] = useState({ name: '', subject: '', body: '' });
 
   const handleSaveTemplate = () => {
@@ -546,7 +554,6 @@ export default function AdminDashboard() {
                         )}
                       </div>
 
-                      {/* Section de Test d'Email */}
                       <div className="flex gap-2 items-end border-t pt-4 mt-4 bg-white/50 p-3 rounded-lg border border-primary/10">
                         <div className="flex-1 space-y-1">
                           <label className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1">
@@ -581,6 +588,89 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {isSuperAdmin && (
+            <TabsContent value="admins" className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-8">
+                {/* Pending Requests */}
+                <Card className="border-t-4 border-t-amber-500 shadow-md">
+                  <CardHeader><CardTitle className="text-lg flex items-center gap-2 text-amber-600"><Clock className="w-5 h-5" /> Demandes en attente</CardTitle></CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {adminRequests?.filter(r => r.status === 'PENDING').length === 0 ? (
+                        <p className="text-sm text-muted-foreground italic">Aucune demande en attente.</p>
+                      ) : (
+                        adminRequests?.filter(r => r.status === 'PENDING').map(request => (
+                          <div key={request.id} className="p-4 border rounded-xl flex justify-between items-center bg-amber-50/30">
+                            <div>
+                              <p className="font-bold">{request.email}</p>
+                              <p className="text-[10px] text-muted-foreground">Demandé le {new Date(request.requestedAt).toLocaleDateString()}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button size="sm" className="bg-green-600" onClick={() => {
+                                setDocumentNonBlocking(doc(db, 'roles_admin', request.id), { addedAt: new Date().toISOString() }, { merge: true });
+                                updateDocumentNonBlocking(doc(db, 'admin_requests', request.id), { status: 'APPROVED' });
+                                toast({ title: "Accès approuvé" });
+                              }}><CheckCircle className="w-4 h-4" /></Button>
+                              <Button size="sm" variant="destructive" onClick={() => {
+                                updateDocumentNonBlocking(doc(db, 'admin_requests', request.id), { status: 'REJECTED' });
+                                toast({ title: "Demande refusée" });
+                              }}><XCircle className="w-4 h-4" /></Button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Current Admins */}
+                <Card className="border-t-4 border-t-primary shadow-md">
+                  <CardHeader><CardTitle className="text-lg flex items-center gap-2 text-primary"><ShieldCheck className="w-5 h-5" /> Administrateurs Actuels</CardTitle></CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {adminRoles?.map(admin => {
+                        const originalRequest = adminRequests?.find(r => r.id === admin.id);
+                        return (
+                          <div key={admin.id} className="p-4 border rounded-xl flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                                {originalRequest?.email ? originalRequest.email.charAt(0).toUpperCase() : 'A'}
+                              </div>
+                              <div>
+                                <p className="font-bold text-sm">{originalRequest?.email || `ID: ${admin.id.substring(0, 8)}...`}</p>
+                                <p className="text-[10px] text-muted-foreground">Admin depuis {admin.addedAt ? new Date(admin.addedAt).toLocaleDateString() : '?'}</p>
+                              </div>
+                            </div>
+                            {admin.id !== user.uid && (
+                               <AlertDialog>
+                                 <AlertDialogTrigger asChild>
+                                   <Button size="sm" variant="ghost" className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                                 </AlertDialogTrigger>
+                                 <AlertDialogContent>
+                                   <AlertDialogHeader>
+                                     <AlertDialogTitle>Retirer les droits ?</AlertDialogTitle>
+                                     <AlertDialogDescription>Cet utilisateur n'aura plus accès au tableau de bord.</AlertDialogDescription>
+                                   </AlertDialogHeader>
+                                   <AlertDialogFooter>
+                                     <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                     <AlertDialogAction onClick={() => {
+                                       deleteDocumentNonBlocking(doc(db, 'roles_admin', admin.id));
+                                       toast({ title: "Accès retiré" });
+                                     }}>Confirmer</AlertDialogAction>
+                                   </AlertDialogFooter>
+                                 </AlertDialogContent>
+                               </AlertDialog>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
       </main>
 
