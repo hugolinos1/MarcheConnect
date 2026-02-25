@@ -14,10 +14,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
-import { sendAcceptanceEmail, sendRejectionEmail, testSmtpGmail, sendBulkEmailAction } from '@/app/actions/email-actions';
+import { sendAcceptanceEmail, sendRejectionEmail, sendBulkEmailAction } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useMemoFirebase, useCollection, useUser, useAuth, useDoc } from '@/firebase';
-import { collection, doc, query, orderBy, where, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, query, orderBy, where } from 'firebase/firestore';
 import { updateDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { initiateEmailSignIn, initiateEmailSignUp } from '@/firebase/non-blocking-login';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -35,7 +35,6 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [justification, setJustification] = useState('');
   const [acceptanceMessage, setAcceptanceMessage] = useState('');
@@ -60,10 +59,6 @@ export default function AdminDashboard() {
   const userRoleRef = useMemoFirebase(() => user ? doc(db, 'roles_admin', user.uid) : null, [db, user]);
   const { data: userRoleDoc, isLoading: isRoleLoading } = useDoc(userRoleRef);
   const isAuthorized = isSuperAdmin || !!userRoleDoc;
-
-  // Admin Requests
-  const adminRequestsQuery = useMemoFirebase(() => isSuperAdmin ? collection(db, 'admin_requests') : null, [db, isSuperAdmin]);
-  const { data: adminRequests } = useCollection(adminRequestsQuery);
 
   // Market Configs
   const marketConfigsQuery = useMemoFirebase(() => query(collection(db, 'market_configurations'), orderBy('marketYear', 'desc')), [db]);
@@ -355,7 +350,6 @@ export default function AdminDashboard() {
             <Card className="max-w-3xl mx-auto border-t-4 border-t-primary bg-white shadow-xl">
               <CardHeader><CardTitle className="text-primary flex items-center gap-2"><Settings className="w-6 h-6" /> Configuration de l'édition</CardTitle></CardHeader>
               <CardContent className="space-y-6">
-                 {/* Existing configuration fields */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Année</label><Input type="number" value={configForm.marketYear} onChange={(e) => setConfigForm({...configForm, marketYear: parseInt(e.target.value)})} /></div>
                   <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Nom Édition</label><Input value={configForm.editionNumber} onChange={(e) => setConfigForm({...configForm, editionNumber: e.target.value})} /></div>
@@ -375,7 +369,31 @@ export default function AdminDashboard() {
                    <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Prix Électricité</label><Input type="number" value={configForm.priceElectricity} onChange={(e) => setConfigForm({...configForm, priceElectricity: parseInt(e.target.value)})} /></div>
                    <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Prix Tombola</label><Input type="number" value={configForm.priceTombola} onChange={(e) => setConfigForm({...configForm, priceTombola: parseInt(e.target.value)})} /></div>
                 </div>
-                <Button onClick={() => setDocumentNonBlocking(doc(db, 'market_configurations', currentConfig!.id), { ...configForm }, { merge: true })} className="w-full">Sauvegarder la configuration</Button>
+                <div className="flex gap-2">
+                  <Button onClick={() => setDocumentNonBlocking(doc(db, 'market_configurations', currentConfig!.id), { ...configForm }, { merge: true })} className="flex-1">Sauvegarder</Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive"><Trash2 className="w-4 h-4" /></Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Supprimer l'édition {currentConfig?.marketYear} ?</AlertDialogTitle>
+                        <AlertDialogDescription>Cette action est irréversible et supprimera toutes les candidatures associées.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => {
+                          if (configs && configs.length > 1) {
+                            deleteDocumentNonBlocking(doc(db, 'market_configurations', currentConfig!.id));
+                            toast({ title: "Édition supprimée" });
+                          } else {
+                            toast({ variant: "destructive", title: "Impossible", description: "Vous devez garder au moins une édition." });
+                          }
+                        }}>Supprimer définitivement</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
                 
                 <Separator />
                 
@@ -455,13 +473,25 @@ export default function AdminDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Other Dialogs (Accept, Reject, View) - Minimal for brevity but must be present or assumed */}
+      {/* Other Dialogs */}
       <Dialog open={!!viewingExhibitor} onOpenChange={o => !o && setViewingExhibitor(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader><DialogTitle>Dossier de {viewingExhibitor?.companyName}</DialogTitle></DialogHeader>
           <ScrollArea className="h-[70vh] p-4">
-             {/* Content same as before */}
-             {viewingExhibitor && <div className="space-y-4"><p><strong>Produits:</strong> {viewingExhibitor.productDescription}</p></div>}
+             {viewingExhibitor && (
+               <div className="space-y-6">
+                 <div className="grid grid-cols-2 gap-4">
+                   <div><p className="text-xs font-bold uppercase text-muted-foreground">Contact</p><p>{viewingExhibitor.firstName} {viewingExhibitor.lastName}</p><p>{viewingExhibitor.email}</p><p>{viewingExhibitor.phone}</p></div>
+                   <div><p className="text-xs font-bold uppercase text-muted-foreground">Adresse</p><p>{viewingExhibitor.address}</p><p>{viewingExhibitor.postalCode} {viewingExhibitor.city}</p></div>
+                 </div>
+                 <div><p className="text-xs font-bold uppercase text-muted-foreground">Description Stand</p><p className="whitespace-pre-wrap">{viewingExhibitor.productDescription}</p></div>
+                 {viewingExhibitor.productImages && (
+                   <div className="grid grid-cols-3 gap-4">
+                     {viewingExhibitor.productImages.map((img, i) => <img key={i} src={img} className="rounded-lg border aspect-square object-cover" alt="Produit" />)}
+                   </div>
+                 )}
+               </div>
+             )}
           </ScrollArea>
         </DialogContent>
       </Dialog>
@@ -477,6 +507,7 @@ export default function AdminDashboard() {
               updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { status: 'accepted_form1' });
               await sendAcceptanceEmail(actingExhibitor, acceptanceMessage, currentConfig);
               setIsAcceptDialogOpen(false); setIsSending(false); setAcceptanceMessage('');
+              toast({ title: "Candidature acceptée et email envoyé" });
             }} disabled={isSending}>{isSending ? <Loader2 className="animate-spin" /> : "Confirmer"}</Button>
           </DialogFooter>
         </DialogContent>
@@ -485,7 +516,20 @@ export default function AdminDashboard() {
       <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Refuser la candidature</DialogTitle></DialogHeader>
-          <Textarea value={justification} onChange={e => setJustification(e.target.value)} placeholder="Motif du refus..." rows={6} className="mt-4" />
+          <div className="space-y-4 mt-4">
+            <Button variant="outline" size="sm" onClick={async () => {
+              if (!actingExhibitor) return;
+              setIsSending(true);
+              const res = await generateRejectionJustification({
+                applicantName: `${actingExhibitor.firstName} ${actingExhibitor.lastName}`,
+                applicationSummary: actingExhibitor.productDescription,
+                rejectionReasons: ["Manque de place", "Catégorie déjà saturée"]
+              });
+              setJustification(res.justificationMessage);
+              setIsSending(false);
+            }} disabled={isSending} className="gap-2"><Sparkles className="w-4 h-4" /> Générer avec l'IA</Button>
+            <Textarea value={justification} onChange={e => setJustification(e.target.value)} placeholder="Motif du refus..." rows={6} />
+          </div>
           <DialogFooter className="mt-6">
             <Button variant="destructive" onClick={async () => {
               if (!actingExhibitor) return;
@@ -493,6 +537,7 @@ export default function AdminDashboard() {
               updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { status: 'rejected', rejectionJustification: justification });
               await sendRejectionEmail(actingExhibitor, justification, currentConfig);
               setIsRejectDialogOpen(false); setIsSending(false); setJustification('');
+              toast({ title: "Candidature refusée" });
             }} disabled={isSending || !justification}>Refuser</Button>
           </DialogFooter>
         </DialogContent>
