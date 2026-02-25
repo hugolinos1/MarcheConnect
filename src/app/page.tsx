@@ -242,7 +242,6 @@ export default function Home() {
           </div>
           <p className="text-sm opacity-80">© {marketYear} Association "Un jardin pour Félix"</p>
           <div className="flex gap-4">
-            <Link href="https://www.unjardinpourfelix.org/" target="_blank" className="text-sm hover:underline">Blog de Félix</Link>
             <Link href="https://www.facebook.com/unjardinpourfelix" target="_blank" className="text-sm hover:underline">Facebook</Link>
           </div>
         </div>
