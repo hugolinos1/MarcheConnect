@@ -1,4 +1,5 @@
-["use client"
+'use client';
+
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -327,5 +328,3 @@ export default function DetailsPage() {
     </div>
   );
 }
-
-    
