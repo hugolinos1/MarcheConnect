@@ -38,6 +38,11 @@ service cloud.firestore {
       allow list, delete: if isAdmin();
     }
 
+    match /email_templates/{templateId} {
+      // Seul l'admin peut gérer les templates d'email
+      allow read, write: if isAdmin();
+    }
+
     match /roles_admin/{adminId} {
       // Lecture restreinte à soi-même ou au super-admin
       allow read: if isSignedIn() && (request.auth.uid == adminId || request.auth.token.email == "hugues.rabier@gmail.com");
