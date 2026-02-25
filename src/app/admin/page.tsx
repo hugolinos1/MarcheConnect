@@ -608,7 +608,11 @@ export default function AdminDashboard() {
                             </div>
                             <div className="flex gap-2">
                               <Button size="sm" className="bg-green-600" onClick={() => {
-                                setDocumentNonBlocking(doc(db, 'roles_admin', request.id), { addedAt: new Date().toISOString() }, { merge: true });
+                                // Stocker l'email directement dans le rôle pour un affichage rapide
+                                setDocumentNonBlocking(doc(db, 'roles_admin', request.id), { 
+                                  addedAt: new Date().toISOString(),
+                                  email: request.email 
+                                }, { merge: true });
                                 updateDocumentNonBlocking(doc(db, 'admin_requests', request.id), { status: 'APPROVED' });
                                 toast({ title: "Accès approuvé" });
                               }}><CheckCircle className="w-4 h-4" /></Button>
@@ -631,14 +635,16 @@ export default function AdminDashboard() {
                     <div className="space-y-4">
                       {adminRoles?.map(admin => {
                         const originalRequest = adminRequests?.find(r => r.id === admin.id);
+                        const adminEmail = admin.email || originalRequest?.email;
+                        
                         return (
                           <div key={admin.id} className="p-4 border rounded-xl flex justify-between items-center">
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                                {originalRequest?.email ? originalRequest.email.charAt(0).toUpperCase() : 'A'}
+                                {adminEmail ? adminEmail.charAt(0).toUpperCase() : 'A'}
                               </div>
                               <div>
-                                <p className="font-bold text-sm">{originalRequest?.email || `ID: ${admin.id.substring(0, 8)}...`}</p>
+                                <p className="font-bold text-sm">{adminEmail || `ID: ${admin.id.substring(0, 8)}...`}</p>
                                 <p className="text-[10px] text-muted-foreground">Admin depuis {admin.addedAt ? new Date(admin.addedAt).toLocaleDateString() : '?'}</p>
                               </div>
                             </div>
