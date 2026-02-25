@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Users, UserCheck, Clock, ArrowLeft, Phone, Globe, LayoutGrid, Calculator, TrendingUp, Wallet, ClipboardList, Filter, Send, Plus, Image as ImageIcon, Bold, Italic, Underline, List, Type, WrapText, EyeOff, Link as LucideLink } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Users, UserCheck, Clock, ArrowLeft, Phone, Globe, LayoutGrid, Calculator, TrendingUp, Wallet, ClipboardList, Filter, Send, Plus, Image as ImageIcon, Bold, Italic, Underline, List, Type, WrapText, EyeOff, Link as LucideLink, Key, UserPlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -36,6 +36,7 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [justification, setJustification] = useState('');
@@ -54,6 +55,7 @@ export default function AdminDashboard() {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [inputSignupCode, setInputSignupCode] = useState('');
   const [authError, setAuthError] = useState('');
   const [testEmailAddress, setTestEmailAddress] = useState('');
 
@@ -157,6 +159,7 @@ export default function AdminDashboard() {
     editionNumber: "6ème",
     posterImageUrl: "https://i.ibb.co/3y3KRNW4/Affiche-March.jpg",
     notificationEmail: "lemarchedefelix2020@gmail.com",
+    signupCode: "FELIX2026",
     priceTable1: 40,
     priceTable2: 60,
     priceMeal: 8,
@@ -175,6 +178,7 @@ export default function AdminDashboard() {
         editionNumber: currentConfig.editionNumber,
         posterImageUrl: currentConfig.posterImageUrl,
         notificationEmail: currentConfig.notificationEmail || "lemarchedefelix2020@gmail.com",
+        signupCode: currentConfig.signupCode || "FELIX2026",
         priceTable1: currentConfig.priceTable1 ?? 40,
         priceTable2: currentConfig.priceTable2 ?? 60,
         priceMeal: currentConfig.priceMeal ?? 8,
@@ -284,10 +288,30 @@ export default function AdminDashboard() {
     e.preventDefault();
     setAuthError('');
     setIsAuthLoading(true);
+
+    if (isSigningUp && inputSignupCode !== (currentConfig?.signupCode || "FELIX2026")) {
+      setAuthError("Code d'accès invalide.");
+      setIsAuthLoading(false);
+      return;
+    }
+
     const authPromise = isSigningUp 
       ? initiateEmailSignUp(auth, email, password)
       : initiateEmailSignIn(auth, email, password);
     authPromise.catch((err: any) => setAuthError("Erreur d'authentification.")).finally(() => setIsAuthLoading(false));
+  };
+
+  const handleUnlockWithCode = () => {
+    if (inputSignupCode === (currentConfig?.signupCode || "FELIX2026")) {
+      setDocumentNonBlocking(doc(db, 'roles_admin', user!.uid), { 
+        addedAt: new Date().toISOString(),
+        email: user!.email 
+      }, { merge: true });
+      updateDocumentNonBlocking(doc(db, 'admin_requests', user!.uid), { status: 'APPROVED' });
+      toast({ title: "Accès activé !" });
+    } else {
+      toast({ variant: "destructive", title: "Code erroné", description: "Veuillez vérifier le code envoyé par l'admin." });
+    }
   };
 
   if (isUserLoading || isRoleLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
@@ -296,16 +320,57 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
         <Card className="max-w-md w-full border-t-4 border-t-primary shadow-xl mb-4">
-          <CardHeader className="text-center"><CardTitle className="text-primary">{isSigningUp ? "Créer un compte" : "Administration"}</CardTitle></CardHeader>
+          <CardHeader className="text-center">
+            <CardTitle className="text-primary flex items-center justify-center gap-2">
+              {isSigningUp ? <UserPlus className="w-6 h-6" /> : <ShieldCheck className="w-6 h-6" />}
+              {isSigningUp ? "Créer un compte" : "Administration"}
+            </CardTitle>
+          </CardHeader>
           <CardContent>
             <form onSubmit={handleAuth} className="space-y-4">
-              <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              <Input type="password" placeholder="Mot de passe" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <div className="space-y-2">
+                <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              </div>
+              <div className="relative">
+                <Input 
+                  type={showPassword ? "text" : "password"} 
+                  placeholder="Mot de passe" 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  required 
+                  className="pr-10"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              
+              {isSigningUp && (
+                <div className="space-y-2 border-t pt-4">
+                  <label className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1">
+                    <Key className="w-3 h-3" /> Code d'accès (Requis)
+                  </label>
+                  <Input 
+                    placeholder="Code fourni par l'admin" 
+                    value={inputSignupCode} 
+                    onChange={(e) => setInputSignupCode(e.target.value)} 
+                    required={isSigningUp}
+                  />
+                  <p className="text-[9px] text-muted-foreground">Contactez l'organisateur pour obtenir ce code.</p>
+                </div>
+              )}
+
               {authError && <p className="text-xs text-destructive text-center font-bold">{authError}</p>}
+              
               <Button type="submit" disabled={isAuthLoading} className="w-full">
                 {isAuthLoading ? <Loader2 className="animate-spin" /> : (isSigningUp ? "S'inscrire" : "Connexion")}
               </Button>
-              <Button type="button" variant="ghost" className="w-full text-xs" onClick={() => setIsSigningUp(!isSigningUp)}>
+              
+              <Button type="button" variant="ghost" className="w-full text-xs" onClick={() => { setIsSigningUp(!isSigningUp); setAuthError(''); }}>
                 {isSigningUp ? "Déjà un compte ? Connectez-vous" : "Pas encore de compte ? Inscrivez-vous"}
               </Button>
             </form>
@@ -321,7 +386,21 @@ export default function AdminDashboard() {
         <Card className="max-w-md w-full border-t-4 border-t-amber-500 shadow-xl p-8 text-center space-y-6">
           <Clock className="mx-auto w-12 h-12 text-amber-500 animate-pulse" />
           <h2 className="text-xl font-bold">Accès en attente</h2>
-          <Button onClick={() => setDocumentNonBlocking(doc(db, 'admin_requests', user.uid), { email: user.email, requestedAt: new Date().toISOString(), status: 'PENDING' }, { merge: true })} className="w-full bg-amber-500 hover:bg-amber-600">Demander l'accès</Button>
+          <p className="text-sm text-muted-foreground">Votre compte a été créé, mais vous n'avez pas encore les droits d'administration.</p>
+          
+          <div className="space-y-4 border-y py-6">
+            <p className="text-xs font-bold uppercase text-muted-foreground">Vous avez un code d'activation ?</p>
+            <div className="flex gap-2">
+              <Input 
+                placeholder="Entrez le code ici" 
+                value={inputSignupCode} 
+                onChange={(e) => setInputSignupCode(e.target.value)} 
+              />
+              <Button onClick={handleUnlockWithCode}>Valider</Button>
+            </div>
+          </div>
+
+          <Button onClick={() => setDocumentNonBlocking(doc(db, 'admin_requests', user.uid), { email: user.email, requestedAt: new Date().toISOString(), status: 'PENDING' }, { merge: true })} className="w-full bg-amber-500 hover:bg-amber-600">Demander l'accès manuellement</Button>
           <Button onClick={() => auth.signOut()} variant="outline" className="w-full">Se déconnecter</Button>
         </Card>
       </div>
@@ -437,6 +516,23 @@ export default function AdminDashboard() {
                   <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Année</label><Input type="number" value={configForm.marketYear} onChange={(e) => setConfigForm({...configForm, marketYear: parseInt(e.target.value)})} /></div>
                   <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Nom Édition</label><Input value={configForm.editionNumber} onChange={(e) => setConfigForm({...configForm, editionNumber: e.target.value})} /></div>
                 </div>
+                
+                <div className="p-4 bg-primary/5 rounded-xl border-2 border-primary/10 space-y-4">
+                  <div className="flex items-center gap-2 text-primary font-bold">
+                    <Key className="w-5 h-5" /> Sécurité & Accès Admin
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase text-muted-foreground">Code d'invitation secret</label>
+                    <Input 
+                      value={configForm.signupCode} 
+                      onChange={(e) => setConfigForm({...configForm, signupCode: e.target.value})} 
+                      placeholder="Ex: FELIX2026"
+                      className="bg-white font-mono"
+                    />
+                    <p className="text-[10px] text-muted-foreground italic">Ce code doit être saisi par les nouveaux admins lors de leur inscription ou pour débloquer leur compte.</p>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-2"><ImageIcon className="w-3 h-3" /> URL de l'image de l'affiche</label>
                   <Input value={configForm.posterImageUrl} onChange={(e) => setConfigForm({...configForm, posterImageUrl: e.target.value})} placeholder="https://..." />
