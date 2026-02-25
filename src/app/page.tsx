@@ -216,7 +216,7 @@ export default function Home() {
                     </a>
                   </Button>
                   <Button asChild variant="link" className="text-primary p-0 h-auto font-bold">
-                    <a href="https://un-jardin-pour-felix.sumupstore.com/" target="_blank" className="flex items-center gap-2">
+                    <a href="https://www.lemarchedefelix.com/" target="_blank" className="flex items-center gap-2">
                       <ShoppingBag className="w-4 h-4" /> Boutique Solidaire
                     </a>
                   </Button>
