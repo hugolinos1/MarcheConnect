@@ -1,19 +1,13 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * MARCHÉCONNECT SECURITY RULES
-     */
-
-    // --- Helper Functions ---
+    // --- Fonctions d'aide ---
 
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Vérification de l'administrateur sans récursion
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email == "hugues.rabier@gmail.com" ||
@@ -21,36 +15,43 @@ service cloud.firestore {
       );
     }
 
-    // --- Collection Rules ---
-
-    match /roles_admin/{adminId} {
-      // On évite d'appeler isAdmin() ici pour ne pas créer de récursion avec exists()
-      allow get: if isSignedIn() && (request.auth.uid == adminId || request.auth.token.email == "hugues.rabier@gmail.com");
-      allow list: if isSignedIn() && request.auth.token.email == "hugues.rabier@gmail.com";
-      allow create, update, delete: if isSignedIn() && request.auth.token.email == "hugues.rabier@gmail.com";
-    }
-
-    match /admin_requests/{requestId} {
-      allow create: if isSignedIn() && request.auth.uid == requestId;
-      allow get: if isSignedIn() && (request.auth.uid == requestId || isAdmin());
-      allow list, update, delete: if isAdmin();
-    }
+    // --- Règles des collections ---
 
     match /market_configurations/{marketConfigId} {
-      // Lecture toujours autorisée pour le bon fonctionnement du site
-      allow get, list: if true;
-      allow create, update, delete: if isAdmin();
+      // Lecture toujours autorisée pour le bon fonctionnement du site et de l'admin
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /pre_registrations/{preRegistrationId} {
+      // Tout le monde peut postuler et voir son statut via son ID
       allow create: if true;
       allow get: if true;
+      // Seul l'admin peut lister et modifier
       allow list, update, delete: if isAdmin();
     }
 
     match /exhibitor_details/{exhibitorDetailId} {
-      allow create, update, get: if true;
+      // Lecture et création autorisées pour les exposants acceptés (via leur ID)
+      allow read, create, update: if true;
+      // Seul l'admin peut lister/supprimer
       allow list, delete: if isAdmin();
+    }
+
+    match /roles_admin/{adminId} {
+      // Lecture restreinte à soi-même ou au super-admin
+      allow read: if isSignedIn() && (request.auth.uid == adminId || request.auth.token.email == "hugues.rabier@gmail.com");
+      // Seul le super-admin peut gérer les rôles
+      allow write: if isSignedIn() && request.auth.token.email == "hugues.rabier@gmail.com";
+    }
+
+    match /admin_requests/{requestId} {
+      // Tout utilisateur connecté peut faire une demande
+      allow create: if isSignedIn() && request.auth.uid == requestId;
+      // Lecture pour l'intéressé ou l'admin
+      allow read: if isSignedIn() && (request.auth.uid == requestId || isAdmin());
+      // Seul l'admin peut valider/supprimer
+      allow write: if isAdmin();
     }
   }
 }
