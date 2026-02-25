@@ -46,10 +46,9 @@ service cloud.firestore {
     match /admin_requests/{requestId} {
       // Lecture pour l'intéressé ou l'admin
       allow read: if isSignedIn() && (request.auth.uid == requestId || isAdmin());
-      // Création et mise à jour autorisées pour le propriétaire (pour solliciter un code)
+      // Création et mise à jour autorisées pour le propriétaire
       allow create, update: if isSignedIn() && request.auth.uid == requestId;
-      // Seul l'admin peut valider/supprimer (l'admin peut aussi update pour changer le status)
-      allow delete: if isAdmin();
+      // Seul l'admin peut tout faire
       allow write: if isAdmin();
     }
   }
