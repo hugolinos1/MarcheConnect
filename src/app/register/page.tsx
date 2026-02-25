@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -219,7 +218,7 @@ export default function RegisterPage() {
                         <p>Vous vous engagez à ne mettre sur votre stand que les articles qui ont été validé par le bureau du marché de Noël. Si besoin, nous vous demanderons de retirer les articles inaquédats.</p>
                         <p>Dans la mesure du possible, merci de porter un soin à votre stand : nappes pour recouvrir la table, mettre en avant le nom de votre marque, rendre lisible ce que vous vendez.</p>
                         <p>Nous serons sensibles aux demandes de personnes étant déclarées au registre du commerce. Le régime de micro-entreprise (régime micro-Bic) calcule les taxes qu’au strict pourcentage des ventes, cela n’engage donc pas de frais supplémentaires pour vous. Dans le cas où vous n’êtes pas déclaré, l’article L30-2 du code de commerce autorise les particuliers non inscrits à participer 2 fois/an à des marchés.</p>
-                        <p>Pour toute demande : envoi de photos récentes présentant vos créations. Lien de votre site marchand (facebook, etsy, instagram, internet…).</p>
+                        <p>Pour toute demande : envoi de photos récentes présentant vos créations. Lien de votre site marchand (facebook, etsy, instagram, internet…)</p>
                       </div>
                     </div>
                     <div>
@@ -250,7 +249,7 @@ export default function RegisterPage() {
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 6 :</h4>
                       <div className="space-y-2">
-                        <p>Nous organisons cette année une tombola avec une vente de ticket à 2€, que nous proposerons en amont de l’évènement lors de la foulée des jeunes, la course des 9 clochers le 10 et 11 octobre à Chazay. </p>
+                        <p>Nous organisons cette année une tombola avec une vente de ticket à 2€, que nous proposerons en amont de l’évènement lors de la foulée des jeunes, la course annuelle des 9 clochers de Chazay d'Azergues. </p>
                         <p>Nous allons démarcher des acteurs locaux afin de récolter de lots qui mettent en avant la gastronomie, les animations locales, le savoir-faire artisanal du département et de la région.</p>
                         <p>Nous vous sollicitons également pour faire un lot, à cet effet vous pourrez cocher la case en fin de bulletin et peut-être préciser la nature de votre don. </p>
                         <p>Il n’y a pas d’obligation, c’est au bon vouloir de chacun. N’hésitez pas à mettre votre carte de visite afin de faire connaître votre marque à l’heureux gagnant. </p>
