@@ -55,7 +55,8 @@ export default function AdminDashboard() {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [inputSignupCode, setInputSignupCode] = useState('');
+  const [signupCodeInput, setSignupCodeInput] = useState('');
+  const [inputActivationCode, setInputActivationCode] = useState('');
   const [authError, setAuthError] = useState('');
   const [testEmailAddress, setTestEmailAddress] = useState('');
 
@@ -288,19 +289,45 @@ export default function AdminDashboard() {
     setIsSending(false);
   };
 
-  const handleAuth = (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
     setIsAuthLoading(true);
 
-    const authPromise = isSigningUp 
-      ? initiateEmailSignUp(auth, email, password)
-      : initiateEmailSignIn(auth, email, password);
-    authPromise.catch((err: any) => setAuthError("Erreur d'authentification.")).finally(() => setIsAuthLoading(false));
+    try {
+      if (isSigningUp) {
+        const userCred = await initiateEmailSignUp(auth, email, password);
+        const uid = userCred.user.uid;
+        
+        // Check code immediately during signup
+        const masterCode = currentConfig?.signupCode || "FELIX2026";
+        if (signupCodeInput === masterCode) {
+          setDocumentNonBlocking(doc(db, 'roles_admin', uid), { 
+            addedAt: new Date().toISOString(),
+            email: email 
+          }, { merge: true });
+          toast({ title: "Accès activé immédiatement !" });
+        } else {
+          // If no code or wrong code, create request
+          setDocumentNonBlocking(doc(db, 'admin_requests', uid), { 
+            email: email, 
+            requestedAt: new Date().toISOString(), 
+            status: 'PENDING' 
+          }, { merge: true });
+          toast({ title: "Compte créé", description: "Demande d'accès envoyée à l'administrateur." });
+        }
+      } else {
+        await initiateEmailSignIn(auth, email, password);
+      }
+    } catch (err: any) {
+      setAuthError("Erreur d'authentification. Vérifiez vos identifiants.");
+    } finally {
+      setIsAuthLoading(false);
+    }
   };
 
   const handleUnlockWithCode = () => {
-    if (inputSignupCode === (currentConfig?.signupCode || "FELIX2026")) {
+    if (inputActivationCode === (currentConfig?.signupCode || "FELIX2026")) {
       setDocumentNonBlocking(doc(db, 'roles_admin', user!.uid), { 
         addedAt: new Date().toISOString(),
         email: user!.email 
@@ -355,6 +382,20 @@ export default function AdminDashboard() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+
+              {isSigningUp && (
+                <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <Input 
+                    placeholder="Code de création (optionnel)" 
+                    value={signupCodeInput} 
+                    onChange={(e) => setSignupCodeInput(e.target.value)}
+                    className="bg-primary/5 border-primary/20 font-mono"
+                  />
+                  <p className="text-[10px] text-muted-foreground italic px-1">
+                    Si vous n'avez pas de code, une demande d'accès sera envoyée à l'administrateur après l'inscription.
+                  </p>
+                </div>
+              )}
               
               {authError && <p className="text-xs text-destructive text-center font-bold">{authError}</p>}
               
@@ -362,9 +403,15 @@ export default function AdminDashboard() {
                 {isAuthLoading ? <Loader2 className="animate-spin" /> : (isSigningUp ? "S'inscrire" : "Connexion")}
               </Button>
               
-              <Button type="button" variant="ghost" className="w-full text-xs" onClick={() => { setIsSigningUp(!isSigningUp); setAuthError(''); }}>
-                {isSigningUp ? "Déjà un compte ? Connectez-vous" : "Pas encore de compte ? Inscrivez-vous"}
-              </Button>
+              {!isSigningUp ? (
+                <Button type="button" variant="link" className="w-full text-xs text-muted-foreground" onClick={() => { setIsSigningUp(true); setAuthError(''); }}>
+                  Pas de compte Admin. Solliciter un code
+                </Button>
+              ) : (
+                <Button type="button" variant="ghost" className="w-full text-xs" onClick={() => { setIsSigningUp(false); setAuthError(''); }}>
+                  Déjà un compte ? Connectez-vous
+                </Button>
+              )}
             </form>
           </CardContent>
         </Card>
@@ -393,8 +440,8 @@ export default function AdminDashboard() {
               <div className="flex gap-2">
                 <Input 
                   placeholder="Entrez le code ici" 
-                  value={inputSignupCode} 
-                  onChange={(e) => setInputSignupCode(e.target.value)} 
+                  value={inputActivationCode} 
+                  onChange={(e) => setInputActivationCode(e.target.value)} 
                 />
                 <Button onClick={handleUnlockWithCode}>Valider</Button>
               </div>
@@ -547,7 +594,7 @@ export default function AdminDashboard() {
                       placeholder="Ex: FELIX2026"
                       className="bg-white font-mono"
                     />
-                    <p className="text-[10px] text-muted-foreground italic">Ce code doit être saisi par les nouveaux admins pour débloquer leur compte instantanément.</p>
+                    <p className="text-[10px] text-muted-foreground italic">Ce code peut être saisi lors de l'inscription pour un accès instantané, ou plus tard sur l'écran d'attente.</p>
                   </div>
                 </div>
 
