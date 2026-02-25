@@ -67,6 +67,10 @@ export default function AdminDashboard() {
   const { data: userRoleDoc, isLoading: isRoleLoading } = useDoc(userRoleRef);
   const isAuthorized = isSuperAdmin || !!userRoleDoc;
 
+  // Personal Request Check
+  const myRequestRef = useMemoFirebase(() => user ? doc(db, 'admin_requests', user.uid) : null, [db, user]);
+  const { data: myRequest } = useDoc(myRequestRef);
+
   // Market Configs
   const marketConfigsQuery = useMemoFirebase(() => query(collection(db, 'market_configurations'), orderBy('marketYear', 'desc')), [db]);
   const { data: configs } = useCollection(marketConfigsQuery);
@@ -289,12 +293,6 @@ export default function AdminDashboard() {
     setAuthError('');
     setIsAuthLoading(true);
 
-    if (isSigningUp && inputSignupCode !== (currentConfig?.signupCode || "FELIX2026")) {
-      setAuthError("Code d'accès invalide.");
-      setIsAuthLoading(false);
-      return;
-    }
-
     const authPromise = isSigningUp 
       ? initiateEmailSignUp(auth, email, password)
       : initiateEmailSignIn(auth, email, password);
@@ -312,6 +310,15 @@ export default function AdminDashboard() {
     } else {
       toast({ variant: "destructive", title: "Code erroné", description: "Veuillez vérifier le code envoyé par l'admin." });
     }
+  };
+
+  const handleManualRequest = () => {
+    setDocumentNonBlocking(doc(db, 'admin_requests', user!.uid), { 
+      email: user!.email, 
+      requestedAt: new Date().toISOString(), 
+      status: 'PENDING' 
+    }, { merge: true });
+    toast({ title: "Demande envoyée !", description: "L'administrateur a été notifié de votre demande." });
   };
 
   if (isUserLoading || isRoleLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
@@ -349,21 +356,6 @@ export default function AdminDashboard() {
                 </button>
               </div>
               
-              {isSigningUp && (
-                <div className="space-y-2 border-t pt-4">
-                  <label className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1">
-                    <Key className="w-3 h-3" /> Code d'accès (Requis)
-                  </label>
-                  <Input 
-                    placeholder="Code fourni par l'admin" 
-                    value={inputSignupCode} 
-                    onChange={(e) => setInputSignupCode(e.target.value)} 
-                    required={isSigningUp}
-                  />
-                  <p className="text-[9px] text-muted-foreground">Contactez l'organisateur pour obtenir ce code.</p>
-                </div>
-              )}
-
               {authError && <p className="text-xs text-destructive text-center font-bold">{authError}</p>}
               
               <Button type="submit" disabled={isAuthLoading} className="w-full">
@@ -384,24 +376,50 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full border-t-4 border-t-amber-500 shadow-xl p-8 text-center space-y-6">
-          <Clock className="mx-auto w-12 h-12 text-amber-500 animate-pulse" />
-          <h2 className="text-xl font-bold">Accès en attente</h2>
-          <p className="text-sm text-muted-foreground">Votre compte a été créé, mais vous n'avez pas encore les droits d'administration.</p>
-          
-          <div className="space-y-4 border-y py-6">
-            <p className="text-xs font-bold uppercase text-muted-foreground">Vous avez un code d'activation ?</p>
-            <div className="flex gap-2">
-              <Input 
-                placeholder="Entrez le code ici" 
-                value={inputSignupCode} 
-                onChange={(e) => setInputSignupCode(e.target.value)} 
-              />
-              <Button onClick={handleUnlockWithCode}>Valider</Button>
-            </div>
+          <div className="relative mx-auto w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center">
+            <Clock className="w-8 h-8 text-amber-600 animate-pulse" />
           </div>
+          <h2 className="text-xl font-bold">Accès en attente</h2>
+          <p className="text-sm text-muted-foreground">Votre compte est créé. Choisissez une méthode pour activer vos droits d'administration.</p>
+          
+          <Tabs defaultValue="code" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="code">Via Code</TabsTrigger>
+              <TabsTrigger value="request">Via Demande</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="code" className="pt-4 space-y-4">
+              <p className="text-xs font-bold uppercase text-muted-foreground">Vous avez un code d'activation ?</p>
+              <div className="flex gap-2">
+                <Input 
+                  placeholder="Entrez le code ici" 
+                  value={inputSignupCode} 
+                  onChange={(e) => setInputSignupCode(e.target.value)} 
+                />
+                <Button onClick={handleUnlockWithCode}>Valider</Button>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="request" className="pt-4 space-y-4">
+              {myRequest?.status === 'PENDING' ? (
+                <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                  <p className="text-sm text-amber-800 font-bold">Demande envoyée !</p>
+                  <p className="text-xs text-amber-700 mt-1">L'administrateur doit maintenant valider votre accès. Vous serez autorisé automatiquement dès que ce sera fait.</p>
+                </div>
+              ) : myRequest?.status === 'REJECTED' ? (
+                <div className="p-4 bg-destructive/10 rounded-xl border border-destructive/20">
+                  <p className="text-sm text-destructive font-bold">Demande refusée</p>
+                  <p className="text-xs text-muted-foreground mt-1">Contactez le super-administrateur pour plus d'informations.</p>
+                </div>
+              ) : (
+                <Button onClick={handleManualRequest} className="w-full bg-amber-500 hover:bg-amber-600">
+                  Envoyer une demande d'accès
+                </Button>
+              )}
+            </TabsContent>
+          </Tabs>
 
-          <Button onClick={() => setDocumentNonBlocking(doc(db, 'admin_requests', user.uid), { email: user.email, requestedAt: new Date().toISOString(), status: 'PENDING' }, { merge: true })} className="w-full bg-amber-500 hover:bg-amber-600">Demander l'accès manuellement</Button>
-          <Button onClick={() => auth.signOut()} variant="outline" className="w-full">Se déconnecter</Button>
+          <Button onClick={() => auth.signOut()} variant="ghost" className="w-full text-muted-foreground text-xs">Se déconnecter</Button>
         </Card>
       </div>
     );
@@ -529,7 +547,7 @@ export default function AdminDashboard() {
                       placeholder="Ex: FELIX2026"
                       className="bg-white font-mono"
                     />
-                    <p className="text-[10px] text-muted-foreground italic">Ce code doit être saisi par les nouveaux admins lors de leur inscription ou pour débloquer leur compte.</p>
+                    <p className="text-[10px] text-muted-foreground italic">Ce code doit être saisi par les nouveaux admins pour débloquer leur compte instantanément.</p>
                   </div>
                 </div>
 
