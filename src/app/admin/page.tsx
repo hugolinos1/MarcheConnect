@@ -86,8 +86,11 @@ export default function AdminDashboard() {
     }
   }, [user]);
 
-  // Email Templates
-  const templatesQuery = useMemoFirebase(() => query(collection(db, 'email_templates'), orderBy('createdAt', 'desc')), [db]);
+  // Email Templates - Only query if authorized
+  const templatesQuery = useMemoFirebase(() => {
+    if (!isAuthorized) return null;
+    return query(collection(db, 'email_templates'), orderBy('createdAt', 'desc'));
+  }, [db, isAuthorized]);
   const { data: templates } = useCollection(templatesQuery);
 
   // Admin Requests (SuperAdmin Only)
@@ -98,7 +101,7 @@ export default function AdminDashboard() {
   const adminRolesQuery = useMemoFirebase(() => isSuperAdmin ? collection(db, 'roles_admin') : null, [db, isSuperAdmin]);
   const { data: adminRoles } = useCollection(adminRolesQuery);
 
-  // Exhibitors Data
+  // Exhibitors Data - Only query if authorized
   const exhibitorsQuery = useMemoFirebase(() => {
     if (!isAuthorized || !selectedConfigId) return null;
     return query(collection(db, 'pre_registrations'), where('marketConfigurationId', '==', selectedConfigId));
