@@ -1,3 +1,4 @@
+
 'use server';
 
 import nodemailer from 'nodemailer';
@@ -210,4 +211,37 @@ L'equipe "Un jardin pour Felix"`;
     console.error('SMTP Error:', error);
     return { success: false, error: error.message };
   }
+}
+
+/**
+ * Envoie un email groupé à une liste de destinataires.
+ */
+export async function sendBulkEmailAction(emails: string[], subject: string, body: string) {
+  const transporter = createTransporter();
+  const cleanedSubject = stripAccents(subject);
+  const cleanedBody = stripAccents(body);
+
+  const results = await Promise.all(emails.map(async (email) => {
+    const mailOptions = {
+      from: `"Le Marche de Felix" <hugues.rabier@gmail.com>`,
+      to: email,
+      subject: cleanedSubject,
+      text: cleanedBody,
+    };
+    try {
+      await transporter.sendMail(mailOptions);
+      return { email, success: true };
+    } catch (error: any) {
+      console.error(`Bulk Email Error for ${email}:`, error);
+      return { email, success: false, error: error.message };
+    }
+  }));
+
+  const failed = results.filter(r => !r.success);
+  return { 
+    success: failed.length === 0, 
+    totalSent: results.length - failed.length,
+    totalFailed: failed.length,
+    failedEmails: failed.map(f => f.email)
+  };
 }

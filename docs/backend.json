@@ -166,6 +166,20 @@
         "status"
       ]
     },
+    "EmailTemplate": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "EmailTemplate",
+      "type": "object",
+      "description": "A template for emails sent to exhibitors.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "description": "Display name of the template." },
+        "subject": { "type": "string" },
+        "body": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "subject", "body"]
+    },
     "AdminRole": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "AdminRole",
@@ -275,6 +289,22 @@
             {
               "name": "exhibitorDetailId",
               "description": "The unique identifier for an exhibitor's detailed information entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/email_templates/{templateId}",
+        "definition": {
+          "entityName": "EmailTemplate",
+          "schema": {
+            "$ref": "#/backend/entities/EmailTemplate"
+          },
+          "description": "Templates for administrative emails.",
+          "params": [
+            {
+              "name": "templateId",
+              "description": "Unique identifier for the template."
             }
           ]
         }
