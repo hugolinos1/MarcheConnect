@@ -29,6 +29,10 @@
           "description": "The email address where administrator notifications are sent and which is placed in CC for exhibitor communications.",
           "format": "email"
         },
+        "signupCode": {
+          "type": "string",
+          "description": "Global invitation code for admin creation."
+        },
         "preRegistrationStartDate": {
           "type": "string",
           "description": "The date and time when the initial pre-registration form (Form 1) becomes available to exhibitors.",
@@ -126,11 +130,7 @@
         },
         "productCategory": {
           "type": "string",
-          "description": "A description or category of the products/services the exhibitor intends to offer (e.g., 'Artisanat', 'Produits du terroir', 'Créations artistiques')."
-        },
-        "boothSizePreference": {
-          "type": "string",
-          "description": "The preferred size or type of booth requested by the exhibitor (e.g., 'Petit stand (2x2m)', 'Grand stand (4x3m)', 'Espace extérieur')."
+          "description": "A description or category of the products/services the exhibitor intends to offer."
         },
         "applicationDate": {
           "type": "string",
@@ -139,20 +139,7 @@
         },
         "status": {
           "type": "string",
-          "description": "The current status of the pre-registration application (e.g., 'PENDING', 'ACCEPTED', 'REJECTED')."
-        },
-        "rejectionJustification": {
-          "type": "string",
-          "description": "A detailed explanation or reason for the rejection of the application, potentially generated with AI assistance."
-        },
-        "initialEmailSentAt": {
-          "type": "string",
-          "description": "The date and time when the initial email regarding the application status (acceptance or rejection) was sent to the applicant.",
-          "format": "date-time"
-        },
-        "detailedFormLinkHash": {
-          "type": "string",
-          "description": "A unique hash or token used to generate a secure, one-time link for accepted applicants to access the detailed information form (Form 2)."
+          "description": "The current status of the pre-registration application."
         }
       },
       "required": [
@@ -205,7 +192,8 @@
       "properties": {
         "email": { "type": "string" },
         "requestedAt": { "type": "string", "format": "date-time" },
-        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] }
+        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] },
+        "invitationCode": { "type": "string", "description": "The unique code generated for this requester." }
       }
     }
   },
@@ -224,13 +212,7 @@
           "schema": {
             "$ref": "#/backend/entities/AdminRole"
           },
-          "description": "Dedicated collection for storing UIDs of users granted administrative privileges.",
-          "params": [
-            {
-              "name": "adminId",
-              "description": "The unique Firebase Authentication UID of an administrator."
-            }
-          ]
+          "description": "Users with admin rights."
         }
       },
       {
@@ -240,13 +222,7 @@
           "schema": {
             "$ref": "#/backend/entities/AdminRequest"
           },
-          "description": "Requests for admin access.",
-          "params": [
-            {
-              "name": "requestId",
-              "description": "The UID of the user requesting access."
-            }
-          ]
+          "description": "Requests for admin access."
         }
       },
       {
@@ -255,14 +231,7 @@
           "entityName": "MarketConfiguration",
           "schema": {
             "$ref": "#/backend/entities/MarketConfiguration"
-          },
-          "description": "Annual configurations for the market.",
-          "params": [
-            {
-              "name": "marketConfigId",
-              "description": "The unique identifier for a specific market configuration."
-            }
-          ]
+          }
         }
       },
       {
@@ -271,30 +240,7 @@
           "entityName": "PreRegistration",
           "schema": {
             "$ref": "#/backend/entities/PreRegistration"
-          },
-          "description": "Initial pre-registration applications.",
-          "params": [
-            {
-              "name": "preRegistrationId",
-              "description": "The unique identifier for a pre-registration application."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/exhibitor_details/{exhibitorDetailId}",
-        "definition": {
-          "entityName": "ExhibitorDetail",
-          "schema": {
-            "$ref": "#/backend/entities/ExhibitorDetail"
-          },
-          "description": "Comprehensive detailed information submitted by accepted exhibitors.",
-          "params": [
-            {
-              "name": "exhibitorDetailId",
-              "description": "The unique identifier for an exhibitor's detailed information entry."
-            }
-          ]
+          }
         }
       },
       {
@@ -303,14 +249,7 @@
           "entityName": "EmailTemplate",
           "schema": {
             "$ref": "#/backend/entities/EmailTemplate"
-          },
-          "description": "Templates for administrative emails.",
-          "params": [
-            {
-              "name": "templateId",
-              "description": "Unique identifier for the template."
-            }
-          ]
+          }
         }
       }
     ]
