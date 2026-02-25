@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -48,6 +49,7 @@ service cloud.firestore {
       // Création et mise à jour autorisées pour le propriétaire (pour solliciter un code)
       allow create, update: if isSignedIn() && request.auth.uid == requestId;
       // Seul l'admin peut valider/supprimer (l'admin peut aussi update pour changer le status)
+      allow delete: if isAdmin();
       allow write: if isAdmin();
     }
   }
