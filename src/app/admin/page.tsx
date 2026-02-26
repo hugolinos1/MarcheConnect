@@ -709,6 +709,28 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   </div>
+
+                  <div className="flex gap-2 items-end border-t pt-4 mt-2">
+                    <div className="flex-1 space-y-1">
+                      <label className="text-[10px] font-bold uppercase text-muted-foreground">Tester l'envoi vers :</label>
+                      <Input 
+                        placeholder="votre@email.com" 
+                        value={testEmailAddress} 
+                        onChange={e => setTestEmailAddress(e.target.value)}
+                        className="h-8 text-xs bg-white"
+                      />
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleSendTestEmail}
+                      disabled={isSendingTest || !testEmailAddress || !configForm.smtpUser}
+                      className="h-8 gap-2"
+                    >
+                      {isSendingTest ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                      Tester SMTP
+                    </Button>
+                  </div>
                   <p className="text-[10px] text-muted-foreground italic">Ces identifiants sont stockés en base de données pour l'envoi des messages automatiques.</p>
                 </div>
 
