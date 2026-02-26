@@ -244,13 +244,18 @@ export default function AdminDashboard() {
     toast({ title: "Template enregistré" });
   };
 
-  const handleSendTestEmail = async () => {
-    if (!testEmailAddress || !templateForm.subject || !templateForm.body) {
-      toast({ variant: "destructive", title: "Champs manquants", description: "Veuillez remplir le sujet et le corps du message." });
+  const handleSendTestEmail = async (subject?: string, body?: string) => {
+    // Si appelé sans paramètres, on utilise soit le template actuel, soit un message par défaut pour le test SMTP
+    const testSubject = subject || templateForm.subject || "Email de test - MarcheConnect";
+    const testBody = body || templateForm.body || "<p>Ceci est un email de test pour valider la configuration SMTP.</p>";
+
+    if (!testEmailAddress) {
+      toast({ variant: "destructive", title: "Champs manquants", description: "Veuillez renseigner une adresse email de test." });
       return;
     }
+    
     setIsSendingTest(true);
-    const res = await sendTestEmailAction(testEmailAddress, templateForm.subject, templateForm.body, currentConfig);
+    const res = await sendTestEmailAction(testEmailAddress, testSubject, testBody, currentConfig);
     if (res.success) {
       toast({ title: "Email de test envoyé !" });
     } else {
@@ -723,7 +728,7 @@ export default function AdminDashboard() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={handleSendTestEmail}
+                      onClick={() => handleSendTestEmail()}
                       disabled={isSendingTest || !testEmailAddress || !configForm.smtpUser}
                       className="h-8 gap-2"
                     >
@@ -857,7 +862,7 @@ export default function AdminDashboard() {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={handleSendTestEmail}
+                          onClick={() => handleSendTestEmail(templateForm.subject, templateForm.body)}
                           disabled={isSendingTest || !testEmailAddress || !templateForm.subject}
                           className="h-8 gap-2"
                         >
