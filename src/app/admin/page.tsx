@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare } from 'lucide-react';
+import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare, FileText, X as XIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -62,18 +62,15 @@ export default function AdminDashboard() {
 
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
   
-  // Auth check
   const userRoleRef = useMemoFirebase(() => user ? doc(db, 'roles_admin', user.uid) : null, [db, user]);
   const { data: userRoleDoc, isLoading: isRoleLoading } = useDoc(userRoleRef);
   
   const isSuperAdmin = user?.email === "hugues.rabier@gmail.com" || !!userRoleDoc?.isSuperAdmin;
   const isAuthorized = isSuperAdmin || !!userRoleDoc;
 
-  // Personal Request Check
   const myRequestRef = useMemoFirebase(() => user ? doc(db, 'admin_requests', user.uid) : null, [db, user]);
   const { data: myRequest } = useDoc(myRequestRef);
 
-  // Market Configs
   const marketConfigsQuery = useMemoFirebase(() => query(collection(db, 'market_configurations'), orderBy('marketYear', 'desc')), [db]);
   const { data: configs } = useCollection(marketConfigsQuery);
   
@@ -94,22 +91,18 @@ export default function AdminDashboard() {
     }
   }, [user]);
 
-  // Email Templates
   const templatesQuery = useMemoFirebase(() => {
     if (!isAuthorized) return null;
     return query(collection(db, 'email_templates'), orderBy('createdAt', 'desc'));
   }, [db, isAuthorized]);
   const { data: templates } = useCollection(templatesQuery);
 
-  // Admin Requests (SuperAdmin Only)
   const adminRequestsQuery = useMemoFirebase(() => isSuperAdmin ? query(collection(db, 'admin_requests'), orderBy('requestedAt', 'desc')) : null, [db, isSuperAdmin]);
   const { data: adminRequests } = useCollection(adminRequestsQuery);
 
-  // Current Admins (SuperAdmin Only)
   const adminRolesQuery = useMemoFirebase(() => isSuperAdmin ? collection(db, 'roles_admin') : null, [db, isSuperAdmin]);
   const { data: adminRoles } = useCollection(adminRolesQuery);
 
-  // Exhibitors Data
   const exhibitorsQuery = useMemoFirebase(() => {
     if (!isAuthorized || !selectedConfigId) return null;
     return query(collection(db, 'pre_registrations'), where('marketConfigurationId', '==', selectedConfigId));
@@ -130,7 +123,6 @@ export default function AdminDashboard() {
     return exhibitorsData.filter(e => e.status === 'validated');
   }, [exhibitorsData]);
 
-  // Stats
   const stats = useMemo(() => {
     if (!exhibitorsData) return { total: 0, pending: 0, accepted: 0, rejected: 0, validated: 0, submitted: 0, revenue: 0 };
     let totalRevenue = 0;
