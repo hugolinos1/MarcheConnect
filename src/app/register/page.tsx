@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -67,7 +66,6 @@ export default function RegisterPage() {
 
   const priceTable1 = currentConfig?.priceTable1 ?? 40;
   const priceTable2 = currentConfig?.priceTable2 ?? 60;
-  const priceMeal = currentConfig?.priceMeal ?? 8;
   const priceTombola = currentConfig?.priceTombola ?? 2;
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -217,85 +215,26 @@ export default function RegisterPage() {
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 3 :</h4>
                       <div className="space-y-2">
-                        <p>Nous répondrons à toutes les candidatures, par mail (que la réponse soit positive ou négative) dans les 15 semaines suivant votre demande. Nous nous octroyons le droit de refuser une candidature si les articles proposés ne conviennent pas à notre sélection : Hors thématique Noël /idée cadeau Noël ou si plusieurs exposants proposent des articles similaires. Nous privilégions les articles et produits artisanaux. Nous n’acceptons pas la revente. Les attributions et les emplacements ne sont pas systématiquement renouvelés d’une année sur l’autre, ceci afin de garder notre marché attrayant.</p>
-                        <p>Vous vous engagez à ne mettre sur votre stand que les articles qui ont été validé par le bureau du marché de Noël. Si besoin, nous vous demanderons de retirer les articles inaquédats.</p>
-                        <p>Dans la mesure du possible, merci de porter un soin à votre stand : nappes pour recouvrir la table, mettre en avant le nom de votre marque, rendre lisible ce que vous vendez.</p>
-                        <p>Nous serons sensibles aux demandes de personnes étant déclarées au registre du commerce. Le régime de micro-entreprise (régime micro-Bic) calcule les taxes qu’au strict pourcentage des ventes, cela n’engage donc pas de frais supplémentaires pour vous. Dans le cas où vous n’êtes pas déclaré, l’article L30-2 du code de commerce autorise les particuliers non inscrits à participer 2 fois/an à des marchés.</p>
-                        <p>Pour toute demande : envoi de photos récentes présentant vos créations. Lien de votre site marchand (facebook, etsy, instagram, internet…)</p>
+                        <p>Nous répondrons à toutes les candidatures, par mail (que la réponse soit positive ou négative) dans les 15 semaines suivant votre demande. Nous nous octroyons le droit de refuser une candidature si les articles proposés ne conviennent pas à notre sélection. Nous privilégions les articles et produits artisanaux. Nous n’acceptons pas la revente.</p>
+                        <p>Vous vous engagez à ne mettre sur votre stand que les articles qui ont été validé par le bureau du marché de Noël.</p>
+                        <p>Nous serons sensibles aux demandes de personnes étant déclarées au registre du commerce. Dans le cas où vous n’êtes pas déclaré, l’article L30-2 du code de commerce autorise les particuliers non inscrits à participer 2 fois/an à des marchés.</p>
                       </div>
                     </div>
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 4 :</h4>
                       <div className="space-y-2">
-                        <p>L’installation des exposants (artisans/créateurs exclusivement) aura lieu le samedi entre 11h et 13h. Les emplacements seront attribués à l’arrivée de chaque exposant. Grilles, tables et chaises sont fournies et installées préalablement, en fonction des besoins exprimés.</p>
-                        <p>Nous pourrons fournir en électricité 8 à 10 stands maximum, merci d’en faire la demande lors de l’inscription. Nous ne garantirons pas de pouvoir répondre à toutes les demandes, priorité sera donnée aux produits alimentaires. Les rallonges sont à prévoir par l'exposant.</p>
-                        <p>Nous vous préviendrons début novembre de l’attribution du point électrique. Le jour du marché, nous vous indiquerons l’emplacement avec l’électricité pour un supplément de 1€. </p>
-                        <p>Il est essentiel de respecter les horaires d’installation pour ne pas retarder l’ouverture du marché de Noël. Si vous pensez avoir du retard ou avez un empêchement de minute à la suite d’une contrainte familiale ou médicale, merci de me prévenir au 06 81 14 77 76 (Cécile Rabier).</p>
-                        <p>Merci de prendre en compte le temps d’installation de votre stand pour qu’il soit prêt à l’ouverture au public.</p>
+                        <p>L’installation des exposants aura lieu le samedi entre 11h et 13h. Les emplacements seront attribués à l’arrivée de chaque exposant.</p>
+                        <p>Nous pourrons fournir en électricité 8 à 10 stands maximum, merci d’en faire la demande lors de l’inscription.</p>
                         <p>Le démontage du stand ne pourra se faire que le dimanche après la fermeture du marché soit 17h30.</p>
-                        <p>Nous ne prévoyons pas de bénévoles pour vous aider à ranger, nos bénévoles sont là pour l’organisation du marché en priorité.</p>
                       </div>
                     </div>
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 5 :</h4>
                       <div className="space-y-2">
-                        <p>- Un chèque correspondant au nombre de tables souhaité (1 table = 1m75 ou 2 tables = 3m50) est demandé après validation de votre inscription. Sans ce versement, l’inscription ne sera pas prise en compte. Tarif {marketYear} : {priceTable1}€ pour 1 table et {priceTable2}€ pour 2 tables (les tables sont fournies / mesures de la table : 1m75x0.8m).</p>
-                        <p>- Chèque à l’ordre de « Les amis d’un jardin pour Félix » association locale de Chazay d’Azergues. Le chèque sera encaissé à partir du 20 novembre {marketYear}.</p>
-                        <p>- Toute annulation à partir du 20 novembre ne donnera pas lieu à remboursement.</p>
-                        <p>- Restauration : nous proposons aux exposants un plateau repas le dimanche midi. Si vous êtes intéressés, la réservation (+ paiement) est demandée en même temps que l’inscription. Il s’agit d’un plateau repas fait maison : salade composée maison, part de quiche (différentes recettes), fromage avec une tranche de pain, une clémentine et une part de gâteau à choisir au bar et une bouteille d’eau. Le prix du repas/personne est de {priceMeal}€, toujours le même tarif depuis 2023. </p>
-                        <p>- Un café, un thé ou une boisson fraîche vous sera offert le samedi contre remise d’un ticket qui vous sera attribué à votre arrivée (nous n’offrons pas de chocolat chaud, ni de vin chaud, ni tout autre boisson autre que celles énoncées ci-dessus).</p>
-                        <p>- Le dimanche matin nous vous invitons à venir pour 9h30 afin de vous offrir café, thé ou une bouteille d’eau accompagné d’une part de gâteau (offert par Bruno Saladino, chocolatier à Vilefranche sur saône). Ce moment nous permet de débriefer de la veille.</p>
-                        <p>- Une buvette avec petite restauration à tarif attractif sera ouverte à tous le samedi midi et le dimanche (salades, quiches, crêpes, crêpes salées, gâteaux …)</p>
-                        <p>- Pour des raisons de sécurité, les appareils de chauffage et de cuisson sont strictement interdits sur les stands.</p>
+                        <p>- Un chèque correspondant au nombre de tables souhaité ({priceTable1}€ pour 1 table et {priceTable2}€ pour 2 tables) est demandé après validation de votre inscription.</p>
+                        <p>- Chèque à l’ordre de « Les amis d’un jardin pour Félix ».</p>
                       </div>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 6 :</h4>
-                      <div className="space-y-2">
-                        <p>Nous organisons cette année une tombola avec une vente de ticket à {priceTombola}€, que nous proposerons en amont de l’évènement lors de la foulée des jeunes, la course annuelle des 9 clochers de Chazay d'Azergues.</p>
-                        <p>Nous allons démarcher des acteurs locaux afin de récolter de lots qui mettent en avant la gastronomie, les animations locales, le savoir-faire artisanal du département et de la région.</p>
-                        <p>Nous vous sollicitons également pour faire un lot, à cet effet vous pourrez cocher la case en fin de bulletin et peut-être préciser la nature de votre don. </p>
-                        <p>Il n’y a pas d’obligation, c’est au bon vouloir de chacun. N’hésitez pas à mettre votre carte de visite afin de faire connaître votre marque à l’heureux gagnant. </p>
-                        <p>Pour un souci d’organisation, nous aimerions pouvoir récupérer votre lot dès votre arrivée le samedi matin.</p>
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 7 :</h4>
-                      <p>DROITS A L’IMAGE : l’exposant accepte que des vues de son stand puissent être prises par l’organisateur ou la Mairie de Chazay d’Azergues et en accepte la diffusion gratuite dans le cadre de toute communication liée à la manifestation (facebook, instagram, site marchand de l’association).</p>
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 8 :</h4>
-                      <p>RESPONSABILITE – ASSURANCE : les organisateurs ne sont pas dépositaires des œuvres au sens donné à ce terme par le code civil, mais seulement détenteurs précaires des œuvres/marchandises exposées. Ils ne pourront donc en aucun cas encourir de responsabilité en cas de vol ou dégradations en tout genre et circonstance. Outre l’assurance couvrant les objets exposés et plus généralement tous les éléments lui appartenant, l’exposant est tenu de souscrire, à ses frais, toutes assurances couvrant les risques que lui-même, les personnes qui l’accompagnent et son matériel encourent ou font courir à des tiers. L’organisateur est dégagé de toute responsabilité à cet égard, notamment en cas d’accident, de perte, vol, incendie, dégât naturel, ou dommage quelconque. L’organisateur se réserve le droit d’annuler la manifestation en cas de force majeure.</p>
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 9 :</h4>
-                      <p>OBLIGATIONS DE L’EXPOSANT : l’exposant s’engage à être conforme à la législation en vigueur et assume l’entière responsabilité de ses ventes. L’organisateur décline toute responsabilité relative aux déclarations légales vis-à-vis de l’Administration fiscale.</p>
-                    </div>
-                  </div>
-                </ScrollArea>
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="rgpd" className="border-none">
-              <AccordionTrigger className="px-6 hover:no-underline hover:bg-muted/50 text-left">
-                <span className="flex items-center gap-2 font-bold text-primary">
-                  <ShieldCheck className="w-5 h-5" /> Protection des données (RGPD)
-                </span>
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-6">
-                <ScrollArea className="h-64 pr-4 text-xs text-muted-foreground">
-                  <div className="space-y-4 pb-8 leading-relaxed">
-                    <p className="font-bold text-foreground">Finalité du traitement</p>
-                    <p>Les informations recueillies dans ce formulaire sont nécessaires pour la gestion des candidatures et l'organisation logistique du Marché de Noël solidaire. Elles sont destinées exclusivement à l'association "Un jardin pour Félix".</p>
-                    
-                    <p className="font-bold text-foreground">Conservation des données</p>
-                    <p>Vos données personnelles (Nom, Prénom, Email, Téléphone, Adresse, Photos) sont conservées pendant une durée de 3 ans à compter de votre dernière interaction avec l'association, afin de vous informer des éditions futures.</p>
-                    
-                    <p className="font-bold text-foreground">Vos droits</p>
-                    <p>Conformément au Règlement Général sur la Protection des Données (RGPD), vous disposez d'un droit d'accès, de rectification, de portabilité et de suppression de vos données. Vous pouvez exercer ces droits à tout moment en contactant notre équipe par email à : <span className="font-bold">lemarchedefelix2020@gmail.com</span>.</p>
-                    
-                    <p className="font-bold text-foreground">Droit à l'image</p>
-                    <p>En participant au marché, vous consentez à ce que des photographies ou vidéos de votre stand puissent être utilisées pour la communication de l'association, sauf mention contraire explicite lors de votre inscription définitive.</p>
                   </div>
                 </ScrollArea>
               </AccordionContent>
@@ -463,7 +402,7 @@ export default function RegisterPage() {
                       </label>
                     )}
                   </div>
-                  <p className="text-[10px] text-muted-foreground">Merci de fournir 3 photos illustrant vos créations et la décoration de votre stand.</p>
+                  <p className="text-[10px] text-muted-foreground">Merci de fournir 3 photos illustrant vos créations.</p>
                 </div>
 
                 <div className="p-4 bg-muted/30 rounded-lg">
@@ -491,7 +430,7 @@ export default function RegisterPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Nature de votre stand / Description des produits</FormLabel>
-                      <FormControl><Textarea placeholder="Détaillez vos créations et votre univers..." className="min-h-[120px]" {...field} /></FormControl>
+                      <FormControl><Textarea placeholder="Détaillez vos créations..." className="min-h-[120px]" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -500,7 +439,7 @@ export default function RegisterPage() {
                 <div className="space-y-6 pt-6">
                   <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 space-y-4 shadow-inner">
                     <h3 className="text-sm font-bold text-primary flex items-center gap-2 uppercase tracking-wider">
-                      <ShieldCheck className="w-4 h-4" /> Consentements et validations
+                      <ShieldCheck className="w-4 h-4" /> Consentements
                     </h3>
                     
                     <div className="space-y-4">
@@ -510,12 +449,7 @@ export default function RegisterPage() {
                             <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                           </FormControl>
                           <div className="space-y-1 leading-none">
-                            <FormLabel className="font-bold text-primary text-xs flex items-center gap-2">
-                              Protection des données (RGPD) *
-                            </FormLabel>
-                            <FormDescription className="text-[11px] leading-relaxed">
-                              J'ai pris connaissance de la politique de protection des données (disponible en haut de page) et j'accepte que mes informations soient utilisées pour l'organisation du marché de Noël {marketYear}.
-                            </FormDescription>
+                            <FormLabel className="font-bold text-primary text-xs">Protection des données (RGPD) *</FormLabel>
                             <FormMessage />
                           </div>
                         </FormItem>
@@ -528,9 +462,6 @@ export default function RegisterPage() {
                           </FormControl>
                           <div className="space-y-1 leading-none">
                             <FormLabel className="font-bold text-primary text-xs">Règlement du Marché *</FormLabel>
-                            <FormDescription className="text-[11px] leading-relaxed">
-                              J'ai lu et j'accepte l'intégralité du règlement du marché présenté en haut de cette page. Je m'engage à être présent les deux jours de l'événement.
-                            </FormDescription>
                             <FormMessage />
                           </div>
                         </FormItem>
@@ -542,9 +473,6 @@ export default function RegisterPage() {
                 <Button type="submit" disabled={isSubmitting} className="w-full bg-primary hover:bg-primary/90 text-white gold-glow h-16 text-xl font-bold gap-2 mt-8">
                   {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />} Envoyer ma candidature
                 </Button>
-                <p className="text-[10px] text-center text-muted-foreground italic">
-                  Les champs marqués d'une * sont obligatoires pour la validation de votre dossier.
-                </p>
               </form>
             </Form>
           </CardContent>

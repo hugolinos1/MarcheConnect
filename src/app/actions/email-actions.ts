@@ -27,7 +27,6 @@ async function getBaseUrl() {
 
 /**
  * Nettoie les chaînes pour éviter les problèmes d'encodage avec Gmail.
- * On garde une version plus souple pour le contenu HTML.
  */
 function stripAccents(str: string = "") {
   if (!str) return "";
@@ -56,31 +55,38 @@ function createTransporter() {
 }
 
 /**
- * Fonction de test SMTP Gmail.
+ * Fonction de notification d'une nouvelle candidature pour l'admin.
  */
-export async function testSmtpGmail() {
+export async function sendApplicationNotification(exhibitorData: any, marketConfig: any) {
   const transporter = createTransporter();
+  const year = marketConfig?.marketYear || '2026';
+  const notificationEmail = marketConfig?.notificationEmail || "lemarchedefelix2020@gmail.com";
+  const company = stripAccents(exhibitorData.companyName);
+
   const mailOptions = {
-    from: `"Test MarcheConnect" <hugues.rabier@gmail.com>`,
-    to: "hugues.rabier@gmail.com",
-    subject: "Test SMTP Gmail Reussi",
-    text: "Ceci est un test de connexion SMTP Gmail depuis l'application MarcheConnect.",
+    from: `"MarcheConnect" <hugues.rabier@gmail.com>`,
+    to: notificationEmail,
+    subject: `Nouvelle Candidature : ${company}`,
+    text: `Nouvelle candidature pour le Marche de Noel ${year}.\n\nEnseigne : ${company}\nContact : ${stripAccents(exhibitorData.firstName)} ${stripAccents(exhibitorData.lastName)}`,
   };
 
   try {
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error: any) {
-    console.error('SMTP Test Error:', error);
+    console.error('SMTP Error (Notification):', error);
     return { success: false, error: error.message };
   }
 }
 
+/**
+ * Envoie l'email d'acceptation (Etape 1).
+ */
 export async function sendAcceptanceEmail(exhibitor: any, customMessage: string, marketConfig: any) {
   const transporter = createTransporter();
-  const year = marketConfig?.marketYear || '2026';
   const baseUrl = await getBaseUrl();
   const detailsLink = `${baseUrl}/details/${exhibitor.id}`;
+  const year = marketConfig?.marketYear || '2026';
 
   const firstName = stripAccents(exhibitor.firstName);
   const lastName = stripAccents(exhibitor.lastName);
@@ -108,11 +114,14 @@ L'equipe "Un jardin pour Felix"`,
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error: any) {
-    console.error('SMTP Error:', error);
+    console.error('SMTP Error (Acceptance):', error);
     return { success: false, error: error.message };
   }
 }
 
+/**
+ * Envoie l'email de refus.
+ */
 export async function sendRejectionEmail(exhibitor: any, justification: string, marketConfig: any) {
   const transporter = createTransporter();
   const year = marketConfig?.marketYear || '2026';
@@ -140,31 +149,14 @@ Bonne continuation.`,
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error: any) {
+    console.error('SMTP Error (Rejection):', error);
     return { success: false, error: error.message };
   }
 }
 
-export async function sendApplicationNotification(exhibitorData: any, marketConfig: any) {
-  const transporter = createTransporter();
-  const year = marketConfig?.marketYear || '2026';
-  const notificationEmail = marketConfig?.notificationEmail || "lemarchedefelix2020@gmail.com";
-  const company = stripAccents(exhibitorData.companyName);
-
-  const mailOptions = {
-    from: `"MarcheConnect" <hugues.rabier@gmail.com>`,
-    to: notificationEmail,
-    subject: `Nouvelle Candidature : ${company}`,
-    text: `Nouvelle candidature pour le Marche de Noel ${year}.\n\nEnseigne : ${company}\nContact : ${stripAccents(exhibitorData.firstName)} ${stripAccents(exhibitorData.lastName)}`,
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
-    return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-}
-
+/**
+ * Envoie l'email de confirmation finale après dossier technique.
+ */
 export async function sendFinalConfirmationEmail(exhibitor: any, details: any, marketConfig: any) {
   const transporter = createTransporter();
   const year = marketConfig?.marketYear || '2026';
@@ -208,19 +200,17 @@ L'equipe "Un jardin pour Felix"`;
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error: any) {
-    console.error('SMTP Error:', error);
+    console.error('SMTP Error (Final):', error);
     return { success: false, error: error.message };
   }
 }
 
 /**
- * Envoie un email groupé à une liste de destinataires avec support HTML.
+ * Envoie un email groupé.
  */
 export async function sendBulkEmailAction(emails: string[], subject: string, body: string) {
   const transporter = createTransporter();
   const cleanedSubject = stripAccents(subject);
-  
-  // Création d'une version texte brut simple en enlevant les balises HTML pour la compatibilité
   const plainTextBody = body.replace(/<[^>]*>?/gm, '');
 
   const results = await Promise.all(emails.map(async (email) => {
@@ -229,7 +219,7 @@ export async function sendBulkEmailAction(emails: string[], subject: string, bod
       to: email,
       subject: cleanedSubject,
       text: plainTextBody,
-      html: body, // On envoie le corps tel quel pour le HTML
+      html: body,
     };
     try {
       await transporter.sendMail(mailOptions);
@@ -250,7 +240,7 @@ export async function sendBulkEmailAction(emails: string[], subject: string, bod
 }
 
 /**
- * Envoie un email de test à un destinataire unique.
+ * Envoie un email de test.
  */
 export async function sendTestEmailAction(to: string, subject: string, body: string) {
   const transporter = createTransporter();

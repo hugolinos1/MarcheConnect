@@ -17,25 +17,16 @@ import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import { sendFinalConfirmationEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { useFirestore, useMemoFirebase, useDoc, useCollection } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
-export default function DetailsPage() {
-  const { id } = useParams();
+function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; currentConfig: any }) {
   const router = useRouter();
   const { toast } = useToast();
   const db = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
-  const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
-
-  const marketConfigRef = useMemoFirebase(() => collection(db, 'market_configurations'), [db]);
-  const { data: configs } = useCollection(marketConfigRef);
-  const currentConfig = configs?.find(c => c.currentMarket) || configs?.[0];
-
-  const exhibitorRef = useMemoFirebase(() => id ? doc(db, 'pre_registrations', id as string) : null, [db, id]);
-  const { data: exhibitor, isLoading: isExhibitorLoading } = useDoc<Exhibitor>(exhibitorRef);
 
   const formSchema = useMemo(() => {
     return z.object({
@@ -57,18 +48,18 @@ export default function DetailsPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      siret: "",
-      idCardPhoto: "",
-      needsElectricity: false,
-      needsGrid: false,
-      sundayLunchCount: 0,
-      tombolaLot: true,
-      tombolaLotDescription: "",
-      insuranceCompany: "",
-      insurancePolicyNumber: "",
-      agreedToImageRights: false,
-      agreedToTerms: false,
-      additionalComments: "",
+      siret: exhibitor.detailedInfo?.siret || "",
+      idCardPhoto: exhibitor.detailedInfo?.idCardPhoto || "",
+      needsElectricity: exhibitor.detailedInfo?.needsElectricity || false,
+      needsGrid: exhibitor.detailedInfo?.needsGrid || false,
+      sundayLunchCount: exhibitor.detailedInfo?.sundayLunchCount || 0,
+      tombolaLot: exhibitor.detailedInfo?.tombolaLot ?? true,
+      tombolaLotDescription: exhibitor.detailedInfo?.tombolaLotDescription || "",
+      insuranceCompany: exhibitor.detailedInfo?.insuranceCompany || "",
+      insurancePolicyNumber: exhibitor.detailedInfo?.insurancePolicyNumber || "",
+      agreedToImageRights: exhibitor.detailedInfo?.agreedToImageRights || false,
+      agreedToTerms: exhibitor.detailedInfo?.agreedToTerms || false,
+      additionalComments: exhibitor.detailedInfo?.additionalComments || "",
     },
   });
 
@@ -81,12 +72,6 @@ export default function DetailsPage() {
   const electricityPrice = watchNeedsElectricity ? (currentConfig?.priceElectricity ?? 1) : 0;
   const mealsPrice = watchLunchCount * (currentConfig?.priceMeal ?? 8);
   const totalToPay = standPrice + electricityPrice + mealsPrice;
-
-  useEffect(() => {
-    if (exhibitor?.detailedInfo) {
-      form.reset(exhibitor.detailedInfo);
-    }
-  }, [exhibitor, form]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -113,7 +98,6 @@ export default function DetailsPage() {
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!exhibitor) return;
     setIsSubmitting(true);
     try {
       const detailedData = {
@@ -131,7 +115,7 @@ export default function DetailsPage() {
         detailedInfo: detailedData
       });
 
-      sendFinalConfirmationEmail(exhibitor, values, currentConfig).catch(e => console.error("Email error:", e));
+      await sendFinalConfirmationEmail(exhibitor, values, currentConfig);
       
       toast({ title: "Dossier enregistré !", description: "Merci pour votre finalisation." });
       setTimeout(() => router.push('/register/success?type=final'), 1000);
@@ -142,8 +126,6 @@ export default function DetailsPage() {
     }
   }
 
-  if (isExhibitorLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
-
   return (
     <div className="min-h-screen bg-background py-12 px-4">
       <ChristmasSnow />
@@ -152,7 +134,7 @@ export default function DetailsPage() {
         <Card className="border-t-8 border-t-primary shadow-2xl overflow-hidden bg-white/95">
           <div className="bg-primary text-white p-8 flex items-center justify-between gap-6">
             <div><h1 className="text-2xl font-bold">Dossier Technique</h1><p className="text-accent">{exhibitor?.companyName}</p></div>
-            <img src={logoUrl} alt="Logo" className="w-16 h-16 rounded-full" />
+            <img src="https://i.ibb.co/yncRPkvR/logo-ujpf.jpg" alt="Logo" className="w-16 h-16 rounded-full" />
           </div>
           <CardContent className="p-4 md:p-8">
             <Form {...form}>
@@ -324,6 +306,30 @@ export default function DetailsPage() {
             </Form>
           </CardContent>
         </Card>
+      </div>
+    </div>
+  );
+}
+
+export default function DetailsPage() {
+  const { id } = useParams();
+  const db = useFirestore();
+
+  const configsRef = useMemoFirebase(() => collection(db, 'market_configurations'), [db]);
+  const { data: configs } = useCollection(configsRef);
+  const currentConfig = configs?.find(c => c.currentMarket) || configs?.[0];
+
+  const exhibitorRef = useMemoFirebase(() => id ? doc(db, 'pre_registrations', id as string) : null, [db, id]);
+  const { data: exhibitor, isLoading } = useDoc<Exhibitor>(exhibitorRef);
+
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
+  if (!exhibitor) return <div className="min-h-screen flex items-center justify-center p-4"><p>Dossier introuvable</p></div>;
+
+  return (
+    <div className="min-h-screen bg-muted/20 py-12 px-4 relative">
+      <ChristmasSnow />
+      <div className="max-w-2xl mx-auto relative z-10">
+        <FinalizationForm exhibitor={exhibitor} currentConfig={currentConfig} />
       </div>
     </div>
   );

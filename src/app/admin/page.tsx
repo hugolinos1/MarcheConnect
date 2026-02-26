@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
@@ -884,7 +883,6 @@ export default function AdminDashboard() {
         </Tabs>
       </main>
 
-      {/* Suppression Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Supprimer l'exposant</DialogTitle></DialogHeader>
@@ -931,7 +929,6 @@ export default function AdminDashboard() {
           <ScrollArea className="h-[75vh] pr-4">
              {viewingExhibitor && (
                <div className="space-y-8 p-4">
-                 {/* Section 1: Inscription Initiale (Form 1) */}
                  <section className="space-y-4">
                    <h3 className="text-lg font-bold border-b pb-2 flex items-center gap-2 text-primary">
                      <FileText className="w-5 h-5" /> Informations de base (Formulaire 1)
@@ -976,7 +973,6 @@ export default function AdminDashboard() {
                    )}
                  </section>
 
-                 {/* Section 2: Dossier Technique (Form 2) */}
                  {viewingExhibitor.detailedInfo ? (
                    <section className="space-y-6 pt-4 border-t-2 border-primary/10">
                      <h3 className="text-lg font-bold border-b pb-2 flex items-center gap-2 text-secondary">
