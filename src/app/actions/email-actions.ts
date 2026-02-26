@@ -37,16 +37,23 @@ function stripAccents(str: string = "") {
 }
 
 /**
- * Configuration du transporteur Gmail.
+ * Configuration du transporteur Gmail utilisant des variables d'environnement pour la sécurité.
  */
 function createTransporter() {
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (!user || !pass) {
+    console.warn("SMTP_USER ou SMTP_PASS manquant dans les variables d'environnement.");
+  }
+
   return nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
     secure: true,
     auth: {
-      user: "hugues.rabier@gmail.com",
-      pass: "fcmnbojqjvbxbeqg",
+      user: user,
+      pass: pass,
     },
     connectionTimeout: 15000,
     greetingTimeout: 15000,
@@ -64,7 +71,7 @@ export async function sendApplicationNotification(exhibitorData: any, marketConf
   const company = stripAccents(exhibitorData.companyName);
 
   const mailOptions = {
-    from: `"MarcheConnect" <hugues.rabier@gmail.com>`,
+    from: `"MarcheConnect" <${process.env.SMTP_USER}>`,
     to: notificationEmail,
     subject: `Nouvelle Candidature : ${company}`,
     text: `Nouvelle candidature pour le Marche de Noel ${year}.\n\nEnseigne : ${company}\nContact : ${stripAccents(exhibitorData.firstName)} ${stripAccents(exhibitorData.lastName)}`,
@@ -93,7 +100,7 @@ export async function sendAcceptanceEmail(exhibitor: any, customMessage: string,
   const messagePerso = stripAccents(customMessage);
 
   const mailOptions = {
-    from: `"Le Marche de Felix" <hugues.rabier@gmail.com>`,
+    from: `"Le Marche de Felix" <${process.env.SMTP_USER}>`,
     to: exhibitor.email,
     subject: `Candidature retenue - Marche de Noel ${year}`,
     text: `Bonjour ${firstName} ${lastName},
@@ -130,7 +137,7 @@ export async function sendRejectionEmail(exhibitor: any, justification: string, 
   const reason = stripAccents(justification);
 
   const mailOptions = {
-    from: `"Le Marche de Felix" <hugues.rabier@gmail.com>`,
+    from: `"Le Marche de Felix" <${process.env.SMTP_USER}>`,
     to: exhibitor.email,
     subject: `Candidature Marche de Noel ${year}`,
     text: `Bonjour ${firstName} ${lastName},
@@ -190,7 +197,7 @@ Rappel des dates et heures : samedi ${satDate} de ${satHours} et le dimanche ${s
 L'equipe "Un jardin pour Felix"`;
 
   const mailOptions = {
-    from: `"Le Marche de Felix" <hugues.rabier@gmail.com>`,
+    from: `"Le Marche de Felix" <${process.env.SMTP_USER}>`,
     to: exhibitor.email,
     subject: `Confirmation dossier - ${stripAccents(exhibitor.companyName)}`,
     text: mailText,
@@ -215,7 +222,7 @@ export async function sendBulkEmailAction(emails: string[], subject: string, bod
 
   const results = await Promise.all(emails.map(async (email) => {
     const mailOptions = {
-      from: `"Le Marche de Felix" <hugues.rabier@gmail.com>`,
+      from: `"Le Marche de Felix" <${process.env.SMTP_USER}>`,
       to: email,
       subject: cleanedSubject,
       text: plainTextBody,
@@ -248,7 +255,7 @@ export async function sendTestEmailAction(to: string, subject: string, body: str
   const plainTextBody = body.replace(/<[^>]*>?/gm, '');
 
   const mailOptions = {
-    from: `"Le Marche de Felix" <hugues.rabier@gmail.com>`,
+    from: `"Le Marche de Felix" <${process.env.SMTP_USER}>`,
     to: to,
     subject: cleanedSubject,
     text: plainTextBody,
