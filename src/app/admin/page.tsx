@@ -1,13 +1,14 @@
 
 "use client"
 import React, { useEffect, useState, useMemo, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { Exhibitor } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare, FileText, X as XIcon } from 'lucide-react';
+import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare, FileText, X as XIcon, Map as MapIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,6 +25,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import * as XLSX from 'xlsx';
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
+
+// Load map dynamically to avoid SSR errors with Leaflet
+const AdminMap = dynamic(() => import('@/components/AdminMap').then(mod => mod.AdminMap), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[600px] bg-muted/20 animate-pulse rounded-2xl flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-primary/30" />
+    </div>
+  )
+});
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -537,6 +548,7 @@ export default function AdminDashboard() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <TabsList>
               <TabsTrigger value="exhibitors">Exposants</TabsTrigger>
+              <TabsTrigger value="map">Carte</TabsTrigger>
               <TabsTrigger value="settings">Configuration</TabsTrigger>
               {isSuperAdmin && <TabsTrigger value="admins">Administrateurs</TabsTrigger>}
             </TabsList>
@@ -607,6 +619,26 @@ export default function AdminDashboard() {
                     ))}
                 </TableBody>
               </Table>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="map" className="space-y-6">
+            <Card className="border-t-4 border-t-primary shadow-lg overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2 text-primary">
+                  <MapIcon className="w-5 h-5" /> Géolocalisation des Artisans
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">Localisation basée sur la ville et le code postal</p>
+              </CardHeader>
+              <CardContent>
+                {filteredExhibitors.length > 0 ? (
+                  <AdminMap exhibitors={filteredExhibitors} onViewExhibitor={setViewingExhibitor} />
+                ) : (
+                  <div className="h-[400px] flex items-center justify-center border-2 border-dashed rounded-xl">
+                    <p className="text-muted-foreground italic">Aucun exposant à afficher sur la carte.</p>
+                  </div>
+                )}
+              </CardContent>
             </Card>
           </TabsContent>
 

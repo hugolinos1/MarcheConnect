@@ -1,6 +1,9 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@import url('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
 
 @layer base {
   :root {
@@ -61,4 +64,11 @@
   pointer-events: none;
   z-index: 1000;
   animation: snow linear infinite;
+}
+
+/* Leaflet height fix */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius);
 }
