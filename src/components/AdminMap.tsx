@@ -8,6 +8,7 @@ import { Exhibitor } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Eye, MapPin, Loader2 } from 'lucide-react';
+import { getStatusLabel, getStatusVariant } from '@/app/admin/page';
 
 // Fix for default marker icons in React Leaflet
 const DefaultIcon = L.icon({
@@ -112,8 +113,8 @@ export function AdminMap({ exhibitors, onViewExhibitor }: AdminMapProps) {
                   {item.exhibitor.city} ({item.exhibitor.postalCode})
                 </div>
                 <div className="flex justify-between items-center pt-2">
-                  <Badge variant="outline" className="text-[10px]">
-                    {item.exhibitor.status}
+                  <Badge variant={getStatusVariant(item.exhibitor.status)} className="text-[10px]">
+                    {getStatusLabel(item.exhibitor.status)}
                   </Badge>
                   <Button 
                     variant="ghost" 

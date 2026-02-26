@@ -2,7 +2,7 @@
 "use client"
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { Exhibitor } from '@/lib/types';
+import { Exhibitor, ApplicationStatus } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import * as XLSX from 'xlsx';
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
+
+// Helper for status display
+export const getStatusLabel = (status: ApplicationStatus): string => {
+  const labels: Record<ApplicationStatus, string> = {
+    pending: "À l'étude",
+    accepted_form1: "Accepté (Étape 1)",
+    rejected: "Refusé",
+    submitted_form2: "Dossier technique reçu",
+    validated: "Confirmé"
+  };
+  return labels[status] || status;
+};
+
+export const getStatusVariant = (status: ApplicationStatus): "default" | "secondary" | "destructive" | "outline" => {
+  const variants: Record<ApplicationStatus, "default" | "secondary" | "destructive" | "outline"> = {
+    pending: "secondary",
+    accepted_form1: "secondary",
+    rejected: "destructive",
+    submitted_form2: "secondary",
+    validated: "default"
+  };
+  return variants[status] || "secondary";
+};
 
 // Load map dynamically to avoid SSR errors with Leaflet
 const AdminMap = dynamic(() => import('@/components/AdminMap').then(mod => mod.AdminMap), {
@@ -592,12 +615,8 @@ export default function AdminDashboard() {
                         </TableCell>
                         <TableCell><Badge variant="outline">{exhibitor.requestedTables} table(s)</Badge></TableCell>
                         <TableCell>
-                          <Badge variant={
-                            exhibitor.status === 'pending' ? 'secondary' : 
-                            exhibitor.status === 'rejected' ? 'destructive' : 
-                            exhibitor.status === 'validated' ? 'default' : 'secondary'
-                          }>
-                            {exhibitor.status === 'pending' ? 'À l\'étude' : exhibitor.status === 'validated' ? 'Confirmé' : exhibitor.status}
+                          <Badge variant={getStatusVariant(exhibitor.status)}>
+                            {getStatusLabel(exhibitor.status)}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
