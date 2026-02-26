@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare, FileText, X as XIcon, Map as MapIcon, Lock } from 'lucide-react';
+import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare, FileText, X as XIcon, Map as MapIcon, Lock, ExternalLink } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -245,7 +245,6 @@ export default function AdminDashboard() {
   };
 
   const handleSendTestEmail = async (subject?: string, body?: string) => {
-    // Si appelé sans paramètres, on utilise soit le template actuel, soit un message par défaut pour le test SMTP
     const testSubject = subject || templateForm.subject || "Email de test - MarcheConnect";
     const testBody = body || templateForm.body || "<p>Ceci est un email de test pour valider la configuration SMTP.</p>";
 
@@ -255,7 +254,7 @@ export default function AdminDashboard() {
     }
     
     setIsSendingTest(true);
-    const res = await sendTestEmailAction(testEmailAddress, testSubject, testBody, currentConfig);
+    const res = await sendTestEmailAction(testEmailAddress, testSubject, testBody, configForm);
     if (res.success) {
       toast({ title: "Email de test envoyé !" });
     } else {
@@ -583,7 +582,7 @@ export default function AdminDashboard() {
               <TabsTrigger value="exhibitors">Exposants</TabsTrigger>
               <TabsTrigger value="map">Carte</TabsTrigger>
               <TabsTrigger value="settings">Configuration</TabsTrigger>
-              {isSuperAdmin && <TabsTrigger value="admins">Administrateurs</TabsTrigger>}
+              {isAuthorized && <TabsTrigger value="admins">Administrateurs</TabsTrigger>}
             </TabsList>
             
             <Select value={selectedConfigId} onValueChange={setSelectedConfigId}>
@@ -712,6 +711,14 @@ export default function AdminDashboard() {
                           {showSmtpPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
+                      <a 
+                        href="https://myaccount.google.com/apppasswords" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-[10px] text-blue-600 hover:underline flex items-center gap-1 mt-1"
+                      >
+                        <ExternalLink className="w-2.5 h-2.5" /> Aide : Créer un mot de passe d'application Google
+                      </a>
                     </div>
                   </div>
 
@@ -882,7 +889,7 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          {isSuperAdmin && (
+          {isAuthorized && (
             <TabsContent value="admins" className="space-y-6">
               <div className="grid md:grid-cols-2 gap-8">
                 <Card className="border-t-4 border-t-amber-500 shadow-md">
