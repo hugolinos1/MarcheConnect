@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -66,7 +67,6 @@ export default function RegisterPage() {
 
   const priceTable1 = currentConfig?.priceTable1 ?? 40;
   const priceTable2 = currentConfig?.priceTable2 ?? 60;
-  const priceTombola = currentConfig?.priceTombola ?? 2;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -173,6 +173,7 @@ export default function RegisterPage() {
       const colRef = collection(db, 'pre_registrations');
       await addDocumentNonBlocking(colRef, newExhibitor);
       
+      // On passe currentConfig qui contient maintenant smtpUser et smtpPass si configurés
       await sendApplicationNotification(newExhibitor, currentConfig);
       
       router.push('/register/success');
@@ -206,7 +207,7 @@ export default function RegisterPage() {
                   <div className="space-y-6 pb-12 leading-relaxed">
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 1 :</h4>
-                      <p>Le marché aura lieu le samedi {satDate} de {satHours} et le dimanche {sunDate} de {sunHours} à la salle Maurice Baquet, rue Pierre Coubertin (à droite de l’entrée du stade de foot) à Chazay d’Azergues (69380).</p>
+                      <p>Le marché aura lieu le samedi {satDate} de {satHours} et le dimanche {sunDate} de {sunHours} à la salle Maurice Baquet, rue Pierre Coubertin à Chazay d’Azergues (69380).</p>
                     </div>
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 2 :</h4>
@@ -214,26 +215,16 @@ export default function RegisterPage() {
                     </div>
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 3 :</h4>
-                      <div className="space-y-2">
-                        <p>Nous répondrons à toutes les candidatures, par mail (que la réponse soit positive ou négative) dans les 15 semaines suivant votre demande. Nous nous octroyons le droit de refuser une candidature si les articles proposés ne conviennent pas à notre sélection. Nous privilégions les articles et produits artisanaux. Nous n’acceptons pas la revente.</p>
-                        <p>Vous vous engagez à ne mettre sur votre stand que les articles qui ont été validé par le bureau du marché de Noël.</p>
-                        <p>Nous serons sensibles aux demandes de personnes étant déclarées au registre du commerce. Dans le cas où vous n’êtes pas déclaré, l’article L30-2 du code de commerce autorise les particuliers non inscrits à participer 2 fois/an à des marchés.</p>
-                      </div>
+                      <p>Nous privilégions les articles et produits artisanaux. Nous n’acceptons pas la revente.</p>
                     </div>
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 4 :</h4>
-                      <div className="space-y-2">
-                        <p>L’installation des exposants aura lieu le samedi entre 11h et 13h. Les emplacements seront attribués à l’arrivée de chaque exposant.</p>
-                        <p>Nous pourrons fournir en électricité 8 à 10 stands maximum, merci d’en faire la demande lors de l’inscription.</p>
-                        <p>Le démontage du stand ne pourra se faire que le dimanche après la fermeture du marché soit 17h30.</p>
-                      </div>
+                      <p>L’installation des exposants aura lieu le samedi entre 11h et 13h.</p>
                     </div>
                     <div>
                       <h4 className="font-bold text-foreground underline mb-1">Article 5 :</h4>
-                      <div className="space-y-2">
-                        <p>- Un chèque correspondant au nombre de tables souhaité ({priceTable1}€ pour 1 table et {priceTable2}€ pour 2 tables) est demandé après validation de votre inscription.</p>
-                        <p>- Chèque à l’ordre de « Les amis d’un jardin pour Félix ».</p>
-                      </div>
+                      <p>- {priceTable1}€ pour 1 table (1.75m)</p>
+                      <p>- {priceTable2}€ pour 2 tables (3.50m)</p>
                     </div>
                   </div>
                 </ScrollArea>

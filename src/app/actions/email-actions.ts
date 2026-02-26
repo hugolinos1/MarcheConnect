@@ -1,3 +1,4 @@
+
 'use server';
 
 import nodemailer from 'nodemailer';
@@ -37,15 +38,15 @@ function stripAccents(str: string = "") {
 }
 
 /**
- * Configuration du transporteur Gmail utilisant des variables d'environnement pour la sécurité.
- * Ces variables doivent être configurées dans votre environnement de déploiement (Firebase App Hosting).
+ * Configuration du transporteur Gmail.
+ * Utilise les informations de la base de données si fournies, sinon les variables d'environnement.
  */
-function createTransporter() {
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+function createTransporter(marketConfig?: any) {
+  const user = marketConfig?.smtpUser || process.env.SMTP_USER;
+  const pass = marketConfig?.smtpPass || process.env.SMTP_PASS;
 
   if (!user || !pass) {
-    console.warn("SMTP_USER ou SMTP_PASS manquant dans les variables d'environnement. Les emails ne pourront pas être envoyés.");
+    console.warn("SMTP_USER ou SMTP_PASS manquant. Les emails ne pourront pas être envoyés.");
   }
 
   return nodemailer.createTransport({
@@ -56,7 +57,6 @@ function createTransporter() {
       user: user,
       pass: pass,
     },
-    // Augmentation des timeouts pour éviter les erreurs de connexion intermittentes
     connectionTimeout: 15000,
     greetingTimeout: 15000,
     socketTimeout: 30000,
@@ -67,13 +67,13 @@ function createTransporter() {
  * Fonction de notification d'une nouvelle candidature pour l'admin.
  */
 export async function sendApplicationNotification(exhibitorData: any, marketConfig: any) {
-  const transporter = createTransporter();
+  const transporter = createTransporter(marketConfig);
   const year = marketConfig?.marketYear || '2026';
   const notificationEmail = marketConfig?.notificationEmail || "lemarchedefelix2020@gmail.com";
   const company = stripAccents(exhibitorData.companyName);
 
   const mailOptions = {
-    from: `"MarcheConnect" <${process.env.SMTP_USER}>`,
+    from: `"MarcheConnect" <${marketConfig?.smtpUser || process.env.SMTP_USER}>`,
     to: notificationEmail,
     subject: `Nouvelle Candidature : ${company}`,
     text: `Nouvelle candidature pour le Marche de Noel ${year}.\n\nEnseigne : ${company}\nContact : ${stripAccents(exhibitorData.firstName)} ${stripAccents(exhibitorData.lastName)}`,
@@ -92,7 +92,7 @@ export async function sendApplicationNotification(exhibitorData: any, marketConf
  * Envoie l'email d'acceptation (Etape 1).
  */
 export async function sendAcceptanceEmail(exhibitor: any, customMessage: string, marketConfig: any) {
-  const transporter = createTransporter();
+  const transporter = createTransporter(marketConfig);
   const baseUrl = await getBaseUrl();
   const detailsLink = `${baseUrl}/details/${exhibitor.id}`;
   const year = marketConfig?.marketYear || '2026';
@@ -102,7 +102,7 @@ export async function sendAcceptanceEmail(exhibitor: any, customMessage: string,
   const messagePerso = stripAccents(customMessage);
 
   const mailOptions = {
-    from: `"Le Marche de Felix" <${process.env.SMTP_USER}>`,
+    from: `"Le Marche de Felix" <${marketConfig?.smtpUser || process.env.SMTP_USER}>`,
     to: exhibitor.email,
     subject: `Candidature retenue - Marche de Noel ${year}`,
     text: `Bonjour ${firstName} ${lastName},
@@ -132,14 +132,14 @@ L'equipe "Un jardin pour Felix"`,
  * Envoie l'email de refus.
  */
 export async function sendRejectionEmail(exhibitor: any, justification: string, marketConfig: any) {
-  const transporter = createTransporter();
+  const transporter = createTransporter(marketConfig);
   const year = marketConfig?.marketYear || '2026';
   const firstName = stripAccents(exhibitor.firstName);
   const lastName = stripAccents(exhibitor.lastName);
   const reason = stripAccents(justification);
 
   const mailOptions = {
-    from: `"Le Marche de Felix" <${process.env.SMTP_USER}>`,
+    from: `"Le Marche de Felix" <${marketConfig?.smtpUser || process.env.SMTP_USER}>`,
     to: exhibitor.email,
     subject: `Candidature Marche de Noel ${year}`,
     text: `Bonjour ${firstName} ${lastName},
@@ -167,7 +167,7 @@ Bonne continuation.`,
  * Envoie l'email de confirmation finale après dossier technique.
  */
 export async function sendFinalConfirmationEmail(exhibitor: any, details: any, marketConfig: any) {
-  const transporter = createTransporter();
+  const transporter = createTransporter(marketConfig);
   const year = marketConfig?.marketYear || '2026';
   
   const standPrice = exhibitor.requestedTables === '1' ? (marketConfig?.priceTable1 ?? 40) : (marketConfig?.priceTable2 ?? 60);
@@ -199,7 +199,7 @@ Rappel des dates et heures : samedi ${satDate} de ${satHours} et le dimanche ${s
 L'equipe "Un jardin pour Felix"`;
 
   const mailOptions = {
-    from: `"Le Marche de Felix" <${process.env.SMTP_USER}>`,
+    from: `"Le Marche de Felix" <${marketConfig?.smtpUser || process.env.SMTP_USER}>`,
     to: exhibitor.email,
     subject: `Confirmation dossier - ${stripAccents(exhibitor.companyName)}`,
     text: mailText,
@@ -217,15 +217,14 @@ L'equipe "Un jardin pour Felix"`;
 /**
  * Envoie un email groupé.
  */
-export async function sendBulkEmailAction(emails: string[], subject: string, body: string) {
-  const transporter = createTransporter();
+export async function sendBulkEmailAction(emails: string[], subject: string, body: string, marketConfig: any) {
+  const transporter = createTransporter(marketConfig);
   const cleanedSubject = stripAccents(subject);
-  // Suppression basique des balises HTML pour la version texte
   const plainTextBody = body.replace(/<[^>]*>?/gm, '');
 
   const results = await Promise.all(emails.map(async (email) => {
     const mailOptions = {
-      from: `"Le Marche de Felix" <${process.env.SMTP_USER}>`,
+      from: `"Le Marche de Felix" <${marketConfig?.smtpUser || process.env.SMTP_USER}>`,
       to: email,
       subject: cleanedSubject,
       text: plainTextBody,
@@ -252,13 +251,13 @@ export async function sendBulkEmailAction(emails: string[], subject: string, bod
 /**
  * Envoie un email de test.
  */
-export async function sendTestEmailAction(to: string, subject: string, body: string) {
-  const transporter = createTransporter();
+export async function sendTestEmailAction(to: string, subject: string, body: string, marketConfig: any) {
+  const transporter = createTransporter(marketConfig);
   const cleanedSubject = `[TEST] ${stripAccents(subject)}`;
   const plainTextBody = body.replace(/<[^>]*>?/gm, '');
 
   const mailOptions = {
-    from: `"Le Marche de Felix" <${process.env.SMTP_USER}>`,
+    from: `"Le Marche de Felix" <${marketConfig?.smtpUser || process.env.SMTP_USER}>`,
     to: to,
     subject: cleanedSubject,
     text: plainTextBody,

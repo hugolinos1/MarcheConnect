@@ -29,6 +29,15 @@
           "description": "The email address where administrator notifications are sent and which is placed in CC for exhibitor communications.",
           "format": "email"
         },
+        "smtpUser": {
+          "type": "string",
+          "description": "L'adresse email Gmail utilisée pour l'envoi des messages.",
+          "format": "email"
+        },
+        "smtpPass": {
+          "type": "string",
+          "description": "Le mot de passe d'application Gmail pour l'envoi sécurisé."
+        },
         "signupCode": {
           "type": "string",
           "description": "Global invitation code for admin creation."

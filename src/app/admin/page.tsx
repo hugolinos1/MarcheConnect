@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare, FileText, X as XIcon, Map as MapIcon } from 'lucide-react';
+import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare, FileText, X as XIcon, Map as MapIcon, Lock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -69,6 +70,7 @@ export default function AdminDashboard() {
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showSmtpPass, setShowSmtpPass] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [justification, setJustification] = useState('');
@@ -189,6 +191,8 @@ export default function AdminDashboard() {
     editionNumber: "6ème",
     posterImageUrl: "https://i.ibb.co/3y3KRNW4/Affiche-March.jpg",
     notificationEmail: "lemarchedefelix2020@gmail.com",
+    smtpUser: "",
+    smtpPass: "",
     signupCode: "FELIX2026",
     priceTable1: 40,
     priceTable2: 60,
@@ -208,6 +212,8 @@ export default function AdminDashboard() {
         editionNumber: currentConfig.editionNumber,
         posterImageUrl: currentConfig.posterImageUrl,
         notificationEmail: currentConfig.notificationEmail || "lemarchedefelix2020@gmail.com",
+        smtpUser: currentConfig.smtpUser || "",
+        smtpPass: currentConfig.smtpPass || "",
         signupCode: currentConfig.signupCode || "FELIX2026",
         priceTable1: currentConfig.priceTable1 ?? 40,
         priceTable2: currentConfig.priceTable2 ?? 60,
@@ -244,7 +250,7 @@ export default function AdminDashboard() {
       return;
     }
     setIsSendingTest(true);
-    const res = await sendTestEmailAction(testEmailAddress, templateForm.subject, templateForm.body);
+    const res = await sendTestEmailAction(testEmailAddress, templateForm.subject, templateForm.body, currentConfig);
     if (res.success) {
       toast({ title: "Email de test envoyé !" });
     } else {
@@ -299,7 +305,7 @@ export default function AdminDashboard() {
     if (!template || confirmedExhibitors.length === 0) return;
     setIsSending(true);
     const emails = confirmedExhibitors.map(e => e.email);
-    const res = await sendBulkEmailAction(emails, template.subject, template.body);
+    const res = await sendBulkEmailAction(emails, template.subject, template.body, currentConfig);
     if (res.success) {
       toast({ title: "Emails envoyés !", description: `${res.totalSent} emails envoyés avec succès.` });
     } else {
@@ -671,6 +677,43 @@ export default function AdminDashboard() {
                 
                 <div className="p-4 bg-primary/5 rounded-xl border-2 border-primary/10 space-y-4">
                   <div className="flex items-center gap-2 text-primary font-bold">
+                    <Mail className="w-5 h-5" /> Configuration SMTP (Envoi d'emails)
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-2"><Mail className="w-3 h-3" /> Email Expéditeur (Gmail)</label>
+                      <Input 
+                        value={configForm.smtpUser} 
+                        onChange={(e) => setConfigForm({...configForm, smtpUser: e.target.value})} 
+                        placeholder="votre@email.com"
+                        className="bg-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-2"><Lock className="w-3 h-3" /> Mot de passe d'application</label>
+                      <div className="relative">
+                        <Input 
+                          type={showSmtpPass ? "text" : "password"} 
+                          value={configForm.smtpPass} 
+                          onChange={(e) => setConfigForm({...configForm, smtpPass: e.target.value})} 
+                          placeholder="Mot de passe d'application Google"
+                          className="bg-white pr-10"
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => setShowSmtpPass(!showSmtpPass)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                        >
+                          {showSmtpPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground italic">Ces identifiants sont stockés en base de données pour l'envoi des messages automatiques.</p>
+                </div>
+
+                <div className="p-4 bg-primary/5 rounded-xl border-2 border-primary/10 space-y-4">
+                  <div className="flex items-center gap-2 text-primary font-bold">
                     <Key className="w-5 h-5" /> Sécurité & Accès Admin
                   </div>
                   <div className="space-y-2">
@@ -690,7 +733,7 @@ export default function AdminDashboard() {
                   <Input value={configForm.posterImageUrl} onChange={(e) => setConfigForm({...configForm, posterImageUrl: e.target.value})} placeholder="https://..." />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-2"><Mail className="w-3 h-3" /> Email de notification</label>
+                  <label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-2"><Mail className="w-3 h-3" /> Email de notification admin</label>
                   <Input value={configForm.notificationEmail} onChange={(e) => setConfigForm({...configForm, notificationEmail: e.target.value})} placeholder="email@exemple.com" />
                 </div>
                 <div className="grid grid-cols-2 gap-4 border-y py-4">
@@ -704,7 +747,7 @@ export default function AdminDashboard() {
                   <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Prix 2 Tables</label><Input type="number" value={configForm.priceTable2} onChange={(e) => setConfigForm({...configForm, priceTable2: parseInt(e.target.value)})} /></div>
                   <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Prix Repas</label><Input type="number" value={configForm.priceMeal} onChange={(e) => setConfigForm({...configForm, priceMeal: parseInt(e.target.value)})} /></div>
                 </div>
-                <Button onClick={() => setDocumentNonBlocking(doc(db, 'market_configurations', currentConfig!.id), { ...configForm }, { merge: true })} className="w-full">Sauvegarder</Button>
+                <Button onClick={() => setDocumentNonBlocking(doc(db, 'market_configurations', currentConfig!.id), { ...configForm }, { merge: true })} className="w-full">Sauvegarder la configuration</Button>
                 
                 <Separator />
                 
@@ -882,6 +925,10 @@ export default function AdminDashboard() {
           )}
         </Tabs>
       </main>
+
+      <footer className="py-8 text-center text-xs text-muted-foreground border-t">
+        <p>© {currentConfig?.marketYear} Association "Un jardin pour Félix"</p>
+      </footer>
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
