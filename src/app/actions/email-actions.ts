@@ -38,13 +38,14 @@ function stripAccents(str: string = "") {
 
 /**
  * Configuration du transporteur Gmail utilisant des variables d'environnement pour la sécurité.
+ * Ces variables doivent être configurées dans votre environnement de déploiement (Firebase App Hosting).
  */
 function createTransporter() {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
 
   if (!user || !pass) {
-    console.warn("SMTP_USER ou SMTP_PASS manquant dans les variables d'environnement.");
+    console.warn("SMTP_USER ou SMTP_PASS manquant dans les variables d'environnement. Les emails ne pourront pas être envoyés.");
   }
 
   return nodemailer.createTransport({
@@ -55,6 +56,7 @@ function createTransporter() {
       user: user,
       pass: pass,
     },
+    // Augmentation des timeouts pour éviter les erreurs de connexion intermittentes
     connectionTimeout: 15000,
     greetingTimeout: 15000,
     socketTimeout: 30000,
@@ -218,6 +220,7 @@ L'equipe "Un jardin pour Felix"`;
 export async function sendBulkEmailAction(emails: string[], subject: string, body: string) {
   const transporter = createTransporter();
   const cleanedSubject = stripAccents(subject);
+  // Suppression basique des balises HTML pour la version texte
   const plainTextBody = body.replace(/<[^>]*>?/gm, '');
 
   const results = await Promise.all(emails.map(async (email) => {
