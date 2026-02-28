@@ -744,6 +744,7 @@ export default function AdminDashboard() {
                       <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-600 hover:underline flex items-center gap-1 mt-1"><ExternalLink className="w-2.5 h-2.5" /> Aide : Créer un mot de passe d'application</a>
                     </div>
                   </div>
+                  
                   <div className="flex gap-2 items-end border-t pt-4">
                     <div className="flex-1 space-y-1">
                       <label className="text-[10px] font-bold uppercase">Tester l'envoi vers :</label>
