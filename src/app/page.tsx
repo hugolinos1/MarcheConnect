@@ -1,8 +1,9 @@
+
 "use client"
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { Gift, TreePine, Star, ChevronRight, Info, ShoppingBag, Calendar } from 'lucide-react';
+import { Gift, TreePine, Star, ChevronRight, Info, ShoppingBag, Calendar, ShieldCheck } from 'lucide-react';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
@@ -31,7 +32,7 @@ export default function Home() {
       <header className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-40">
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="relative w-14 h-14 overflow-hidden rounded-full border-2 border-primary/10">
+            <div className="relative w-14 h-14 shrink-0 overflow-hidden rounded-full border-2 border-primary/10">
               <Image 
                 src={logoUrl}
                 alt="Logo Un Jardin pour Félix"
@@ -40,12 +41,15 @@ export default function Home() {
               />
             </div>
             <div className="flex flex-col">
-              <span className="font-headline font-bold text-lg leading-none text-primary">Le Marché de Félix</span>
-              <span className="text-[10px] uppercase tracking-widest text-secondary font-bold">Un Jardin pour Félix</span>
+              <span className="font-headline font-bold text-sm md:text-lg leading-none text-primary">Le Marché de Félix</span>
+              <span className="text-[9px] md:text-[10px] uppercase tracking-widest text-secondary font-bold">Un Jardin pour Félix</span>
             </div>
           </div>
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href="/admin" className="text-sm font-medium hover:text-primary transition-colors">Portail Admin</Link>
+          <nav className="flex items-center gap-2 md:gap-6">
+            <Link href="/admin" className="text-xs md:text-sm font-bold flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/5 text-primary hover:bg-primary/10 transition-colors">
+              <ShieldCheck className="w-4 h-4" />
+              <span>Admin</span>
+            </Link>
           </nav>
         </div>
       </header>
