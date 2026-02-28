@@ -132,6 +132,7 @@ Motif :
 ${justification}
 ---------------------------
 
+Merci pour l'intérêt porté à notre marché.
 Bonne continuation dans vos projets.
 L'équipe "Un jardin pour Félix"`,
   };
@@ -198,6 +199,31 @@ L'équipe "Un jardin pour Félix"`;
 }
 
 /**
+ * Envoie l'email de test.
+ */
+export async function sendTestEmailAction(to: string, subject: string, body: string, marketConfig: any) {
+  const transporter = createTransporter(marketConfig);
+  const smtpUser = (marketConfig?.smtpUser || process.env.SMTP_USER || "").trim();
+  const plainTextBody = body.replace(/<[^>]*>?/gm, '');
+
+  const mailOptions = {
+    from: `"Le Marché de Félix" <${smtpUser}>`,
+    to: to,
+    subject: `[TEST] ${subject}`,
+    text: plainTextBody,
+    html: body,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return { success: true };
+  } catch (error: any) {
+    console.error(`Test Email Error:`, error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * Envoie un email groupé.
  */
 export async function sendBulkEmailAction(emails: string[], subject: string, body: string, marketConfig: any) {
@@ -229,29 +255,4 @@ export async function sendBulkEmailAction(emails: string[], subject: string, bod
     totalFailed: failed.length,
     failedEmails: failed.map(f => f.email)
   };
-}
-
-/**
- * Envoie un email de test.
- */
-export async function sendTestEmailAction(to: string, subject: string, body: string, marketConfig: any) {
-  const transporter = createTransporter(marketConfig);
-  const smtpUser = (marketConfig?.smtpUser || process.env.SMTP_USER || "").trim();
-  const plainTextBody = body.replace(/<[^>]*>?/gm, '');
-
-  const mailOptions = {
-    from: `"Le Marché de Félix" <${smtpUser}>`,
-    to: to,
-    subject: `[TEST] ${subject}`,
-    text: plainTextBody,
-    html: body,
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
-    return { success: true };
-  } catch (error: any) {
-    console.error(`Test Email Error:`, error);
-    return { success: false, error: error.message };
-  }
 }
