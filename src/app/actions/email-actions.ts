@@ -1,4 +1,3 @@
-
 'use server';
 
 import nodemailer from 'nodemailer';
@@ -27,30 +26,27 @@ async function getBaseUrl() {
 }
 
 /**
- * Nettoie les chaînes pour éviter les problèmes d'encodage avec Gmail.
+ * Nettoie les chaînes pour éviter les problèmes d'encodage avec Gmail si nécessaire.
+ * Conservé en utilitaire mais utilisé plus parcimonieusement pour garder les accents.
  */
 function stripAccents(str: string = "") {
   if (!str) return "";
   return str
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\x00-\x7F]/g, "");
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 /**
  * Configuration du transporteur Gmail.
- * Utilise les informations de la base de données si fournies, sinon les variables d'environnement.
  */
 function createTransporter(marketConfig?: any) {
-  // On récupère les identifiants et on enlève les espaces accidentels (trim)
   const user = (marketConfig?.smtpUser || process.env.SMTP_USER || "").trim();
   const pass = (marketConfig?.smtpPass || process.env.SMTP_PASS || "").trim();
 
   if (!user || !pass) {
-    console.warn("SMTP_USER ou SMTP_PASS manquant. Les emails ne pourront pas être envoyés.");
+    console.warn("SMTP_USER ou SMTP_PASS manquant.");
   }
 
-  // Utilisation du service 'gmail' intégré à nodemailer pour plus de fiabilité
   return nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -64,20 +60,20 @@ function createTransporter(marketConfig?: any) {
 }
 
 /**
- * Fonction de notification d'une nouvelle candidature pour l'admin.
+ * Notification d'une nouvelle candidature pour l'admin.
  */
 export async function sendApplicationNotification(exhibitorData: any, marketConfig: any) {
   const transporter = createTransporter(marketConfig);
   const year = marketConfig?.marketYear || '2026';
   const notificationEmail = marketConfig?.notificationEmail || "lemarchedefelix2020@gmail.com";
-  const company = stripAccents(exhibitorData.companyName);
+  const company = exhibitorData.companyName;
   const smtpUser = (marketConfig?.smtpUser || process.env.SMTP_USER || "").trim();
 
   const mailOptions = {
     from: `"MarcheConnect" <${smtpUser}>`,
     to: notificationEmail,
     subject: `Nouvelle Candidature : ${company}`,
-    text: `Nouvelle candidature pour le Marche de Noel ${year}.\n\nEnseigne : ${company}\nContact : ${stripAccents(exhibitorData.firstName)} ${stripAccents(exhibitorData.lastName)}`,
+    text: `Nouvelle candidature pour le Marché de Noël ${year}.\n\nEnseigne : ${company}\nContact : ${exhibitorData.firstName} ${exhibitorData.lastName}`,
   };
 
   try {
@@ -90,7 +86,7 @@ export async function sendApplicationNotification(exhibitorData: any, marketConf
 }
 
 /**
- * Envoie l'email d'acceptation (Etape 1).
+ * Envoie l'email d'acceptation (Étape 1).
  */
 export async function sendAcceptanceEmail(exhibitor: any, customMessage: string, marketConfig: any) {
   const transporter = createTransporter(marketConfig);
@@ -99,26 +95,22 @@ export async function sendAcceptanceEmail(exhibitor: any, customMessage: string,
   const year = marketConfig?.marketYear || '2026';
   const smtpUser = (marketConfig?.smtpUser || process.env.SMTP_USER || "").trim();
 
-  const firstName = stripAccents(exhibitor.firstName);
-  const lastName = stripAccents(exhibitor.lastName);
-  const messagePerso = stripAccents(customMessage);
-
   const mailOptions = {
-    from: `"Le Marche de Felix" <${smtpUser}>`,
+    from: `"Le Marché de Félix" <${smtpUser}>`,
     to: exhibitor.email,
-    subject: `Candidature retenue - Marche de Noel ${year}`,
-    text: `Bonjour ${firstName} ${lastName},
+    subject: `Candidature retenue - Marché de Noël ${year}`,
+    text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 
-Nous avons le plaisir de vous informer que votre candidature pour le Marche de Noel ${year} a ete acceptee.
+Nous avons le plaisir de vous informer que votre candidature pour le Marché de Noël ${year} a été acceptée.
 
-${messagePerso ? `Note de l'organisateur :\n---------------------------\n${messagePerso}\n---------------------------\n` : ''}
+${customMessage ? `Note de l'organisateur :\n---------------------------\n${customMessage}\n---------------------------\n` : ''}
 
-Pour finaliser votre inscription, merci de completer votre dossier technique en cliquant sur le lien ci-dessous :
+Pour finaliser votre inscription, merci de compléter votre dossier technique en cliquant sur le lien ci-dessous :
 
 Lien : ${detailsLink}
 
-A bientot !
-L'equipe "Un jardin pour Felix"`,
+À bientôt !
+L'équipe "Un jardin pour Félix"`,
   };
 
   try {
@@ -136,25 +128,23 @@ L'equipe "Un jardin pour Felix"`,
 export async function sendRejectionEmail(exhibitor: any, justification: string, marketConfig: any) {
   const transporter = createTransporter(marketConfig);
   const year = marketConfig?.marketYear || '2026';
-  const firstName = stripAccents(exhibitor.firstName);
-  const lastName = stripAccents(exhibitor.lastName);
-  const reason = stripAccents(justification);
   const smtpUser = (marketConfig?.smtpUser || process.env.SMTP_USER || "").trim();
 
   const mailOptions = {
-    from: `"Le Marche de Felix" <${smtpUser}>`,
+    from: `"Le Marché de Félix" <${smtpUser}>`,
     to: exhibitor.email,
-    subject: `Candidature Marche de Noel ${year}`,
-    text: `Bonjour ${firstName} ${lastName},
+    subject: `Candidature Marché de Noël ${year}`,
+    text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 
-Nous ne pouvons malheureusement pas retenir votre candidature pour l'edition ${year}.
+Nous ne pouvons malheureusement pas retenir votre candidature pour l'édition ${year}.
 
 Motif :
 ---------------------------
-${reason}
+${justification}
 ---------------------------
 
-Bonne continuation.`,
+Bonne continuation.
+L'équipe "Un jardin pour Félix"`,
   };
 
   try {
@@ -179,33 +169,33 @@ export async function sendFinalConfirmationEmail(exhibitor: any, details: any, m
   const mealsPrice = (details.sundayLunchCount || 0) * (marketConfig?.priceMeal ?? 8);
   const total = standPrice + electricityPrice + mealsPrice;
 
-  const satDate = stripAccents(marketConfig?.saturdayDate || "5/12/2026");
-  const satHours = stripAccents(marketConfig?.saturdayHours || "14h à 19h");
-  const sunDate = stripAccents(marketConfig?.sundayDate || "06/12/2026");
-  const sunHours = stripAccents(marketConfig?.sundayHours || "10h à 17h30");
+  const satDate = marketConfig?.saturdayDate || "5/12/2026";
+  const satHours = marketConfig?.saturdayHours || "14h à 19h";
+  const sunDate = marketConfig?.sundayDate || "06/12/2026";
+  const sunHours = marketConfig?.sundayHours || "10h à 17h30";
 
-  const mailText = `Bonjour ${stripAccents(exhibitor.firstName)} ${stripAccents(exhibitor.lastName)},
+  const mailText = `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 
-Dossier technique recu pour le Marche de Noel ${year}.
+Dossier technique reçu pour le Marché de Noël ${year}.
 
-DETAIL DU REGLEMENT :
+DÉTAIL DU RÈGLEMENT :
 - Emplacement : ${standPrice} EUR (${exhibitor.requestedTables} table(s))
-- Electricite : ${electricityPrice} EUR
+- Électricité : ${electricityPrice} EUR
 - Repas : ${mealsPrice} EUR
 
-MONTANT TOTAL A REGLER : ${total} EUR
+MONTANT TOTAL À RÉGLER : ${total} EUR
 
-Pour confirmer definitivement votre place, merci d'envoyer votre cheque libelle a l'ordre de "Les amis d'un Jardin pour Felix" a l'adresse suivante : 30 rue du Colombier 69380 CHAZAY D'AZERGUES.
-Le cheque doit nous parvenir dans les 15 jours apres la reception de cet email. Il sera encaisse 15 jours avant l'evenement.
+Pour confirmer définitivement votre place, merci d'envoyer votre chèque libellé à l'ordre de "Les amis d'un Jardin pour Félix" à l'adresse suivante : 30 rue du Colombier 69380 CHAZAY D'AZERGUES.
+Le chèque doit nous parvenir dans les 15 jours après la réception de cet e-mail. Il sera encaissé 15 jours avant l'événement.
 
-Rappel des dates et heures : samedi ${satDate} de ${satHours} et le dimanche ${sunDate} de ${sunHours} a la salle Maurice Baquet, rue Pierre Coubertin
+Rappel des dates et heures : samedi ${satDate} de ${satHours} et le dimanche ${sunDate} de ${sunHours} à la salle Maurice Baquet, rue Pierre Coubertin.
 
-L'equipe "Un jardin pour Felix"`;
+L'équipe "Un jardin pour Félix"`;
 
   const mailOptions = {
-    from: `"Le Marche de Felix" <${smtpUser}>`,
+    from: `"Le Marché de Félix" <${smtpUser}>`,
     to: exhibitor.email,
-    subject: `Confirmation dossier - ${stripAccents(exhibitor.companyName)}`,
+    subject: `Confirmation dossier - ${exhibitor.companyName}`,
     text: mailText,
   };
 
@@ -224,14 +214,13 @@ L'equipe "Un jardin pour Felix"`;
 export async function sendBulkEmailAction(emails: string[], subject: string, body: string, marketConfig: any) {
   const transporter = createTransporter(marketConfig);
   const smtpUser = (marketConfig?.smtpUser || process.env.SMTP_USER || "").trim();
-  const cleanedSubject = stripAccents(subject);
   const plainTextBody = body.replace(/<[^>]*>?/gm, '');
 
   const results = await Promise.all(emails.map(async (email) => {
     const mailOptions = {
-      from: `"Le Marche de Felix" <${smtpUser}>`,
+      from: `"Le Marché de Félix" <${smtpUser}>`,
       to: email,
-      subject: cleanedSubject,
+      subject: subject,
       text: plainTextBody,
       html: body,
     };
@@ -259,13 +248,12 @@ export async function sendBulkEmailAction(emails: string[], subject: string, bod
 export async function sendTestEmailAction(to: string, subject: string, body: string, marketConfig: any) {
   const transporter = createTransporter(marketConfig);
   const smtpUser = (marketConfig?.smtpUser || process.env.SMTP_USER || "").trim();
-  const cleanedSubject = `[TEST] ${stripAccents(subject)}`;
   const plainTextBody = body.replace(/<[^>]*>?/gm, '');
 
   const mailOptions = {
-    from: `"Le Marche de Felix" <${smtpUser}>`,
+    from: `"Le Marché de Félix" <${smtpUser}>`,
     to: to,
-    subject: cleanedSubject,
+    subject: `[TEST] ${subject}`,
     text: plainTextBody,
     html: body,
   };
