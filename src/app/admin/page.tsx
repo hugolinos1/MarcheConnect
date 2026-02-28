@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare, FileText, X as XIcon, Map as MapIcon, Lock, ExternalLink } from 'lucide-react';
+import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare, FileText, X as XIcon, Map as MapIcon, Lock, ExternalLink, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import * as XLSX from 'xlsx';
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
+import { differenceInDays } from 'date-fns';
 
 // Helper for status display
 export const getStatusLabel = (status: ApplicationStatus): string => {
@@ -80,10 +81,12 @@ export default function AdminDashboard() {
   const [isAcceptDialogOpen, setIsAcceptDialogOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isSingleEmailDialogOpen, setIsSingleEmailDialogOpen] = useState(false);
   const [actingExhibitor, setActingExhibitor] = useState<Exhibitor | null>(null);
   
   const [isBulkEmailDialogOpen, setIsBulkEmailDialogOpen] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [singleEmailForm, setSingleEmailForm] = useState({ subject: '', body: '' });
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isTemplateFormVisible, setIsTemplateFormVisible] = useState(false);
   
@@ -318,6 +321,20 @@ export default function AdminDashboard() {
     setIsSending(false);
   };
 
+  const handleSingleEmailSend = async () => {
+    if (!actingExhibitor || !singleEmailForm.subject || !singleEmailForm.body) return;
+    setIsSending(true);
+    const res = await sendBulkEmailAction([actingExhibitor.email], singleEmailForm.subject, singleEmailForm.body, currentConfig);
+    if (res.success) {
+      toast({ title: "Email envoyé !" });
+    } else {
+      toast({ variant: "destructive", title: "Échec de l'envoi", description: res.error });
+    }
+    setIsSingleEmailDialogOpen(false);
+    setIsSending(false);
+    setActingExhibitor(null);
+  };
+
   const handleAuth = async (e: React.FormEvent, forceRequest: boolean = false) => {
     e.preventDefault();
     setAuthError('');
@@ -425,6 +442,28 @@ export default function AdminDashboard() {
     setIsDeleteDialogOpen(false);
     setActingExhibitor(null);
     toast({ title: "Exposant supprimé" });
+  };
+
+  const getDelayInfo = (exhibitor: Exhibitor) => {
+    if (exhibitor.status !== 'accepted_form1' || !exhibitor.acceptedAt) return null;
+    const days = differenceInDays(new Date(), new Date(exhibitor.acceptedAt));
+    let colorClass = "text-muted-foreground";
+    let icon = <Clock className="w-3 h-3" />;
+    
+    if (days >= 30) {
+      colorClass = "text-destructive font-bold";
+      icon = <AlertTriangle className="w-3 h-3" />;
+    } else if (days >= 15) {
+      colorClass = "text-orange-500 font-bold";
+      icon = <Clock className="w-3 h-3" />;
+    }
+    
+    return (
+      <div className={`flex items-center gap-1 text-[10px] mt-1 ${colorClass}`}>
+        {icon}
+        {days}j écoulés
+      </div>
+    );
   };
 
   if (isUserLoading || isRoleLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
@@ -611,7 +650,7 @@ export default function AdminDashboard() {
             <Card className="overflow-hidden border-2 bg-white">
               <Table>
                 <TableHeader className="bg-muted/30">
-                  <TableRow><TableHead>Exposant</TableHead><TableHead>Tables</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Actions</TableHead></TableRow>
+                  <TableRow><TableHead>Exposant</TableHead><TableHead>Tables</TableHead><TableHead>Statut & Suivi</TableHead><TableHead className="text-right">Actions</TableHead></TableRow>
                 </TableHeader>
                 <TableBody>
                   {isExhibitorsLoading ? <TableRow><TableCell colSpan={4} className="text-center py-12"><Loader2 className="animate-spin mx-auto text-primary" /></TableCell></TableRow> :
@@ -626,20 +665,22 @@ export default function AdminDashboard() {
                           <Badge variant={getStatusVariant(exhibitor.status)}>
                             {getStatusLabel(exhibitor.status)}
                           </Badge>
+                          {getDelayInfo(exhibitor)}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button variant="outline" size="sm" onClick={() => setViewingExhibitor(exhibitor)}><Eye className="w-4 h-4" /></Button>
+                            <Button variant="outline" size="sm" onClick={() => setViewingExhibitor(exhibitor)} title="Voir fiche"><Eye className="w-4 h-4" /></Button>
+                            <Button variant="outline" size="sm" className="text-secondary border-secondary/20 hover:bg-secondary/5" onClick={() => { setActingExhibitor(exhibitor); setSingleEmailForm({ subject: '', body: '' }); setIsSingleEmailDialogOpen(true); }} title="Envoyer email"><Mail className="w-4 h-4" /></Button>
                             {exhibitor.status === 'pending' && (
                               <>
-                                <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => { setActingExhibitor(exhibitor); setIsAcceptDialogOpen(true); }}><CheckCircle className="w-4 h-4" /></Button>
-                                <Button size="sm" variant="destructive" onClick={() => { setActingExhibitor(exhibitor); setIsRejectDialogOpen(true); }}><XCircle className="w-4 h-4" /></Button>
+                                <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => { setActingExhibitor(exhibitor); setIsAcceptDialogOpen(true); }} title="Accepter"><CheckCircle className="w-4 h-4" /></Button>
+                                <Button size="sm" variant="destructive" onClick={() => { setActingExhibitor(exhibitor); setIsRejectDialogOpen(true); }} title="Refuser"><XCircle className="w-4 h-4" /></Button>
                               </>
                             )}
                             {exhibitor.status === 'submitted_form2' && (
                               <Button size="sm" className="bg-blue-600" onClick={() => updateDocumentNonBlocking(doc(db, 'pre_registrations', exhibitor.id), { status: 'validated' })}>Valider</Button>
                             )}
-                            <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => { setActingExhibitor(exhibitor); setIsDeleteDialogOpen(true); }}><Trash2 className="w-4 h-4" /></Button>
+                            <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => { setActingExhibitor(exhibitor); setIsDeleteDialogOpen(true); }} title="Supprimer"><Trash2 className="w-4 h-4" /></Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -1003,6 +1044,39 @@ export default function AdminDashboard() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={isSingleEmailDialogOpen} onOpenChange={setIsSingleEmailDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Mail className="w-6 h-6" /> Envoyer un message à {actingExhibitor?.companyName}</DialogTitle></DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase text-muted-foreground">Charger un modèle (optionnel)</label>
+              <Select onValueChange={(val) => {
+                const t = templates?.find(tmp => tmp.id === val);
+                if (t) setSingleEmailForm({ subject: t.subject, body: t.body });
+              }}>
+                <SelectTrigger className="w-full"><SelectValue placeholder="Choisir un modèle..." /></SelectTrigger>
+                <SelectContent>{templates?.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <Separator />
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase text-muted-foreground">Objet</label>
+              <Input value={singleEmailForm.subject} onChange={e => setSingleEmailForm({...singleEmailForm, subject: e.target.value})} placeholder="Sujet de l'email..." />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase text-muted-foreground">Message (HTML autorisé)</label>
+              <Textarea value={singleEmailForm.body} onChange={e => setSingleEmailForm({...singleEmailForm, body: e.target.value})} rows={10} className="font-mono text-xs" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsSingleEmailDialogOpen(false)}>Annuler</Button>
+            <Button onClick={handleSingleEmailSend} disabled={isSending || !singleEmailForm.subject || !singleEmailForm.body} className="gap-2">
+              {isSending ? <Loader2 className="animate-spin" /> : <><Send className="w-4 h-4" /> Envoyer le message</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!viewingExhibitor} onOpenChange={o => !o && setViewingExhibitor(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader><DialogTitle>Fiche de synthèse : {viewingExhibitor?.companyName}</DialogTitle></DialogHeader>
@@ -1173,7 +1247,10 @@ export default function AdminDashboard() {
             <Button onClick={async () => {
               if (!actingExhibitor) return;
               setIsSending(true);
-              updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { status: 'accepted_form1' });
+              updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), { 
+                status: 'accepted_form1',
+                acceptedAt: new Date().toISOString()
+              });
               await sendAcceptanceEmail(actingExhibitor, acceptanceMessage, currentConfig);
               setIsAcceptDialogOpen(false); setIsSending(false); setAcceptanceMessage('');
               toast({ title: "Candidature acceptée et email envoyé" });

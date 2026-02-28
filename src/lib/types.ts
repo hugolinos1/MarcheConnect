@@ -19,6 +19,7 @@ export interface Exhibitor {
   rejectionReason?: string;
   rejectionJustification?: string;
   createdAt: string;
+  acceptedAt?: string; // Date d'acceptation (Etape 1) pour calcul délai
   agreedToGdpr: boolean; // Consentement RGPD initial
   agreedToTerms: boolean; // Acceptation règlement initial
   detailedInfo?: DetailedExhibitorInfo;
