@@ -479,6 +479,83 @@ export default function AdminDashboard() {
     );
   };
 
+  const handleExportExcel = () => {
+    if (!filteredExhibitors) return;
+
+    const exportData = filteredExhibitors.map(e => {
+      const info = e.detailedInfo;
+      return {
+        "Enseigne": e.companyName,
+        "Nom": e.lastName,
+        "Prénom": e.firstName,
+        "Email": e.email,
+        "Téléphone": e.phone,
+        "Statut Actuel": getStatusLabel(e.status),
+        "Type": e.isRegistered ? "Professionnel" : "Particulier",
+        "Adresse": e.address,
+        "Ville": e.city,
+        "Code Postal": e.postalCode,
+        "Site / Réseaux": e.websiteUrl || "",
+        "Description Stand": e.productDescription,
+        "Tables Souhaitées": e.requestedTables,
+        "Date Préinscription": e.createdAt ? new Date(e.createdAt).toLocaleString() : "",
+        "Date Acceptation (S1)": e.acceptedAt ? new Date(e.acceptedAt).toLocaleString() : "",
+        
+        // Détails techniques (si disponibles)
+        "SIRET": info?.siret || "",
+        "Besoin Électricité": info?.needsElectricity ? "Oui" : "Non",
+        "Besoin Grille": info?.needsGrid ? "Oui" : "Non",
+        "Repas Dimanche": info?.sundayLunchCount || 0,
+        "Lot Tombola": info?.tombolaLot ? "Oui" : "Non",
+        "Description Lot": info?.tombolaLotDescription || "",
+        "Compagnie Assurance": info?.insuranceCompany || "",
+        "Police Assurance": info?.insurancePolicyNumber || "",
+        "Droits Image": info?.agreedToImageRights ? "Accepté" : "Non renseigné",
+        "Date Dossier Tech": info?.submittedAt ? new Date(info.submittedAt).toLocaleString() : "",
+        "Commentaires Admin": info?.additionalComments || ""
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    
+    // Définition de la largeur des colonnes pour plus de lisibilité
+    const wscols = [
+      { wch: 25 }, // Enseigne
+      { wch: 15 }, // Nom
+      { wch: 15 }, // Prénom
+      { wch: 25 }, // Email
+      { wch: 15 }, // Téléphone
+      { wch: 20 }, // Statut
+      { wch: 15 }, // Type
+      { wch: 30 }, // Adresse
+      { wch: 20 }, // Ville
+      { wch: 10 }, // CP
+      { wch: 25 }, // Site
+      { wch: 40 }, // Description
+      { wch: 10 }, // Tables
+      { wch: 20 }, // Date Pre
+      { wch: 20 }, // Date Acc
+      { wch: 20 }, // SIRET
+      { wch: 10 }, // Elec
+      { wch: 10 }, // Grille
+      { wch: 10 }, // Repas
+      { wch: 10 }, // Tombola
+      { wch: 30 }, // Desc Lot
+      { wch: 20 }, // Assurance
+      { wch: 20 }, // Police
+      { wch: 15 }, // Image
+      { wch: 20 }, // Date Tech
+      { wch: 40 }  // Commentaires
+    ];
+    ws['!cols'] = wscols;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Exposants");
+    XLSX.writeFile(wb, `Exposants_Complet_${currentConfig?.marketYear || 'Export'}.xlsx`);
+    
+    toast({ title: "Export Excel généré", description: "Le fichier contient toutes les données des exposants." });
+  };
+
   if (isUserLoading || isRoleLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
 
   if (!user) {
@@ -650,13 +727,7 @@ export default function AdminDashboard() {
               </div>
               <div className="flex gap-2">
                 <Button onClick={() => setIsBulkEmailDialogOpen(true)} variant="outline" className="gap-2 text-secondary border-secondary/20 hover:bg-secondary/5 font-bold"><Send className="w-4 h-4" /> Message Groupé</Button>
-                <Button onClick={() => {
-                  const exportData = filteredExhibitors.map(e => ({ "Enseigne": e.companyName, "Nom": e.lastName, "Prénom": e.firstName, "Email": e.email, "Statut": e.status }));
-                  const ws = XLSX.utils.json_to_sheet(exportData);
-                  const wb = XLSX.utils.book_new();
-                  XLSX.utils.book_append_sheet(wb, ws, "Exposants");
-                  XLSX.writeFile(wb, `Exposants_${currentConfig?.marketYear}.xlsx`);
-                }} variant="outline" className="gap-2 text-primary font-bold bg-white"><Download className="w-4 h-4" /> Export Excel</Button>
+                <Button onClick={handleExportExcel} variant="outline" className="gap-2 text-primary font-bold bg-white"><Download className="w-4 h-4" /> Export Excel</Button>
               </div>
             </div>
 
