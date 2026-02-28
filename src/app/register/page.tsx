@@ -57,8 +57,9 @@ export default function RegisterPage() {
   const marketConfigQuery = useMemoFirebase(() => query(collection(db, 'market_configurations'), orderBy('marketYear', 'desc')), [db]);
   const { data: configs } = useCollection(marketConfigQuery);
   const currentConfig = configs?.find(c => c.currentMarket) || configs?.[0];
+  
+  // Dynamic Variables from Configuration
   const marketYear = currentConfig?.marketYear || 2026;
-
   const satDate = currentConfig?.saturdayDate || "5/12/2026";
   const satHours = currentConfig?.saturdayHours || "14h à 19h";
   const sunDate = currentConfig?.sundayDate || "06/12/2026";
