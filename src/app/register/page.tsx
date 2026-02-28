@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { TreePine, ArrowLeft, Send, FileText, Star, Camera, X, MapPin, Loader2, ShieldCheck } from 'lucide-react';
+import { TreePine, ArrowLeft, Send, FileText, Star, Camera, X, MapPin, Loader2, ShieldCheck, Info, Lock } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
@@ -173,7 +173,6 @@ export default function RegisterPage() {
       const colRef = collection(db, 'pre_registrations');
       await addDocumentNonBlocking(colRef, newExhibitor);
       
-      // On passe currentConfig qui contient maintenant smtpUser et smtpPass si configurés
       await sendApplicationNotification(newExhibitor, currentConfig);
       
       router.push('/register/success');
@@ -199,35 +198,84 @@ export default function RegisterPage() {
             <AccordionItem value="reglement" className="border-b">
               <AccordionTrigger className="px-6 hover:no-underline hover:bg-muted/50 text-left">
                 <span className="flex items-center gap-2 font-bold text-primary">
-                  <FileText className="w-5 h-5" /> Règlement du Marché {marketYear}
+                  <FileText className="w-5 h-5" /> Règlement complet du Marché {marketYear}
                 </span>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6">
-                <ScrollArea className="h-96 pr-4 text-xs text-muted-foreground">
+                <ScrollArea className="h-[400px] pr-4 text-xs text-muted-foreground">
                   <div className="space-y-6 pb-12 leading-relaxed">
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 1 :</h4>
-                      <p>Le marché aura lieu le samedi {satDate} de {satHours} et le dimanche {sunDate} de {sunHours} à la salle Maurice Baquet, rue Pierre Coubertin à Chazay d’Azergues (69380).</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 1 : Date et Lieu</h4>
+                      <p>Le marché aura lieu le samedi {satDate} de {satHours} et le dimanche {sunDate} de {sunHours} à la salle Maurice Baquet, rue Pierre Coubertin à Chazay d’Azergues (69380). L'accès au public est gratuit.</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 2 :</h4>
-                      <p>L’inscription n’est possible que sur les 2 jours. Pas de dérogation possible.</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 2 : Durée de participation</h4>
+                      <p>L’inscription n’est possible que sur les 2 jours consécutifs. Aucune dérogation ne sera acceptée. Les exposants s'engagent à maintenir leur stand ouvert pendant toute la durée officielle de l'événement.</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 3 :</h4>
-                      <p>Nous privilégions les articles et produits artisanaux. Nous n’acceptons pas la revente.</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 3 : Nature des produits</h4>
+                      <p>Nous privilégions exclusivement les articles et produits artisanaux, le "fait-main" et les créations originales. La revente de produits industriels ou de gros est strictement interdite. Le comité se réserve le droit de refuser tout produit non conforme à l'esprit solidaire du marché.</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 4 :</h4>
-                      <p>L’installation des exposants aura lieu le samedi entre 11h et 13h.</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 4 : Installation et Logistique</h4>
+                      <p>L’installation des exposants s'effectue le samedi entre 11h et 13h. Tout stand non installé à 13h30 pourra être réattribué. Le démontage ne peut commencer qu'après la fermeture au public le dimanche à {sunHours}.</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 5 :</h4>
-                      <p>- {priceTable1}€ pour 1 table (1.75m)</p>
-                      <p>- {priceTable2}€ pour 2 tables (3.50m)</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 5 : Tarifs des emplacements</h4>
+                      <p>La participation financière demandée est de :</p>
+                      <ul className="list-disc pl-5 mt-1">
+                        <li>{priceTable1}€ pour 1 table (fournie, longueur env. 1.75m)</li>
+                        <li>{priceTable2}€ pour 2 tables (fournies, longueur env. 3.50m)</li>
+                      </ul>
+                      <p className="mt-2 text-primary font-semibold">Tous les bénéfices de ces locations sont reversés à l'association "Un jardin pour Félix".</p>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 6 : Assurance et Responsabilité</h4>
+                      <p>Chaque exposant doit être couvert par une assurance Responsabilité Civile professionnelle ou vie privée. L'association décline toute responsabilité en cas de vol, perte ou dégradation de matériel sur les stands.</p>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 7 : Sécurité Incendie</h4>
+                      <p>L'utilisation de flammes nues (bougies, réchauds) est interdite. Tout matériel électrique utilisé doit être aux normes CE et en bon état de fonctionnement. Les allées de circulation doivent rester dégagées en permanence.</p>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 8 : Propreté et Environnement</h4>
+                      <p>Les exposants sont responsables de la propreté de leur emplacement. Les déchets doivent être triés et évacués dans les contenants prévus à cet effet par la municipalité.</p>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 9 : Annulation</h4>
+                      <p>En cas d'annulation par l'exposant moins de 15 jours avant l'événement, le règlement restera acquis à l'association, sauf cas de force majeure justifié.</p>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 10 : Droit à l'image</h4>
+                      <p>L'association se réserve le droit de photographier ou filmer le marché à des fins de promotion et de communication (site web, réseaux sociaux, presse locale).</p>
                     </div>
                   </div>
                 </ScrollArea>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="rgpd">
+              <AccordionTrigger className="px-6 hover:no-underline hover:bg-muted/50 text-left">
+                <span className="flex items-center gap-2 font-bold text-primary">
+                  <Lock className="w-5 h-5" /> Protection des données (RGPD)
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-6">
+                <div className="text-xs text-muted-foreground space-y-4">
+                  <p>L'association "Un jardin pour Félix" attache une grande importance à la protection de vos données personnelles.</p>
+                  <div>
+                    <h5 className="font-bold text-foreground mb-1">Collecte et finalité :</h5>
+                    <p>Les données collectées via ce formulaire (Nom, e-mail, téléphone, adresse, photos) ont pour unique but la gestion de votre candidature et l'organisation logistique du marché de Noël.</p>
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-foreground mb-1">Conservation :</h5>
+                    <p>Vos données sont conservées pendant la durée nécessaire à l'organisation de l'événement et pour une durée maximale de 2 ans afin de vous inviter aux éditions futures, sauf demande de suppression de votre part.</p>
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-foreground mb-1">Vos droits :</h5>
+                    <p>Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et de suppression de vos données. Pour exercer ce droit, contactez-nous par e-mail à : lemarchedefelix2020@gmail.com</p>
+                  </div>
+                </div>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -430,7 +478,7 @@ export default function RegisterPage() {
                 <div className="space-y-6 pt-6">
                   <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 space-y-4 shadow-inner">
                     <h3 className="text-sm font-bold text-primary flex items-center gap-2 uppercase tracking-wider">
-                      <ShieldCheck className="w-4 h-4" /> Consentements
+                      <ShieldCheck className="w-4 h-4" /> Consentements obligatoires
                     </h3>
                     
                     <div className="space-y-4">
@@ -440,7 +488,7 @@ export default function RegisterPage() {
                             <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                           </FormControl>
                           <div className="space-y-1 leading-none">
-                            <FormLabel className="font-bold text-primary text-xs">Protection des données (RGPD) *</FormLabel>
+                            <FormLabel className="font-bold text-primary text-xs">J'accepte la politique de protection des données (RGPD) *</FormLabel>
                             <FormMessage />
                           </div>
                         </FormItem>
@@ -452,7 +500,7 @@ export default function RegisterPage() {
                             <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                           </FormControl>
                           <div className="space-y-1 leading-none">
-                            <FormLabel className="font-bold text-primary text-xs">Règlement du Marché *</FormLabel>
+                            <FormLabel className="font-bold text-primary text-xs">J'accepte l'intégralité du règlement du Marché {marketYear} *</FormLabel>
                             <FormMessage />
                           </div>
                         </FormItem>
