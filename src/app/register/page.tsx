@@ -277,18 +277,38 @@ export default function RegisterPage() {
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6">
                 <div className="text-xs text-muted-foreground space-y-4">
-                  <p>L'association "Un jardin pour Félix" attache une grande importance à la protection de vos données personnelles.</p>
+                  <p>L'association Un jardin pour Félix attache une grande importance à la protection de vos données personnelles.</p>
+                  
+                  <div>
+                    <h5 className="font-bold text-foreground mb-1">Responsable du traitement :</h5>
+                    <p>Association Un jardin pour Félix – 30 rue du Colombier 69380 Chazay d'Azergues<br/>Email : lemarchedefelix2020@gmail.com</p>
+                  </div>
+
                   <div>
                     <h5 className="font-bold text-foreground mb-1">Collecte et finalité :</h5>
-                    <p>Les données collectées via ce formulaire (Nom, e-mail, téléphone, adresse, photos) ont pour unique but la gestion de votre candidature et l'organisation logistique du marché de Noël.</p>
+                    <p>Les données collectées via ce formulaire (nom, e-mail, téléphone, adresse, photos) sont nécessaires à la gestion de votre candidature et à l’organisation logistique du marché de Noël.</p>
                   </div>
+
+                  <div>
+                    <h5 className="font-bold text-foreground mb-1">Base légale :</h5>
+                    <p>Le traitement repose sur votre consentement, que vous pouvez retirer à tout moment.</p>
+                  </div>
+
+                  <div>
+                    <h5 className="font-bold text-foreground mb-1">Destinataires :</h5>
+                    <p>Les données sont exclusivement destinées aux membres habilités de l’association.</p>
+                  </div>
+
                   <div>
                     <h5 className="font-bold text-foreground mb-1">Conservation :</h5>
-                    <p>Vos données sont conservées pendant la durée nécessaire à l'organisation de l'événement et pour une durée maximale de 2 ans afin de vous inviter aux éditions futures, sauf demande de suppression de votre part.</p>
+                    <p>Vos données sont conservées pendant la durée nécessaire à l’organisation de l’événement et pour une durée maximale de 2 ans afin de vous inviter aux éditions futures, sauf demande de suppression de votre part.</p>
                   </div>
+
                   <div>
                     <h5 className="font-bold text-foreground mb-1">Vos droits :</h5>
-                    <p>Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et de suppression de vos données. Pour exercer ce droit, contactez-nous par e-mail à : lemarchedefelix2020@gmail.com</p>
+                    <p>Conformément au RGPD, vous disposez d’un droit d’accès, de rectification, de suppression, ainsi que d’un droit à la limitation du traitement de vos données.<br/>
+                    Vous pouvez exercer ces droits en nous contactant à : lemarchedefelix2020@gmail.com</p>
+                    <p className="mt-2 italic">Vous disposez également du droit d’introduire une réclamation auprès de la CNIL.</p>
                   </div>
                 </div>
               </AccordionContent>
