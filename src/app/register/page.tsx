@@ -67,6 +67,9 @@ export default function RegisterPage() {
 
   const priceTable1 = currentConfig?.priceTable1 ?? 40;
   const priceTable2 = currentConfig?.priceTable2 ?? 60;
+  const priceMeal = currentConfig?.priceMeal ?? 8;
+  const priceElectricity = currentConfig?.priceElectricity ?? 1;
+  const priceTombola = currentConfig?.priceTombola ?? 2;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -198,56 +201,68 @@ export default function RegisterPage() {
             <AccordionItem value="reglement" className="border-b">
               <AccordionTrigger className="px-6 hover:no-underline hover:bg-muted/50 text-left">
                 <span className="flex items-center gap-2 font-bold text-primary">
-                  <FileText className="w-5 h-5" /> Règlement complet du Marché {marketYear}
+                  <FileText className="w-5 h-5" /> Règlement du Marché {marketYear}
                 </span>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6">
-                <ScrollArea className="h-[400px] pr-4 text-xs text-muted-foreground">
+                <ScrollArea className="h-[500px] pr-4 text-xs text-muted-foreground">
                   <div className="space-y-6 pb-12 leading-relaxed">
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 1 : Date et Lieu</h4>
-                      <p>Le marché aura lieu le samedi {satDate} de {satHours} et le dimanche {sunDate} de {sunHours} à la salle Maurice Baquet, rue Pierre Coubertin à Chazay d’Azergues (69380). L'accès au public est gratuit.</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 1</h4>
+                      <p>Le marché aura lieu le samedi {satDate} de {satHours} et le dimanche {sunDate} de {sunHours} à la salle Maurice Baquet, rue Pierre Coubertin (à droite de l’entrée du stade de foot) à Chazay d’Azergues (69380).</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 2 : Durée de participation</h4>
-                      <p>L’inscription n’est possible que sur les 2 jours consécutifs. Aucune dérogation ne sera acceptée. Les exposants s'engagent à maintenir leur stand ouvert pendant toute la durée officielle de l'événement.</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 2</h4>
+                      <p>L’inscription n’est possible que sur les 2 jours. Pas de dérogation possible.</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 3 : Nature des produits</h4>
-                      <p>Nous privilégions exclusivement les articles et produits artisanaux, le "fait-main" et les créations originales. La revente de produits industriels ou de gros est strictement interdite. Le comité se réserve le droit de refuser tout produit non conforme à l'esprit solidaire du marché.</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 3</h4>
+                      <p>Nous répondrons à toutes les candidatures, par mail (que la réponse soit positive ou négative) dans les 15 semaines suivant votre demande. Nous nous octroyons le droit de refuser une candidature si les articles proposés ne conviennent pas à notre sélection : Hors thématique Noël /idée cadeau Noël ou si plusieurs exposants proposent des articles similaires. Nous privilégions les articles et produits artisanaux. Nous n’acceptons pas la revente. Les attributions et les emplacements ne sont pas systématiquement renouvelés d’une année sur l’autre, ceci afin de garder notre marché attrayant.</p>
+                      <p className="mt-2">Vous vous engagez à ne mettre sur votre stand que les articles qui ont été validé par le bureau du marché de Noël. Si besoin, nous vous demanderons de retirer les articles inaquédats.</p>
+                      <p className="mt-2">Dans la mesure du possible, merci de porter un soin à votre stand : nappes pour recouvrir la table, mettre en avant le nom de votre marque, rendre lisible ce que vous vendez.</p>
+                      <p className="mt-2">Nous serons sensibles aux demandes de personnes étant déclarées au registre du commerce. Le régime de micro-entreprise (régime micro-Bic) calcule les taxes qu’au strict pourcentage des ventes, cela n’engage donc pas de frais supplémentaires pour vous. Dans le cas où vous n’êtes pas déclaré, l’article L30-2 du code de commerce autorise les particuliers non inscrits à participer 2 fois/an à des marchés.</p>
+                      <p className="mt-2 italic">Pour toute demande : envoi de photos récentes présentant vos créations. Lien de votre site marchand (facebook, etsy, instagram, internet…)</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 4 : Installation et Logistique</h4>
-                      <p>L’installation des exposants s'effectue le samedi entre 11h et 13h. Tout stand non installé à 13h30 pourra être réattribué. Le démontage ne peut commencer qu'après la fermeture au public le dimanche à {sunHours}.</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 4</h4>
+                      <p>L’installation des exposants (artisans/créateurs exclusivement) aura lieu le samedi entre 11h et 13h. Les emplacements seront attribués à l’arrivée de chaque exposant. Grilles, tables et chaises sont fournies et installées préalablement, en fonction des besoins exprimés.</p>
+                      <p className="mt-2">Nous pourrons fournir en électricité 8 à 10 stands maximum, merci d’en faire la demande lors de l’inscription. Nous ne garantirons pas de pouvoir répondre à toutes les demandes, priorité sera donnée aux produits alimentaires. Les rallonges sont à prévoir par l'exposant.</p>
+                      <p className="mt-2">Nous vous préviendrons début novembre de l’attribution du point électrique. Le jour du marché, nous vous indiquerons l’emplacement avec l’électricité pour un supplément de {priceElectricity}€.</p>
+                      <p className="mt-2">Il est essentiel de respecter les horaires d’installation pour ne pas retarder l’ouverture du marché de Noël. Si vous pensez avoir du retard ou avez un empêchement de dernière minute à la suite d’une contrainte familiale ou médicale, merci de me prévenir au 06 81 14 77 76 (Cécile Rabier).</p>
+                      <p className="mt-2">Merci de prendre en compte le temps d’installation de votre stand pour qu’il soit prêt à l’ouverture au public. Le démontage du stand ne pourra se faire que le dimanche après la fermeture du marché soit {sunHours}.</p>
+                      <p className="mt-2">Nous ne prévoyons pas de bénévoles pour vous aider à ranger, nos bénévoles sont là pour l’organisation du marché en priorité.</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 5 : Tarifs des emplacements</h4>
-                      <p>La participation financière demandée est de :</p>
-                      <ul className="list-disc pl-5 mt-1">
-                        <li>{priceTable1}€ pour 1 table (fournie, longueur env. 1.75m)</li>
-                        <li>{priceTable2}€ pour 2 tables (fournies, longueur env. 3.50m)</li>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 5</h4>
+                      <ul className="list-disc pl-5 space-y-2">
+                        <li>Un chèque correspondant au nombre de tables souhaité (1 table = 1m75 ou 2 tables = 3m50) est demandé après validation de votre inscription. Sans ce versement, l’inscription ne sera pas prise en compte. Tarif {marketYear} : {priceTable1}€ pour 1 table et {priceTable2}€ pour 2 tables (les tables sont fournies / mesures de la table : 1m75x0.8m).</li>
+                        <li>Chèque à l’ordre de « Les amis d’un jardin pour Félix » association locale de Chazay d’Azergues. Le chèque sera encaissé à partir du 20 novembre {marketYear}.</li>
+                        <li>Toute annulation à partir du 20 novembre ne donnera pas lieu à remboursement.</li>
+                        <li>Restauration : nous proposons aux exposants un plateau repas le dimanche midi. Si vous êtes intéressés, la réservation (+ paiement) est demandée en même temps que l’inscription. Il s’agit d’un plateau repas fait maison : salade composée maison, part de quiche (différentes recettes), fromage avec une tranche de pain, une clémentine et une part de gâteau à choisir au bar et une bouteille d’eau. Le prix du repas/personne est de {priceMeal}€, toujours le même tarif depuis 2023.</li>
+                        <li>Un café, un thé ou une boisson fraîche vous sera offert le samedi contre remise d’un ticket qui vous sera attribué à votre arrivée (nous n’offrons pas de chocolat chaud, ni de vin chaud, ni tout autre boisson autre que celles énoncées ci-dessus).</li>
+                        <li>Le dimanche matin nous vous invitons à venir pour 9h30 afin de vous offrir café, thé ou une bouteille d’eau accompagné d’une part de gâteau (offert par Bruno Saladino, chocolatier à Vilefranche sur saône). Ce moment nous permet de débriefer de la veille.</li>
+                        <li>Une buvette avec petite restauration à tarif attractif sera ouverte à tous le samedi midi et le dimanche (salades, quiches, crêpes, crêpes salées, gâteaux …)</li>
+                        <li>Pour des raisons de sécurité, les appareils de chauffage et de cuisson sont strictement interdits sur les stands.</li>
                       </ul>
-                      <p className="mt-2 text-primary font-semibold">Tous les bénéfices de ces locations sont reversés à l'association "Un jardin pour Félix".</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 6 : Assurance et Responsabilité</h4>
-                      <p>Chaque exposant doit être couvert par une assurance Responsabilité Civile professionnelle ou vie privée. L'association décline toute responsabilité en cas de vol, perte ou dégradation de matériel sur les stands.</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 6</h4>
+                      <p>Nous organisons cette année une tombola avec une vente de ticket à {priceTombola}€, que nous proposerons en amont de l’évènement lors de la foulée des jeunes, la course des 9 clochers le 10 et 11 octobre à Chazay.</p>
+                      <p className="mt-2">Nous allons démarcher des acteurs locaux afin de récolter de lots qui mettent en avant la gastronomie, les animations locales, le savoir-faire artisanal du département et de la région. Nous vous sollicitons également pour faire un lot, à cet effet vous pourrez cocher la case en fin de bulletin et peut-être préciser la nature de votre don.</p>
+                      <p className="mt-2">Il n’y a pas d’obligation, c’est au bon vouloir de chacun. N’hésitez pas à mettre votre carte de visite afin de faire connaître votre marque à l’heureux gagnant. Pour un souci d’organisation, nous aimerions pouvoir récupérer votre lot dès votre arrivée le samedi matin.</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 7 : Sécurité Incendie</h4>
-                      <p>L'utilisation de flammes nues (bougies, réchauds) est interdite. Tout matériel électrique utilisé doit être aux normes CE et en bon état de fonctionnement. Les allées de circulation doivent rester dégagées en permanence.</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 7</h4>
+                      <p>DROITS A L’IMAGE : l’exposant accepte que des vues de son stand puissent être prises par l’organisateur ou la Mairie de Chazay d’Azergues et en accepte la diffusion gratuite dans le cadre de toute communication liée à la manifestation (facebook, instagram, site marchand de l’association).</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 8 : Propreté et Environnement</h4>
-                      <p>Les exposants sont responsables de la propreté de leur emplacement. Les déchets doivent être triés et évacués dans les contenants prévus à cet effet par la municipalité.</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 8</h4>
+                      <p>RESPONSABILITE – ASSURANCE : les organisateurs ne sont pas dépositaires des œuvres au sens donné à ce terme par le code civil, mais seulement détenteurs précaires des œuvres/marchandises exposées. Ils ne pourront donc en aucun cas encourir de responsabilité en cas de vol ou dégradations en tout genre et circonstance.</p>
+                      <p className="mt-2">Outre l’assurance couvrant les objets exposés et plus généralement tous les éléments lui appartenant, l’exposant est tenu de souscrire, à ses frais, toutes assurances couvrant les risques que lui-même, les personnes qui l’accompagnent et son matériel encourent ou font courir à des tiers. L’organisateur est dégagé de toute responsabilité à cet égard, notamment en cas d’accident, de perte, vol, incendie, dégât naturel, ou dommage quelconque. L’organisateur se réserve le droit d’annuler la manifestation en cas de force majeure.</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 9 : Annulation</h4>
-                      <p>En cas d'annulation par l'exposant moins de 15 jours avant l'événement, le règlement restera acquis à l'association, sauf cas de force majeure justifié.</p>
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 10 : Droit à l'image</h4>
-                      <p>L'association se réserve le droit de photographier ou filmer le marché à des fins de promotion et de communication (site web, réseaux sociaux, presse locale).</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 9</h4>
+                      <p>OBLIGATIONS DE L’EXPOSANT : l’exposant s’engage à être conforme à la législation en vigueur et assume l’entière responsabilité de ses ventes. L’organisateur décline toute responsabilité relative aux déclarations légales vis-à-vis de l’Administration fiscale.</p>
                     </div>
                   </div>
                 </ScrollArea>
