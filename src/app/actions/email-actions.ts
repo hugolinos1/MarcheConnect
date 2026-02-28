@@ -26,17 +26,6 @@ async function getBaseUrl() {
 }
 
 /**
- * Nettoie les chaînes pour éviter les problèmes d'encodage avec Gmail si nécessaire.
- * Conservé en utilitaire mais utilisé plus parcimonieusement pour garder les accents.
- */
-function stripAccents(str: string = "") {
-  if (!str) return "";
-  return str
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-/**
  * Configuration du transporteur Gmail.
  */
 function createTransporter(marketConfig?: any) {
@@ -101,7 +90,7 @@ export async function sendAcceptanceEmail(exhibitor: any, customMessage: string,
     subject: `Candidature retenue - Marché de Noël ${year}`,
     text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 
-Nous avons le plaisir de vous informer que votre candidature pour le Marché de Noël ${year} a été acceptée.
+Nous avons le plaisir de vous informer que votre candidature pour le Marché de Noël ${year} a été acceptée par notre comité.
 
 ${customMessage ? `Note de l'organisateur :\n---------------------------\n${customMessage}\n---------------------------\n` : ''}
 
@@ -136,14 +125,14 @@ export async function sendRejectionEmail(exhibitor: any, justification: string, 
     subject: `Candidature Marché de Noël ${year}`,
     text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 
-Nous ne pouvons malheureusement pas retenir votre candidature pour l'édition ${year}.
+Nous sommes au regret de vous indiquer que votre candidature n'a pas été retenue par notre comité pour l'édition ${year}.
 
 Motif :
 ---------------------------
 ${justification}
 ---------------------------
 
-Bonne continuation.
+Bonne continuation dans vos projets.
 L'équipe "Un jardin pour Félix"`,
   };
 
@@ -176,7 +165,7 @@ export async function sendFinalConfirmationEmail(exhibitor: any, details: any, m
 
   const mailText = `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
 
-Dossier technique reçu pour le Marché de Noël ${year}.
+Nous avons bien reçu votre dossier technique pour le Marché de Noël ${year}.
 
 DÉTAIL DU RÈGLEMENT :
 - Emplacement : ${standPrice} EUR (${exhibitor.requestedTables} table(s))
