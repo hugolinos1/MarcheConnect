@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
@@ -1111,23 +1110,43 @@ export default function AdminDashboard() {
                        <p className="text-sm italic">{viewingExhibitor.detailedInfo.additionalComments || "Aucun commentaire supplémentaire."}</p>
                      </div>
 
-                     <div className="p-4 bg-primary text-white rounded-xl shadow flex justify-between items-center">
-                       <div className="flex items-center gap-3">
-                         <Calculator className="w-6 h-6" />
-                         <div>
-                           <p className="text-[10px] uppercase font-bold opacity-80">Calcul prévisionnel du règlement</p>
-                           <p className="text-lg font-bold">TOTAL À REGLER</p>
-                         </div>
-                       </div>
-                       <div className="text-3xl font-bold text-accent">
-                         {(() => {
-                           const stand = viewingExhibitor.requestedTables === '1' ? (currentConfig?.priceTable1 ?? 40) : (currentConfig?.priceTable2 ?? 60);
-                           const elec = viewingExhibitor.detailedInfo!.needsElectricity ? (currentConfig?.priceElectricity ?? 1) : 0;
-                           const meals = (viewingExhibitor.detailedInfo!.sundayLunchCount || 0) * (currentConfig?.priceMeal ?? 8);
-                           return stand + elec + meals;
-                         })()} €
-                       </div>
-                     </div>
+                     <div className="p-6 bg-primary text-white rounded-2xl shadow-lg space-y-4">
+                        <h3 className="text-lg font-bold flex items-center gap-3 border-b border-white/20 pb-3">
+                          <Calculator className="w-5 h-5" /> Récapitulatif du règlement
+                        </h3>
+                        <div className="space-y-2 text-sm opacity-90">
+                          <div className="flex justify-between">
+                            <span>Emplacement ({viewingExhibitor.requestedTables === '1' ? '1.75m' : '3.50m'}) :</span>
+                            <span>{viewingExhibitor.requestedTables === '1' ? (currentConfig?.priceTable1 ?? 40) : (currentConfig?.priceTable2 ?? 60)} €</span>
+                          </div>
+                          {viewingExhibitor.detailedInfo.needsElectricity && (
+                            <div className="flex justify-between">
+                              <span>Option Électricité :</span>
+                              <span>{currentConfig?.priceElectricity ?? 1} €</span>
+                            </div>
+                          )}
+                          {(viewingExhibitor.detailedInfo.sundayLunchCount || 0) > 0 && (
+                            <div className="flex justify-between">
+                              <span>Plateaux Repas ({viewingExhibitor.detailedInfo.sundayLunchCount} x {currentConfig?.priceMeal ?? 8}€) :</span>
+                              <span>{(viewingExhibitor.detailedInfo.sundayLunchCount || 0) * (currentConfig?.priceMeal ?? 8)} €</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex justify-between items-center text-xl font-bold border-t border-white/20 pt-3">
+                          <span>MONTANT TOTAL :</span>
+                          <span className="text-3xl text-accent">
+                            {(() => {
+                              const stand = viewingExhibitor.requestedTables === '1' ? (currentConfig?.priceTable1 ?? 40) : (currentConfig?.priceTable2 ?? 60);
+                              const elec = viewingExhibitor.detailedInfo!.needsElectricity ? (currentConfig?.priceElectricity ?? 1) : 0;
+                              const meals = (viewingExhibitor.detailedInfo!.sundayLunchCount || 0) * (currentConfig?.priceMeal ?? 8);
+                              return stand + elec + meals;
+                            })()} €
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-center italic opacity-80 pt-2">
+                          Le paiement s'effectue par chèque à l'ordre de "Un jardin pour Félix".
+                        </p>
+                      </div>
                    </section>
                  ) : (
                    <div className="p-8 border-2 border-dashed rounded-2xl text-center text-muted-foreground bg-muted/5">
