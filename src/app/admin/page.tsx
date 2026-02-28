@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
@@ -8,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare, FileText, X as XIcon, Map as MapIcon, Lock, ExternalLink, AlertTriangle } from 'lucide-react';
+import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare, FileText, X as XIcon, Map as MapIcon, Lock, ExternalLink, AlertTriangle, Link2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -66,6 +65,7 @@ export default function AdminDashboard() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const singleEmailTextareaRef = useRef<HTMLTextAreaElement>(null);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [isAuthLoading, setIsAuthLoading] = useState(false);
@@ -301,6 +301,23 @@ export default function AdminDashboard() {
 
     const newText = `${before}${snippet}${after}`;
     setTemplateForm(prev => ({ ...prev, body: newText }));
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + snippet.length, start + snippet.length);
+    }, 0);
+  };
+
+  const insertLinkSnippetToSingleEmail = (snippet: string) => {
+    if (!singleEmailTextareaRef.current) return;
+    const textarea = singleEmailTextareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const before = text.substring(0, start);
+    const after = text.substring(end);
+
+    const newText = `${before}${snippet}${after}`;
+    setSingleEmailForm(prev => ({ ...prev, body: newText }));
     setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(start + snippet.length, start + snippet.length);
@@ -1142,14 +1159,39 @@ export default function AdminDashboard() {
                 <SelectContent>{templates?.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
+            
             <Separator />
+            
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase text-muted-foreground">Objet</label>
               <Input value={singleEmailForm.subject} onChange={e => setSingleEmailForm({...singleEmailForm, subject: e.target.value})} placeholder="Sujet de l'email..." />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase text-muted-foreground">Message (HTML autorisé)</label>
-              <Textarea value={singleEmailForm.body} onChange={e => setSingleEmailForm({...singleEmailForm, body: e.target.value})} rows={10} className="font-mono text-xs" />
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-bold uppercase text-muted-foreground">Message (HTML autorisé)</label>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-7 text-[10px] gap-1 px-2 border-primary/30 text-primary hover:bg-primary/5"
+                  onClick={() => {
+                    if (actingExhibitor) {
+                      const baseUrl = window.location.origin;
+                      const link = `${baseUrl}/details/${actingExhibitor.id}`;
+                      const snippet = `<p>Voici votre lien unique pour compléter votre dossier technique : <br/><a href="${link}" style="color: #2E3192; font-weight: bold;">Accéder à mon dossier</a></p>`;
+                      insertLinkSnippetToSingleEmail(snippet);
+                    }
+                  }}
+                >
+                  <Link2 className="w-3 h-3" /> Insérer lien dossier
+                </Button>
+              </div>
+              <Textarea 
+                ref={singleEmailTextareaRef}
+                value={singleEmailForm.body} 
+                onChange={e => setSingleEmailForm({...singleEmailForm, body: e.target.value})} 
+                rows={10} 
+                className="font-mono text-xs" 
+              />
             </div>
           </div>
           <DialogFooter>
