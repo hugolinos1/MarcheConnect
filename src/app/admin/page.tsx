@@ -554,7 +554,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <ChristmasSnow />
-      <div className="bg-primary text-white py-4 shadow-lg sticky top-0 z-50">
+      <div className="bg-primary text-white py-4 shadow-lg sticky top-0 z-[2000]">
         <div className="container mx-auto px-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <img src={logoUrl} alt="Logo" className="w-10 h-10 rounded-full bg-white" />
