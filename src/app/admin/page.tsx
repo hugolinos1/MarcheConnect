@@ -809,8 +809,30 @@ export default function AdminDashboard() {
                           <div className="min-h-[200px] p-4 bg-white border border-t-0 rounded-b-lg prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: templateForm.body }} />
                         )}
                       </div>
+                      
+                      <div className="p-4 border rounded-xl bg-white space-y-3">
+                        <div className="flex justify-between items-center">
+                          <p className="text-[10px] font-bold uppercase text-primary">Tester ce modèle</p>
+                          <Button 
+                            variant="secondary" 
+                            size="sm" 
+                            className="h-7 text-[10px] gap-2"
+                            onClick={() => handleSendTestEmail(templateForm.subject, templateForm.body)}
+                            disabled={isSendingTest || !testEmailAddress}
+                          >
+                            {isSendingTest ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} Envoyer un test
+                          </Button>
+                        </div>
+                        <Input 
+                          placeholder="Email de test" 
+                          value={testEmailAddress} 
+                          onChange={e => setTestEmailAddress(e.target.value)} 
+                          className="h-8 text-xs" 
+                        />
+                      </div>
+
                       <div className="flex gap-2">
-                        <Button onClick={handleSaveTemplate} className="flex-1">Sauvegarder</Button>
+                        <Button onClick={handleSaveTemplate} className="flex-1">Sauvegarder le modèle</Button>
                         <Button variant="ghost" onClick={() => setIsTemplateFormVisible(false)}>Annuler</Button>
                       </div>
                     </div>
