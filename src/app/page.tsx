@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { Gift, TreePine, Star, ChevronRight, Info, ShoppingBag } from 'lucide-react';
+import { Gift, TreePine, Star, ChevronRight, Info, ShoppingBag, Calendar } from 'lucide-react';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
@@ -20,6 +20,8 @@ export default function Home() {
   const posterUrl = currentConfig?.posterImageUrl || "https://i.ibb.co/3y3KRNW4/Affiche-March.jpg";
   const marketYear = currentConfig?.marketYear || 2026;
   const editionNumber = currentConfig?.editionNumber || "6ème";
+  const saturdayDate = currentConfig?.saturdayDate || "5/12/2026";
+  const sundayDate = currentConfig?.sundayDate || "06/12/2026";
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -84,14 +86,17 @@ export default function Home() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent pointer-events-none" />
                 </div>
-                {/* Petit badge flottant */}
-                <div className="absolute -bottom-6 -right-6 bg-accent p-4 rounded-xl shadow-xl flex items-center gap-3 text-accent-foreground animate-pulse">
+                {/* Petit badge flottant jaune */}
+                <div className="absolute -bottom-6 -right-6 bg-accent p-4 rounded-xl shadow-xl flex items-center gap-3 text-accent-foreground animate-pulse z-20">
                    <div className="w-10 h-10 rounded-full bg-black/10 flex items-center justify-center">
-                    <Gift className="w-5 h-5" />
+                    <Calendar className="w-5 h-5" />
                   </div>
                   <div>
                     <p className="font-bold text-sm">{editionNumber} Édition</p>
-                    <p className="text-[10px] uppercase font-bold opacity-70">Solidarité</p>
+                    <p className="text-[11px] font-bold uppercase tracking-tighter opacity-90">
+                      {saturdayDate} & {sundayDate}
+                    </p>
+                    <p className="text-[9px] uppercase font-bold opacity-70">Solidarité</p>
                   </div>
                 </div>
               </div>
@@ -120,7 +125,7 @@ export default function Home() {
                 {
                   step: "2",
                   title: "Étude",
-                  desc: "Le comité examine votre candidature (réponse sous 15 semaines maximum)."
+                  desc: "Le comité examine votre candidature (réponse sous 3 semaines maximum)."
                 },
                 {
                   step: "3",
