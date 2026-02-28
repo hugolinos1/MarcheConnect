@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
@@ -445,8 +446,20 @@ export default function AdminDashboard() {
   };
 
   const getDelayInfo = (exhibitor: Exhibitor) => {
-    if (exhibitor.status !== 'accepted_form1' || !exhibitor.acceptedAt) return null;
-    const days = differenceInDays(new Date(), new Date(exhibitor.acceptedAt));
+    let startDate: string | undefined;
+    let label = "";
+
+    if (exhibitor.status === 'accepted_form1') {
+      startDate = exhibitor.acceptedAt;
+      label = "attente dossier";
+    } else if (exhibitor.status === 'submitted_form2') {
+      startDate = exhibitor.detailedInfo?.submittedAt;
+      label = "attente chèque";
+    }
+
+    if (!startDate) return null;
+
+    const days = differenceInDays(new Date(), new Date(startDate));
     let colorClass = "text-muted-foreground";
     let icon = <Clock className="w-3 h-3" />;
     
@@ -461,7 +474,7 @@ export default function AdminDashboard() {
     return (
       <div className={`flex items-center gap-1 text-[10px] mt-1 ${colorClass}`}>
         {icon}
-        {days}j écoulés
+        {days}j ({label})
       </div>
     );
   };
