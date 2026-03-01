@@ -102,6 +102,8 @@ export default function AdminDashboard() {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showAuthPass, setShowAuthPass] = useState(false);
+  const [showSmtpPass, setShowSmtpPass] = useState(false);
   const [signupCodeInput, setSignupCodeInput] = useState('');
   const [authError, setAuthError] = useState('');
   const [testEmailAddress, setTestEmailAddress] = useState('');
@@ -445,7 +447,25 @@ export default function AdminDashboard() {
           <CardContent>
             <form onSubmit={handleAuth} className="space-y-4">
               <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              <Input type="password" placeholder="Mot de passe" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <div className="relative">
+                <Input 
+                  type={showAuthPass ? "text" : "password"} 
+                  placeholder="Mot de passe" 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  required 
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowAuthPass(!showAuthPass)}
+                >
+                  {showAuthPass ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                </Button>
+              </div>
               {isSigningUp && <Input placeholder="Code de création" value={signupCodeInput} onChange={(e) => setSignupCodeInput(e.target.value)} />}
               {authError && <p className="text-xs text-destructive text-center">{authError}</p>}
               <Button type="submit" disabled={isAuthLoading} className="w-full">{isAuthLoading ? <Loader2 className="animate-spin" /> : (isSigningUp ? "S'inscrire" : "Connexion")}</Button>
@@ -629,7 +649,24 @@ export default function AdminDashboard() {
                     <h3 className="text-sm font-bold uppercase text-primary flex items-center gap-2"><Mail className="w-4 h-4" /> Configuration SMTP (Gmail)</h3>
                     <div className="space-y-3">
                       <Input placeholder="Email Gmail" value={configForm.smtpUser} onChange={(e) => setConfigForm({...configForm, smtpUser: e.target.value})} />
-                      <Input type="password" placeholder="Mot de passe application" value={configForm.smtpPass} onChange={(e) => setConfigForm({...configForm, smtpPass: e.target.value})} />
+                      <div className="relative">
+                        <Input 
+                          type={showSmtpPass ? "text" : "password"} 
+                          placeholder="Mot de passe application" 
+                          value={configForm.smtpPass} 
+                          onChange={(e) => setConfigForm({...configForm, smtpPass: e.target.value})} 
+                          className="pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowSmtpPass(!showSmtpPass)}
+                        >
+                          {showSmtpPass ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                        </Button>
+                      </div>
                       <div className="pt-2 border-t space-y-2">
                         <label className="text-[10px] font-bold text-muted-foreground uppercase">Email de destination du test</label>
                         <Input placeholder="votre-email@exemple.com" value={testEmailAddress} onChange={(e) => setTestEmailAddress(e.target.value)} className="h-8 text-xs" />
