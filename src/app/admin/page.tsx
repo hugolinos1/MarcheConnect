@@ -151,7 +151,6 @@ export default function AdminDashboard() {
       e.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       `${e.firstName} ${e.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
     );
-    // Sort by date DESC client-side (Last registered first)
     return [...filtered].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [exhibitorsData, searchTerm]);
 
@@ -277,6 +276,7 @@ export default function AdminDashboard() {
     setIsSending(false);
     setIndividualEmail({ subject: '', body: '' });
     setIncludeDossierLink(false);
+    setSelectedTemplateId('');
   };
 
   const handleBulkEmailSend = async () => {
@@ -304,6 +304,7 @@ export default function AdminDashboard() {
     setIsBulkEmailDialogOpen(false);
     setIsSending(false);
     setFreeBulkEmail({ subject: '', body: '' });
+    setSelectedTemplateId('');
   };
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -345,17 +346,17 @@ export default function AdminDashboard() {
     setter((prev: any) => ({ ...prev, body: newText }));
   };
 
-  const EditorToolbar = ({ textareaRef, setter, isPreview, onTogglePreview, showDossierLink = false }: any) => (
+  const EditorToolbar = ({ textareaRef, setter, isPreview, onTogglePreview }: any) => (
     <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-muted rounded-t-lg border-x border-t">
       <div className="flex flex-wrap gap-1">
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => insertTag(textareaRef, 'b', setter, 'b')}><Bold className="w-4 h-4" /></Button>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => insertTag(textareaRef, 'i', setter, 'i')}><Italic className="w-4 h-4" /></Button>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => insertTag(textareaRef, 'u', setter, 'u')}><Underline className="w-4 h-4" /></Button>
+        <Button variant="ghost" type="button" size="sm" className="h-8 w-8 p-0" onClick={() => insertTag(textareaRef, 'b', setter, 'b')}><Bold className="w-4 h-4" /></Button>
+        <Button variant="ghost" type="button" size="sm" className="h-8 w-8 p-0" onClick={() => insertTag(textareaRef, 'i', setter, 'i')}><Italic className="w-4 h-4" /></Button>
+        <Button variant="ghost" type="button" size="sm" className="h-8 w-8 p-0" onClick={() => insertTag(textareaRef, 'u', setter, 'u')}><Underline className="w-4 h-4" /></Button>
         <Separator orientation="vertical" className="h-6 mx-1" />
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => insertTag(textareaRef, 'p', setter, 'p')}><Type className="w-4 h-4" /></Button>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => insertTag(textareaRef, 'br', setter)}><WrapText className="w-4 h-4" /></Button>
+        <Button variant="ghost" type="button" size="sm" className="h-8 w-8 p-0" onClick={() => insertTag(textareaRef, 'p', setter, 'p')}><Type className="w-4 h-4" /></Button>
+        <Button variant="ghost" type="button" size="sm" className="h-8 w-8 p-0" onClick={() => insertTag(textareaRef, 'br', setter)}><WrapText className="w-4 h-4" /></Button>
       </div>
-      <Button variant="secondary" size="sm" onClick={onTogglePreview} className="h-8 px-2 text-[10px]">{isPreview ? "Rédiger" : "Aperçu"}</Button>
+      <Button variant="secondary" type="button" size="sm" onClick={onTogglePreview} className="h-8 px-2 text-[10px]">{isPreview ? "Rédiger" : "Aperçu"}</Button>
     </div>
   );
 
@@ -773,7 +774,6 @@ export default function AdminDashboard() {
           <ScrollArea className="h-[70vh] pr-4">
              {viewingExhibitor && (
                <div className="space-y-10 p-4">
-                 {/* Section 1: Candidature Initiale */}
                  <div className="space-y-6">
                    <h3 className="text-sm font-bold uppercase text-primary border-b pb-2 flex items-center gap-2">
                      <FileText className="w-4 h-4" /> 1. Candidature Initiale
@@ -821,7 +821,6 @@ export default function AdminDashboard() {
                    )}
                  </div>
 
-                 {/* Section 2: Dossier Technique */}
                  {viewingExhibitor.detailedInfo ? (
                    <div className="space-y-6 pt-6 border-t">
                      <h3 className="text-sm font-bold uppercase text-primary border-b pb-2 flex items-center gap-2">
@@ -893,7 +892,6 @@ export default function AdminDashboard() {
                    </div>
                  )}
 
-                 {/* Section 3: Refus (si applicable) */}
                  {viewingExhibitor.status === 'rejected' && viewingExhibitor.rejectionJustification && (
                    <div className="space-y-2 pt-6 border-t">
                      <h3 className="text-sm font-bold uppercase text-destructive border-b pb-2 flex items-center gap-2">
