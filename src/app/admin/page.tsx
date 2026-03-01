@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
@@ -461,39 +462,40 @@ export default function AdminDashboard() {
                   <TableRow>
                     <TableHead>Exposant</TableHead>
                     <TableHead>Tables</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Délais</TableHead>
+                    <TableHead>Statut & Suivi</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isExhibitorsLoading ? <TableRow><TableCell colSpan={5} className="text-center py-12"><Loader2 className="animate-spin mx-auto text-primary" /></TableCell></TableRow> :
+                  {isExhibitorsLoading ? <TableRow><TableCell colSpan={4} className="text-center py-12"><Loader2 className="animate-spin mx-auto text-primary" /></TableCell></TableRow> :
                     filteredExhibitors.map(ex => {
                       const delay = getExhibitorDelay(ex);
                       return (
                         <TableRow key={ex.id}>
                           <TableCell><div className="font-bold">{ex.companyName}</div><div className="text-[10px] text-muted-foreground">{ex.firstName} {ex.lastName}</div></TableCell>
                           <TableCell><Badge variant="outline">{ex.requestedTables}</Badge></TableCell>
-                          <TableCell><Badge variant={getStatusVariant(ex.status)}>{getStatusLabel(ex.status)}</Badge></TableCell>
                           <TableCell>
-                            {delay && (
-                              <div className={`text-[10px] flex items-center gap-1 ${delay.color}`}>
-                                {delay.days > 15 && <AlertTriangle className="w-3 h-3" />}
-                                <span>{delay.label} : <strong>{delay.days}j</strong></span>
-                              </div>
-                            )}
+                            <div className="flex flex-col gap-1.5 items-start">
+                              <Badge variant={getStatusVariant(ex.status)}>{getStatusLabel(ex.status)}</Badge>
+                              {delay && (
+                                <div className={`text-[10px] flex items-center gap-1 ${delay.color}`}>
+                                  {delay.days > 15 && <AlertTriangle className="w-3 h-3" />}
+                                  <span>{delay.label} : <strong>{delay.days}j</strong></span>
+                                </div>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
-                              <Button variant="outline" size="sm" onClick={() => { setActingExhibitor(ex); setIsIndividualEmailDialogOpen(true); }} className="text-primary border-primary/20"><Mail className="w-4 h-4" /></Button>
-                              <Button variant="outline" size="sm" onClick={() => setViewingExhibitor(ex)}><Eye className="w-4 h-4" /></Button>
+                              <Button variant="outline" size="sm" title="Email" onClick={() => { setActingExhibitor(ex); setIsIndividualEmailDialogOpen(true); }} className="text-primary border-primary/20"><Mail className="w-4 h-4" /></Button>
+                              <Button variant="outline" size="sm" title="Voir" onClick={() => setViewingExhibitor(ex)}><Eye className="w-4 h-4" /></Button>
                               {ex.status === 'pending' && (
                                 <>
-                                  <Button size="sm" className="bg-green-600" onClick={() => { setActingExhibitor(ex); setIsAcceptDialogOpen(true); }}><CheckCircle className="w-4 h-4" /></Button>
-                                  <Button size="sm" variant="destructive" onClick={() => { setActingExhibitor(ex); setIsRejectDialogOpen(true); }}><XCircle className="w-4 h-4" /></Button>
+                                  <Button size="sm" className="bg-green-600" title="Accepter" onClick={() => { setActingExhibitor(ex); setIsAcceptDialogOpen(true); }}><CheckCircle className="w-4 h-4" /></Button>
+                                  <Button size="sm" variant="destructive" title="Refuser" onClick={() => { setActingExhibitor(ex); setIsRejectDialogOpen(true); }}><XCircle className="w-4 h-4" /></Button>
                                 </>
                               )}
-                              <Button variant="ghost" size="sm" className="text-destructive" onClick={() => { if(confirm("Supprimer cet exposant ?")) deleteDocumentNonBlocking(doc(db, 'pre_registrations', ex.id)); }}><Trash2 className="w-4 h-4" /></Button>
+                              <Button variant="ghost" size="sm" className="text-destructive" title="Supprimer" onClick={() => { if(confirm("Supprimer cet exposant ?")) deleteDocumentNonBlocking(doc(db, 'pre_registrations', ex.id)); }}><Trash2 className="w-4 h-4" /></Button>
                             </div>
                           </TableCell>
                         </TableRow>
