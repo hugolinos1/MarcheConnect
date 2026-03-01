@@ -25,7 +25,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import * as XLSX from 'xlsx';
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
-import { differenceInDays } from 'date-fns';
 
 // Helper for status display
 export const getStatusLabel = (status: ApplicationStatus): string => {
@@ -66,13 +65,11 @@ export default function AdminDashboard() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const templateTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const singleEmailTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const freeBulkEmailRef = useRef<HTMLTextAreaElement>(null);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showSmtpPass, setShowSmtpPass] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [justification, setJustification] = useState('');
@@ -82,21 +79,19 @@ export default function AdminDashboard() {
   
   const [isAcceptDialogOpen, setIsAcceptDialogOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isSingleEmailDialogOpen, setIsSingleEmailDialogOpen] = useState(false);
+  const [isBulkEmailDialogOpen, setIsBulkEmailDialogOpen] = useState(false);
   const [actingExhibitor, setActingExhibitor] = useState<Exhibitor | null>(null);
   
-  const [isBulkEmailDialogOpen, setIsBulkEmailDialogOpen] = useState(false);
+  const [bulkEmailMode, setBulkEmailMode] = useState<'template' | 'free'>('template');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
-  const [singleEmailForm, setSingleEmailForm] = useState({ subject: '', body: '' });
+  const [freeBulkEmail, setFreeBulkEmail] = useState({ subject: '', body: '' });
+  const [isFreeEmailPreview, setIsFreeEmailPreview] = useState(false);
   const [isTemplatePreviewMode, setIsTemplatePreviewMode] = useState(false);
-  const [isSingleEmailPreviewMode, setIsSingleEmailPreviewMode] = useState(false);
   const [isTemplateFormVisible, setIsTemplateFormVisible] = useState(false);
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [signupCodeInput, setSignupCodeInput] = useState('');
-  const [inputActivationCode, setInputActivationCode] = useState('');
   const [authError, setAuthError] = useState('');
   const [testEmailAddress, setTestEmailAddress] = useState('');
 
@@ -107,9 +102,6 @@ export default function AdminDashboard() {
   
   const isSuperAdmin = user?.email === "hugues.rabier@gmail.com" || !!userRoleDoc?.isSuperAdmin;
   const isAuthorized = isSuperAdmin || !!userRoleDoc;
-
-  const myRequestRef = useMemoFirebase(() => user ? doc(db, 'admin_requests', user.uid) : null, [db, user]);
-  const { data: myRequest } = useDoc(myRequestRef);
 
   const marketConfigsQuery = useMemoFirebase(() => query(collection(db, 'market_configurations'), orderBy('marketYear', 'desc')), [db]);
   const { data: configs } = useCollection(marketConfigsQuery);
@@ -150,7 +142,7 @@ export default function AdminDashboard() {
       e.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       `${e.firstName} ${e.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
     );
-    // Sort by date DESC client-side
+    // Sort by date DESC client-side (Last registered first)
     return [...filtered].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [exhibitorsData, searchTerm]);
 
@@ -211,7 +203,7 @@ export default function AdminDashboard() {
       setConfigForm({
         marketYear: currentConfig.marketYear,
         editionNumber: currentConfig.editionNumber,
-        posterImageUrl: currentConfig.posterImageUrl,
+        posterImageUrl: currentConfig.posterImageUrl || "https://i.ibb.co/3y3KRNW4/Affiche-March.jpg",
         notificationEmail: currentConfig.notificationEmail || "lemarchedefelix2020@gmail.com",
         smtpUser: currentConfig.smtpUser || "",
         smtpPass: currentConfig.smtpPass || "",
@@ -257,14 +249,29 @@ export default function AdminDashboard() {
   };
 
   const handleBulkEmailSend = async () => {
-    const template = templates?.find(t => t.id === selectedTemplateId);
-    if (!template || confirmedExhibitors.length === 0) return;
+    let subject = '';
+    let body = '';
+    
+    if (bulkEmailMode === 'template') {
+      const template = templates?.find(t => t.id === selectedTemplateId);
+      if (!template) return;
+      subject = template.subject;
+      body = template.body;
+    } else {
+      if (!freeBulkEmail.subject || !freeBulkEmail.body) return;
+      subject = freeBulkEmail.subject;
+      body = freeBulkEmail.body;
+    }
+
+    if (confirmedExhibitors.length === 0) return;
+    
     setIsSending(true);
     const emails = confirmedExhibitors.map(e => e.email);
-    const res = await sendBulkEmailAction(emails, template.subject, template.body, configForm);
+    const res = await sendBulkEmailAction(emails, subject, body, configForm);
     if (res.success) toast({ title: "Emails envoyés !" });
     setIsBulkEmailDialogOpen(false);
     setIsSending(false);
+    setFreeBulkEmail({ subject: '', body: '' });
   };
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -315,17 +322,6 @@ export default function AdminDashboard() {
         <Separator orientation="vertical" className="h-6 mx-1" />
         <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => insertTag(textareaRef, 'p', setter, 'p')}><Type className="w-4 h-4" /></Button>
         <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => insertTag(textareaRef, 'br', setter)}><WrapText className="w-4 h-4" /></Button>
-        {showDossierLink && (
-          <Button variant="outline" size="sm" className="h-8 px-2 text-[10px] gap-1 border-primary/30" onClick={() => {
-            if (actingExhibitor) {
-              const link = `${window.location.origin}/details/${actingExhibitor.id}`;
-              const snippet = `<div style="text-align: center; margin: 30px 0;"><a href="${link}" style="background-color: #2E3192; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Accéder à mon dossier technique</a></div>`;
-              const before = textareaRef.current.value.substring(0, textareaRef.current.selectionStart);
-              const after = textareaRef.current.value.substring(textareaRef.current.selectionEnd);
-              setter((prev: any) => ({ ...prev, body: before + snippet + after }));
-            }
-          }}><Link2 className="w-3 h-3" /> Bouton Dossier</Button>
-        )}
       </div>
       <Button variant="secondary" size="sm" onClick={onTogglePreview} className="h-8 px-2 text-[10px]">{isPreview ? "Rédiger" : "Aperçu"}</Button>
     </div>
@@ -559,18 +555,52 @@ export default function AdminDashboard() {
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Send className="w-6 h-6" /> Message groupé</DialogTitle></DialogHeader>
           <div className="py-6 space-y-6">
             <Badge variant="secondary" className="px-4 py-2">Destinataires : {confirmedExhibitors.length} validés</Badge>
-            <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-              <SelectTrigger><SelectValue placeholder="Choisir un modèle..." /></SelectTrigger>
-              <SelectContent>{templates?.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
-            </Select>
-            {selectedTemplateId && (
-              <div className="p-4 border rounded-xl bg-muted/20 max-h-60 overflow-y-auto">
-                <p className="text-sm font-bold mb-2">Sujet : {templates?.find(t => t.id === selectedTemplateId)?.subject}</p>
-                <div className="text-sm prose max-w-none" dangerouslySetInnerHTML={{ __html: templates?.find(t => t.id === selectedTemplateId)?.body || "" }} />
-              </div>
-            )}
+            
+            <Tabs value={bulkEmailMode} onValueChange={(v: any) => setBulkEmailMode(v)}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="template">Utiliser un modèle</TabsTrigger>
+                <TabsTrigger value="free">Message libre</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="template" className="pt-4 space-y-4">
+                <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                  <SelectTrigger><SelectValue placeholder="Choisir un modèle..." /></SelectTrigger>
+                  <SelectContent>{templates?.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+                </Select>
+                {selectedTemplateId && (
+                  <div className="p-4 border rounded-xl bg-muted/20 max-h-60 overflow-y-auto">
+                    <p className="text-sm font-bold mb-2">Sujet : {templates?.find(t => t.id === selectedTemplateId)?.subject}</p>
+                    <div className="text-sm prose max-w-none" dangerouslySetInnerHTML={{ __html: templates?.find(t => t.id === selectedTemplateId)?.body || "" }} />
+                  </div>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="free" className="pt-4 space-y-4">
+                <Input placeholder="Sujet de l'email..." value={freeBulkEmail.subject} onChange={e => setFreeBulkEmail({...freeBulkEmail, subject: e.target.value})} />
+                <div className="space-y-2">
+                  <EditorToolbar 
+                    textareaRef={freeBulkEmailRef} 
+                    setter={setFreeBulkEmail} 
+                    isPreview={isFreeEmailPreview} 
+                    onTogglePreview={() => setIsFreeEmailPreview(!isFreeEmailPreview)} 
+                  />
+                  {!isFreeEmailPreview ? (
+                    <Textarea 
+                      ref={freeBulkEmailRef} 
+                      placeholder="Rédigez votre message ici..." 
+                      value={freeBulkEmail.body} 
+                      onChange={e => setFreeBulkEmail({...freeBulkEmail, body: e.target.value})} 
+                      rows={8} 
+                      className="font-mono text-xs rounded-t-none" 
+                    />
+                  ) : (
+                    <div className="p-4 bg-white border border-t-0 rounded-b-lg min-h-[150px] text-sm prose max-w-none" dangerouslySetInnerHTML={{ __html: freeBulkEmail.body }} />
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
-          <DialogFooter><Button variant="ghost" onClick={() => setIsBulkEmailDialogOpen(false)}>Annuler</Button><Button onClick={handleBulkEmailSend} disabled={isSending || !selectedTemplateId} className="gap-2">{isSending ? <Loader2 className="animate-spin" /> : "Envoyer"}</Button></DialogFooter>
+          <DialogFooter><Button variant="ghost" onClick={() => setIsBulkEmailDialogOpen(false)}>Annuler</Button><Button onClick={handleBulkEmailSend} disabled={isSending || (bulkEmailMode === 'template' && !selectedTemplateId) || (bulkEmailMode === 'free' && (!freeBulkEmail.subject || !freeBulkEmail.body))} className="gap-2">{isSending ? <Loader2 className="animate-spin" /> : "Envoyer"}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 

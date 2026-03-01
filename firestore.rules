@@ -10,7 +10,7 @@ service cloud.firestore {
     }
 
     // BYPASS MASTER ADMIN (God Mode)
-    // Garantit l'accès complet au propriétaire du projet
+    // Priorité absolue pour le compte de Hugues
     function isMasterAdmin() {
       return isSignedIn() && (
         request.auth.token.email == "hugues.rabier@gmail.com" ||
@@ -37,9 +37,8 @@ service cloud.firestore {
     }
 
     match /pre_registrations/{preRegistrationId} {
-      allow create: if true;
-      allow get: if true;
-      allow list, update, delete: if isAdmin();
+      allow read, create: if true;
+      allow write: if isAdmin();
     }
 
     match /exhibitor_details/{exhibitorDetailId} {
