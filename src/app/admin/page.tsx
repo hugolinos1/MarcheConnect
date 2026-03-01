@@ -505,11 +505,39 @@ export default function AdminDashboard() {
               <div className="flex gap-2">
                 <Button onClick={() => setIsBulkEmailDialogOpen(true)} variant="outline" className="gap-2 text-secondary font-bold"><Send className="w-4 h-4" /> Message Groupé</Button>
                 <Button onClick={() => {
-                  const exportData = filteredExhibitors.map(e => ({ Enseigne: e.companyName, Nom: e.lastName, Email: e.email, Statut: getStatusLabel(e.status) }));
+                  const exportData = filteredExhibitors.map(e => ({
+                    "Enseigne": e.companyName,
+                    "Nom": e.lastName,
+                    "Prénom": e.firstName,
+                    "Email": e.email,
+                    "Téléphone": e.phone,
+                    "Statut": getStatusLabel(e.status),
+                    "Date Inscription": new Date(e.createdAt).toLocaleDateString(),
+                    "Type": e.isRegistered ? "Professionnel" : "Particulier",
+                    "Adresse": e.address,
+                    "Ville": e.city,
+                    "CP": e.postalCode,
+                    "Tables": e.requestedTables,
+                    "Description Produits": e.productDescription,
+                    "Site/Réseaux": e.websiteUrl || "",
+                    // Form 2 Info
+                    "SIRET": e.detailedInfo?.siret || "",
+                    "Electricité": e.detailedInfo?.needsElectricity ? "OUI" : "NON",
+                    "Grille": e.detailedInfo?.needsGrid ? "OUI" : "NON",
+                    "Repas Dimanche": e.detailedInfo?.sundayLunchCount || 0,
+                    "Tombola Lot": e.detailedInfo?.tombolaLot ? "OUI" : "NON",
+                    "Description Lot": e.detailedInfo?.tombolaLotDescription || "",
+                    "Cie Assurance": e.detailedInfo?.insuranceCompany || "",
+                    "Police Assurance": e.detailedInfo?.insurancePolicyNumber || "",
+                    "Droits Image": e.detailedInfo?.agreedToImageRights ? "OUI" : "NON",
+                    "Règlement Accepté": e.detailedInfo?.agreedToTerms ? "OUI" : "NON",
+                    "Commentaires": e.detailedInfo?.additionalComments || "",
+                    "Date Dossier Tech": e.detailedInfo?.submittedAt ? new Date(e.detailedInfo.submittedAt).toLocaleDateString() : ""
+                  }));
                   const ws = XLSX.utils.json_to_sheet(exportData);
                   const wb = XLSX.utils.book_new();
                   XLSX.utils.book_append_sheet(wb, ws, "Exposants");
-                  XLSX.writeFile(wb, `Exposants_${currentConfig?.marketYear}.xlsx`);
+                  XLSX.writeFile(wb, `Exposants_Complets_${currentConfig?.marketYear}.xlsx`);
                 }} variant="outline" className="gap-2 font-bold"><Download className="w-4 h-4" /> Export Excel</Button>
               </div>
             </div>
