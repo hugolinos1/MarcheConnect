@@ -80,7 +80,28 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Association Presentation Block */}
+        {/* Processus de sélection */}
+        <section className="py-24 bg-white">
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl font-headline font-bold text-primary mb-16">Processus de sélection</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+              {[
+                { s: "1", t: "Préinscription", d: "Remplissez le formulaire initial (Etape 1)." },
+                { s: "2", t: "Étude", d: "Le comité examine votre candidature sous 3 semaines." },
+                { s: "3", t: "Validation", d: "Si accepté, vous recevez un lien vers votre dossier technique." },
+                { s: "4", t: "Confirmation", d: "Votre emplacement est réservé dès réception du règlement." }
+              ].map((item, i) => (
+                <div key={i} className="flex flex-col items-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center text-xl font-bold shadow-lg">{item.s}</div>
+                  <h3 className="font-bold text-lg">{item.t}</h3>
+                  <p className="text-sm text-muted-foreground">{item.d}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Association Presentation Block - Placé sous le processus */}
         <section className="py-16 bg-muted/30">
           <div className="container mx-auto px-4">
             <Card className="max-w-3xl mx-auto border-l-4 border-l-secondary shadow-xl overflow-hidden">
@@ -111,26 +132,6 @@ export default function Home() {
                 </div>
               </div>
             </Card>
-          </div>
-        </section>
-
-        <section className="py-24 bg-white">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl font-headline font-bold text-primary mb-16">Processus de sélection</h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
-              {[
-                { s: "1", t: "Préinscription", d: "Remplissez le formulaire initial (Etape 1)." },
-                { s: "2", t: "Étude", d: "Le comité examine votre candidature sous 3 semaines." },
-                { s: "3", t: "Validation", d: "Si accepté, vous recevez un lien vers votre dossier technique." },
-                { s: "4", t: "Confirmation", d: "Votre emplacement est réservé dès réception du règlement." }
-              ].map((item, i) => (
-                <div key={i} className="flex flex-col items-center space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center text-xl font-bold shadow-lg">{item.s}</div>
-                  <h3 className="font-bold text-lg">{item.t}</h3>
-                  <p className="text-sm text-muted-foreground">{item.d}</p>
-                </div>
-              ))}
-            </div>
           </div>
         </section>
       </main>
