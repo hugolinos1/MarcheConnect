@@ -595,7 +595,6 @@ export default function AdminDashboard() {
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button variant="outline" size="sm" title="Email" onClick={() => { setActingExhibitor(ex); setIsIndividualEmailDialogOpen(true); }} className="text-primary border-primary/20"><Mail className="w-4 h-4" /></Button>
-                              <Button variant="outline" size="sm" title="Modifier" onClick={() => handleOpenEdit(ex)} className="text-secondary border-secondary/20"><Pencil className="w-4 h-4" /></Button>
                               <Button variant="outline" size="sm" title="Voir" onClick={() => setViewingExhibitor(ex)}><Eye className="w-4 h-4" /></Button>
                               {ex.status === 'pending' && (
                                 <>
@@ -603,6 +602,7 @@ export default function AdminDashboard() {
                                   <Button size="sm" variant="destructive" title="Refuser" onClick={() => { setActingExhibitor(ex); setIsRejectDialogOpen(true); }}><XCircle className="w-4 h-4" /></Button>
                                 </>
                               )}
+                              <Button variant="outline" size="sm" title="Modifier" onClick={() => handleOpenEdit(ex)} className="text-secondary border-secondary/20"><Pencil className="w-4 h-4" /></Button>
                               <Button variant="ghost" size="sm" className="text-destructive" title="Supprimer" onClick={() => { if(confirm("Supprimer cet exposant ?")) deleteDocumentNonBlocking(doc(db, 'pre_registrations', ex.id)); }}><Trash2 className="w-4 h-4" /></Button>
                             </div>
                           </TableCell>
