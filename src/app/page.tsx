@@ -117,20 +117,20 @@ export default function Home() {
                   <p className="text-sm leading-relaxed text-muted-foreground">
                     L'association « Un jardin pour Félix » a été créé en 2014 par les parents de Félix. Il est atteint d'une maladie génétique rare le syndrome POTOCKI LUPSKI et d'un trouble autistique très envahissant. L'association permet de financer des intervenants à domicile pour le stimuler et le faire progresser au quotidien.
                   </p>
-                  <div className="flex flex-wrap justify-center md:justify-start gap-3 pt-4">
-                    <Button variant="outline" size="sm" className="gap-2 border-secondary text-secondary hover:bg-secondary/10 rounded-full px-5 h-9" asChild>
+                  <div className="flex flex-wrap justify-center md:justify-start gap-2 pt-4">
+                    <Button variant="outline" size="sm" className="gap-2 border-secondary text-secondary hover:bg-secondary/10 rounded-full px-4 h-8 text-[11px]" asChild>
                       <a href="https://www.unjardinpourfelix.org/" target="_blank" rel="noopener noreferrer">
-                        <Info className="w-4 h-4" /> Blog de Félix
+                        <Info className="w-3.5 h-3.5" /> Blog
                       </a>
                     </Button>
-                    <Button variant="outline" size="sm" className="gap-2 border-primary text-primary hover:bg-primary/10 rounded-full px-5 h-9" asChild>
+                    <Button variant="outline" size="sm" className="gap-2 border-primary text-primary hover:bg-primary/10 rounded-full px-4 h-8 text-[11px]" asChild>
                       <a href="https://www.lemarchedefelix.com/" target="_blank" rel="noopener noreferrer">
-                        <ShoppingBag className="w-4 h-4" /> Boutique Solidaire
+                        <ShoppingBag className="w-3.5 h-3.5" /> Boutique
                       </a>
                     </Button>
-                    <Button variant="outline" size="sm" className="gap-2 border-blue-600 text-blue-600 hover:bg-blue-600/10 rounded-full px-5 h-9" asChild>
+                    <Button variant="outline" size="sm" className="gap-2 border-blue-600 text-blue-600 hover:bg-blue-600/10 rounded-full px-4 h-8 text-[11px]" asChild>
                       <a href="https://www.facebook.com/lemarchedeFelix" target="_blank" rel="noopener noreferrer">
-                        <Facebook className="w-4 h-4" /> Facebook du Marché
+                        <Facebook className="w-3.5 h-3.5" /> Facebook
                       </a>
                     </Button>
                   </div>
