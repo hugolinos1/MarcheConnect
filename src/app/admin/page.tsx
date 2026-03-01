@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
@@ -629,7 +630,20 @@ export default function AdminDashboard() {
                     <div className="space-y-3">
                       <Input placeholder="Email Gmail" value={configForm.smtpUser} onChange={(e) => setConfigForm({...configForm, smtpUser: e.target.value})} />
                       <Input type="password" placeholder="Mot de passe application" value={configForm.smtpPass} onChange={(e) => setConfigForm({...configForm, smtpPass: e.target.value})} />
-                      <Button variant="outline" size="sm" className="w-full text-[10px]" onClick={() => handleSendTestEmail()} disabled={isSendingTest}>Tester SMTP</Button>
+                      <div className="pt-2 border-t space-y-2">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase">Email de destination du test</label>
+                        <Input placeholder="votre-email@exemple.com" value={testEmailAddress} onChange={(e) => setTestEmailAddress(e.target.value)} className="h-8 text-xs" />
+                        <Button variant="outline" size="sm" className="w-full text-[10px]" onClick={() => {
+                          if(!testEmailAddress) {
+                            toast({ variant: "destructive", title: "Champ requis", description: "Veuillez saisir un email pour le test." });
+                            return;
+                          }
+                          handleSendTestEmail();
+                        }} disabled={isSendingTest}>
+                          {isSendingTest ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Send className="w-3 h-3 mr-1" />}
+                          Envoyer l'email de test
+                        </Button>
+                      </div>
                     </div>
                   </div>
                   <div className="p-4 bg-muted/30 rounded-xl space-y-4 border">
@@ -1003,7 +1017,7 @@ export default function AdminDashboard() {
                            </div>
                          </div>
                          <div className="space-y-1">
-                           <p className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1"><Gift className="w-3 h-3" /> Tombola Solidaire</p>
+                           <p className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1"><Gift className="w-3 h-3" /> Tombola solidaire</p>
                            <p className="text-sm">{viewingExhibitor.detailedInfo.tombolaLot ? "✅ Offre un lot" : "❌ Pas de lot"}</p>
                            {viewingExhibitor.detailedInfo.tombolaLotDescription && (
                              <p className="text-xs italic bg-amber-50 p-2 rounded border border-amber-100 mt-1">
