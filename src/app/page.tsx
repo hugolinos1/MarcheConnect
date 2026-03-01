@@ -119,7 +119,7 @@ export default function Home() {
                   </p>
                   <div className="flex flex-wrap justify-center md:justify-start gap-4 pt-2">
                     <Button variant="outline" size="sm" className="gap-2 border-secondary text-secondary hover:bg-secondary/10" asChild>
-                      <a href="https://unjardinpourfelix.com" target="_blank" rel="noopener noreferrer">
+                      <a href="https://www.unjardinpourfelix.org/" target="_blank" rel="noopener noreferrer">
                         <Info className="w-4 h-4" /> Blog de Félix
                       </a>
                     </Button>
