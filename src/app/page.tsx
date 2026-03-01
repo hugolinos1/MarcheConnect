@@ -80,6 +80,40 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Association Presentation Block */}
+        <section className="py-16 bg-muted/30">
+          <div className="container mx-auto px-4">
+            <Card className="max-w-3xl mx-auto border-l-4 border-l-secondary shadow-xl overflow-hidden">
+              <div className="p-8 flex flex-col md:flex-row items-center gap-8 bg-white">
+                <div className="relative w-32 h-32 shrink-0 rounded-full overflow-hidden border-4 border-primary/5">
+                  <Image src={logoUrl} alt="Logo Association" fill className="object-cover" />
+                </div>
+                <div className="space-y-4 text-center md:text-left">
+                  <div>
+                    <h2 className="text-3xl font-headline font-bold text-secondary">Un Jardin pour Félix</h2>
+                    <p className="text-muted-foreground font-medium">Marché de Noël Solidaire - Chazay d'Azergues</p>
+                  </div>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    L'association « Un jardin pour Félix » a été créé en 2014 par les parents de Félix. Il est atteint d'une maladie génétique rare le syndrome POTOCKI LUPSKI et d'un trouble autistique très envahissant. L'association permet de financer des intervenants à domicile pour le stimuler et le faire progresser au quotidien.
+                  </p>
+                  <div className="flex flex-wrap justify-center md:justify-start gap-4 pt-2">
+                    <Button variant="outline" size="sm" className="gap-2 border-secondary text-secondary hover:bg-secondary/10" asChild>
+                      <a href="https://unjardinpourfelix.com" target="_blank" rel="noopener noreferrer">
+                        <Info className="w-4 h-4" /> Blog de Félix
+                      </a>
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-2 border-primary text-primary hover:bg-primary/10" asChild>
+                      <a href="https://boutique.unjardinpourfelix.com" target="_blank" rel="noopener noreferrer">
+                        <ShoppingBag className="w-4 h-4" /> Boutique Solidaire
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </section>
+
         <section className="py-24 bg-white">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl font-headline font-bold text-primary mb-16">Processus de sélection</h2>

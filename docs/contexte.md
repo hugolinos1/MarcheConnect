@@ -23,26 +23,26 @@ L'application remplace les échanges d'emails manuels par un workflow structuré
 3. **Paiement :** Calculateur dynamique du montant total dû à régler par chèque.
 
 ### B. Administrateur
-1. **Pilotage :** Dashboard avec statistiques et suivi visuel des délais (Attente Dossier / Paiement) avec alertes après 15 jours.
+1. **Pilotage :** Dashboard avec statistiques et suivi visuel des délais (Attente Dossier / Paiement) affichés directement sous le badge de statut.
 2. **Communication :** 
    - Envoi d'emails individuels avec bouton CTA vers le dossier technique.
    - Envoi d'emails groupés aux exposants confirmés.
-   - Éditeur de texte enrichi (gras, italique, etc.) pour des messages personnalisés sans HTML.
+   - Éditeur de texte enrichi (gras, italique, etc.) pour des messages personnalisés.
 3. **Logistique :** 
    - Cartographie interactive pour visualiser le rayonnement des artisans.
-   - Édition directe des fiches exposants (crayon) pour ajuster les besoins (ex: modifier le nombre de repas).
-   - Export Excel exhaustif de toutes les données (Step 1 + Step 2).
+   - Édition directe des fiches exposants (icône crayon à gauche de la poubelle) pour ajuster les besoins.
+   - Export Excel exhaustif de toutes les données (Étape 1 + Étape 2).
 
 ## 4. Configuration & Sécurité
 - **Paramétrage Global :** Gestion de l'affiche, des dates, des horaires et de la grille tarifaire.
-- **Outils SMTP :** Configuration sécurisée Gmail avec test d'envoi vers une destination personnalisée et visibilité des mots de passe (œil).
+- **Outils SMTP :** Configuration sécurisée Gmail avec test d'envoi vers une destination personnalisable et visibilité des mots de passe (icône œil).
 - **Master Admin :** Accès prioritaire codé pour `hugues.rabier@gmail.com`.
 - **Gestion d'Équipe :** Système de validation des nouveaux admins et gestion des droits Super Admin.
 
 ## 5. Entités Firestore
 - `market_configurations` : Paramètres de l'édition annuelle.
-- `pre_registrations` : Dossiers des exposants (Step 1 + Step 2).
+- `pre_registrations` : Dossiers des exposants (Étape 1 + Étape 2).
 - `email_templates` : Modèles de communication pré-enregistrés.
 - `roles_admin` : Privilèges des utilisateurs du back-office.
 - `admin_requests` : Demandes de création de compte en attente.
-- `exhibitor_details` : Données techniques détaillées (Step 2).
+- `exhibitor_details` : Données techniques détaillées (Étape 2).
