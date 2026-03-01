@@ -456,7 +456,13 @@ export default function AdminDashboard() {
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button variant="outline" size="sm" onClick={() => setViewingExhibitor(ex)}><Eye className="w-4 h-4" /></Button>
-                              {ex.status === 'pending' && <><Button size="sm" className="bg-green-600" onClick={() => { setActingExhibitor(ex); setIsAcceptDialogOpen(true); }}><CheckCircle className="w-4 h-4" /></Button><Button size="sm" variant="destructive" onClick={() => { setActingExhibitor(ex); setIsRejectDialogOpen(true); }}><XCircle className="w-4 h-4" /></Button></>}
+                              {ex.status === 'pending' && (
+                                <>
+                                  <Button size="sm" className="bg-green-600" onClick={() => { setActingExhibitor(ex); setIsAcceptDialogOpen(true); }}><CheckCircle className="w-4 h-4" /></Button>
+                                  <Button size="sm" variant="destructive" onClick={() => { setActingExhibitor(ex); setIsRejectDialogOpen(true); }}><XCircle className="w-4 h-4" /></Button>
+                                </>
+                              )}
+                              <Button variant="ghost" size="sm" className="text-destructive" onClick={() => { if(confirm("Supprimer cet exposant ?")) deleteDocumentNonBlocking(doc(db, 'pre_registrations', ex.id)); }}><Trash2 className="w-4 h-4" /></Button>
                             </div>
                           </TableCell>
                         </TableRow>
