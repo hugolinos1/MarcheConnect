@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare, FileText, X as XIcon, Map as MapIcon, Lock, ExternalLink, AlertTriangle, Link2, Star, TrendingUp, CreditCard, Shield, LayoutGrid } from 'lucide-react';
+import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare, FileText, X as XIcon, Map as MapIcon, Lock, ExternalLink, AlertTriangle, Link2, Star, TrendingUp, CreditCard, Shield, LayoutGrid, Pencil } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import * as XLSX from 'xlsx';
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
 import { differenceInDays } from 'date-fns';
@@ -84,6 +85,7 @@ export default function AdminDashboard() {
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [isBulkEmailDialogOpen, setIsBulkEmailDialogOpen] = useState(false);
   const [isIndividualEmailDialogOpen, setIsIndividualEmailDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [actingExhibitor, setActingExhibitor] = useState<Exhibitor | null>(null);
   
   const [bulkEmailMode, setBulkEmailMode] = useState<'template' | 'free'>('template');
@@ -102,6 +104,19 @@ export default function AdminDashboard() {
   const [signupCodeInput, setSignupCodeInput] = useState('');
   const [authError, setAuthError] = useState('');
   const [testEmailAddress, setTestEmailAddress] = useState('');
+
+  // Editing state
+  const [editFormData, setEditFormData] = useState({
+    firstName: '',
+    lastName: '',
+    companyName: '',
+    email: '',
+    phone: '',
+    requestedTables: '1' as '1' | '2',
+    sundayLunchCount: 0,
+    needsElectricity: false,
+    needsGrid: false
+  });
 
   const logoUrl = "https://i.ibb.co/yncRPkvR/logo-ujpf.jpg";
   
@@ -333,6 +348,48 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleOpenEdit = (ex: Exhibitor) => {
+    setActingExhibitor(ex);
+    setEditFormData({
+      firstName: ex.firstName || '',
+      lastName: ex.lastName || '',
+      companyName: ex.companyName || '',
+      email: ex.email || '',
+      phone: ex.phone || '',
+      requestedTables: ex.requestedTables || '1',
+      sundayLunchCount: ex.detailedInfo?.sundayLunchCount || 0,
+      needsElectricity: ex.detailedInfo?.needsElectricity || false,
+      needsGrid: ex.detailedInfo?.needsGrid || false
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSave = () => {
+    if (!actingExhibitor) return;
+    
+    const updates: any = {
+      firstName: editFormData.firstName,
+      lastName: editFormData.lastName,
+      companyName: editFormData.companyName,
+      email: editFormData.email,
+      phone: editFormData.phone,
+      requestedTables: editFormData.requestedTables
+    };
+
+    if (actingExhibitor.detailedInfo) {
+      updates.detailedInfo = {
+        ...actingExhibitor.detailedInfo,
+        sundayLunchCount: editFormData.sundayLunchCount,
+        needsElectricity: editFormData.needsElectricity,
+        needsGrid: editFormData.needsGrid
+      };
+    }
+
+    updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), updates);
+    setIsEditDialogOpen(false);
+    toast({ title: "Fiche mise à jour avec succès" });
+  };
+
   const insertTag = (ref: React.RefObject<HTMLTextAreaElement>, tag: string, setter: React.Dispatch<React.SetStateAction<any>>, closeTag?: string) => {
     if (!ref.current) return;
     const textarea = ref.current;
@@ -489,6 +546,7 @@ export default function AdminDashboard() {
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button variant="outline" size="sm" title="Email" onClick={() => { setActingExhibitor(ex); setIsIndividualEmailDialogOpen(true); }} className="text-primary border-primary/20"><Mail className="w-4 h-4" /></Button>
+                              <Button variant="outline" size="sm" title="Modifier" onClick={() => handleOpenEdit(ex)} className="text-secondary border-secondary/20"><Pencil className="w-4 h-4" /></Button>
                               <Button variant="outline" size="sm" title="Voir" onClick={() => setViewingExhibitor(ex)}><Eye className="w-4 h-4" /></Button>
                               {ex.status === 'pending' && (
                                 <>
@@ -627,6 +685,56 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Edit Exhibitor Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Pencil className="w-6 h-6" /> Modifier : {actingExhibitor?.companyName}</DialogTitle></DialogHeader>
+          <div className="py-6 space-y-6">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>Prénom</Label><Input value={editFormData.firstName} onChange={e => setEditFormData({...editFormData, firstName: e.target.value})} /></div>
+              <div className="space-y-2"><Label>Nom</Label><Input value={editFormData.lastName} onChange={e => setEditFormData({...editFormData, lastName: e.target.value})} /></div>
+              <div className="space-y-2 md:col-span-2"><Label>Enseigne</Label><Input value={editFormData.companyName} onChange={e => setEditFormData({...editFormData, companyName: e.target.value})} /></div>
+              <div className="space-y-2"><Label>Email</Label><Input type="email" value={editFormData.email} onChange={e => setEditFormData({...editFormData, email: e.target.value})} /></div>
+              <div className="space-y-2"><Label>Téléphone</Label><Input value={editFormData.phone} onChange={e => setEditFormData({...editFormData, phone: e.target.value})} /></div>
+            </div>
+            
+            <Separator />
+            
+            <div className="space-y-4">
+              <Label className="text-primary font-bold">Options Logistiques</Label>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <Label>Taille Emplacement</Label>
+                  <RadioGroup value={editFormData.requestedTables} onValueChange={(v: any) => setEditFormData({...editFormData, requestedTables: v})} className="flex flex-col gap-2">
+                    <div className="flex items-center space-x-2"><RadioGroupItem value="1" id="e-table-1" /><Label htmlFor="e-table-1">1 Table (1m75)</Label></div>
+                    <div className="flex items-center space-x-2"><RadioGroupItem value="2" id="e-table-2" /><Label htmlFor="e-table-2">2 Tables (3m50)</Label></div>
+                  </RadioGroup>
+                </div>
+                <div className="space-y-3">
+                  <Label>Repas Dimanche Midi</Label>
+                  <Input type="number" value={editFormData.sundayLunchCount} onChange={e => setEditFormData({...editFormData, sundayLunchCount: parseInt(e.target.value) || 0})} className="w-24" />
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap gap-4 pt-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="e-elec" checked={editFormData.needsElectricity} onCheckedChange={(v: any) => setEditFormData({...editFormData, needsElectricity: v})} />
+                  <Label htmlFor="e-elec">Electricité</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="e-grid" checked={editFormData.needsGrid} onCheckedChange={(v: any) => setEditFormData({...editFormData, needsGrid: v})} />
+                  <Label htmlFor="e-grid">Grille Expo</Label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsEditDialogOpen(false)}>Annuler</Button>
+            <Button onClick={handleEditSave} className="gap-2"><CheckCircle className="w-4 h-4" /> Enregistrer les modifications</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Individual Email Dialog */}
       <Dialog open={isIndividualEmailDialogOpen} onOpenChange={setIsIndividualEmailDialogOpen}>
