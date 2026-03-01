@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
@@ -745,13 +744,7 @@ export default function AdminDashboard() {
                   <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Prix Tombola</label><Input type="number" value={configForm.priceTombola} onChange={(e) => setConfigForm({...configForm, priceTombola: parseInt(e.target.value)})} /></div>
                 </div>
 
-                {/* SECTION 4: NOTIFICATIONS ADMIN */}
-                <div className="p-4 bg-muted/30 rounded-xl space-y-4">
-                   <h3 className="text-sm font-bold uppercase text-muted-foreground flex items-center gap-2 border-b pb-2"><Mail className="w-4 h-4" /> Notifications Admin</h3>
-                   <div className="space-y-2"><label className="text-xs font-bold">Email pour recevoir les alertes candidatures</label><Input value={configForm.notificationEmail} onChange={(e) => setConfigForm({...configForm, notificationEmail: e.target.value})} placeholder="admin@email.com" /></div>
-                </div>
-                
-                {/* SECTION 5: SMTP (GMAIL) */}
+                {/* SECTION 4: SMTP (GMAIL) */}
                 <div className="p-4 bg-primary/5 rounded-xl border-2 border-primary/10 space-y-4">
                   <div className="flex items-center gap-2 text-primary font-bold"><Mail className="w-5 h-5" /> Configuration SMTP (Gmail)</div>
                   <div className="grid md:grid-cols-2 gap-4">
@@ -775,10 +768,16 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* SECTION 6: SÉCURITÉ & ACCÈS */}
+                {/* SECTION 5: SÉCURITÉ & ACCÈS */}
                 <div className="p-4 bg-primary/5 rounded-xl border-2 border-primary/10 space-y-4">
                   <div className="flex items-center gap-2 text-primary font-bold"><Key className="w-5 h-5" /> Sécurité & Accès Admin</div>
                   <div className="space-y-2"><label className="text-xs font-bold uppercase text-muted-foreground">Code d'invitation secret (Création de compte)</label><Input value={configForm.signupCode} onChange={(e) => setConfigForm({...configForm, signupCode: e.target.value})} className="font-mono" /></div>
+                </div>
+
+                {/* SECTION 6: NOTIFICATIONS ADMIN */}
+                <div className="p-4 bg-muted/30 rounded-xl space-y-4">
+                   <h3 className="text-sm font-bold uppercase text-muted-foreground flex items-center gap-2 border-b pb-2"><Mail className="w-4 h-4" /> Notifications Admin</h3>
+                   <div className="space-y-2"><label className="text-xs font-bold">Email pour recevoir les alertes candidatures</label><Input value={configForm.notificationEmail} onChange={(e) => setConfigForm({...configForm, notificationEmail: e.target.value})} placeholder="admin@email.com" /></div>
                 </div>
 
                 <Button onClick={() => setDocumentNonBlocking(doc(db, 'market_configurations', currentConfig!.id), { ...configForm }, { merge: true })} className="w-full bg-primary h-12 text-lg font-bold">Sauvegarder toute la configuration</Button>

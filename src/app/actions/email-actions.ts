@@ -88,18 +88,44 @@ export async function sendAcceptanceEmail(exhibitor: any, customMessage: string,
     from: `"Le Marché de Félix" <${smtpUser}>`,
     to: exhibitor.email,
     subject: `Candidature retenue - Marché de Noël ${year}`,
-    text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
-
-Nous avons le plaisir de vous informer que votre candidature pour le Marché de Noël ${year} a été acceptée par notre comité.
-
-${customMessage ? `Note de l'organisateur :\n---------------------------\n${customMessage}\n---------------------------\n` : ''}
-
-Pour finaliser votre inscription, merci de compléter votre dossier technique en cliquant sur le lien ci-dessous :
-
-Lien : ${detailsLink}
-
-À bientôt !
-L'équipe "Un jardin pour Félix"`,
+    text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName}, Nous avons le plaisir de vous informer que votre candidature pour le Marché de Noël ${year} a été acceptée. Complétez votre dossier ici : ${detailsLink}`,
+    html: `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden;">
+        <div style="background-color: #2E3192; padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">Félicitations !</h1>
+        </div>
+        <div style="padding: 30px; line-height: 1.6;">
+          <p style="font-size: 16px;">Bonjour <strong>${exhibitor.firstName} ${exhibitor.lastName}</strong>,</p>
+          <p>Nous avons le plaisir de vous informer que votre candidature pour le <strong>Marché de Noël ${year}</strong> a été acceptée par notre comité.</p>
+          
+          ${customMessage ? `
+            <div style="background-color: #f8f9fa; border-left: 4px solid #2E3192; padding: 20px; margin: 25px 0; font-style: italic;">
+              <strong style="color: #2E3192; display: block; margin-bottom: 5px; font-style: normal;">Note de l'organisateur :</strong>
+              ${customMessage.replace(/\n/g, '<br/>')}
+            </div>
+          ` : ''}
+          
+          <p>Pour confirmer votre emplacement, merci de finaliser votre <strong>dossier technique</strong> en cliquant sur le bouton ci-dessous :</p>
+          
+          <div style="text-align: center; margin: 40px 0;">
+            <a href="${detailsLink}" style="background-color: #2E3192; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">Compléter mon dossier technique</a>
+          </div>
+          
+          <p style="font-size: 12px; color: #888; text-align: center; margin-top: 40px;">
+            Si le bouton ne s'affiche pas correctement, copiez ce lien :<br/>
+            <a href="${detailsLink}" style="color: #2E3192;">${detailsLink}</a>
+          </p>
+          
+          <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;" />
+          
+          <p style="margin: 0; font-weight: bold;">À bientôt !</p>
+          <p style="margin: 0;">L'équipe "Un jardin pour Félix"</p>
+        </div>
+        <div style="background-color: #f8f9fa; padding: 15px; text-align: center; font-size: 11px; color: #999;">
+          Association "Un jardin pour Félix" - Chazay d'Azergues
+        </div>
+      </div>
+    `,
   };
 
   try {
@@ -123,18 +149,27 @@ export async function sendRejectionEmail(exhibitor: any, justification: string, 
     from: `"Le Marché de Félix" <${smtpUser}>`,
     to: exhibitor.email,
     subject: `Candidature Marché de Noël ${year}`,
-    text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
-
-Nous sommes au regret de vous indiquer que votre candidature n'a pas été retenue par notre comité pour l'édition ${year}.
-
-Motif :
----------------------------
-${justification}
----------------------------
-
-Merci pour l'intérêt porté à notre marché.
-Bonne continuation dans vos projets.
-L'équipe "Un jardin pour Félix"`,
+    text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName}, Nous sommes au regret de vous indiquer que votre candidature n'a pas été retenue pour l'édition ${year}. Motif : ${justification}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
+        <div style="background-color: #f1f1f1; padding: 20px; text-align: center; border-bottom: 2px solid #ddd;">
+          <h2 style="margin: 0; color: #555;">Information Candidature</h2>
+        </div>
+        <div style="padding: 30px; line-height: 1.6;">
+          <p>Bonjour ${exhibitor.firstName} ${exhibitor.lastName},</p>
+          <p>Nous vous remercions de l'intérêt que vous portez à notre événement.</p>
+          <p>Toutefois, nous sommes au regret de vous indiquer que votre candidature n'a pas été retenue par notre comité pour l'édition <strong>${year}</strong>.</p>
+          
+          <div style="background-color: #fff5f5; border-left: 4px solid #f56565; padding: 20px; margin: 25px 0;">
+            <strong style="color: #c53030; display: block; margin-bottom: 5px;">Motif de la décision :</strong>
+            ${justification.replace(/\n/g, '<br/>')}
+          </div>
+          
+          <p>Nous vous souhaitons une excellente continuation dans vos projets artisanaux.</p>
+          <p>Merci pour votre compréhension.<br/>L'équipe "Un jardin pour Félix"</p>
+        </div>
+      </div>
+    `
   };
 
   try {
@@ -164,29 +199,49 @@ export async function sendFinalConfirmationEmail(exhibitor: any, details: any, m
   const sunDate = marketConfig?.sundayDate || "06/12/2026";
   const sunHours = marketConfig?.sundayHours || "10h à 17h30";
 
-  const mailText = `Bonjour ${exhibitor.firstName} ${exhibitor.lastName},
-
-Nous avons bien reçu votre dossier technique pour le Marché de Noël ${year}.
-
-DÉTAIL DU RÈGLEMENT :
-- Emplacement : ${standPrice} EUR (${exhibitor.requestedTables} table(s))
-- Électricité : ${electricityPrice} EUR
-- Repas : ${mealsPrice} EUR
-
-MONTANT TOTAL À RÉGLER : ${total} EUR
-
-Pour confirmer définitivement votre place, merci d'envoyer votre chèque libellé à l'ordre de "Les amis d'un Jardin pour Félix" à l'adresse suivante : 30 rue du Colombier 69380 CHAZAY D'AZERGUES.
-Le chèque doit nous parvenir dans les 15 jours après la réception de cet e-mail. Il sera encaissé 15 jours avant l'événement.
-
-Rappel des dates et heures : samedi ${satDate} de ${satHours} et le dimanche ${sunDate} de ${sunHours} à la salle Maurice Baquet, rue Pierre Coubertin.
-
-L'équipe "Un jardin pour Félix"`;
-
   const mailOptions = {
     from: `"Le Marché de Félix" <${smtpUser}>`,
     to: exhibitor.email,
     subject: `Confirmation dossier - ${exhibitor.companyName}`,
-    text: mailText,
+    text: `Bonjour ${exhibitor.firstName} ${exhibitor.lastName}, Nous avons bien reçu votre dossier technique. Total à régler : ${total} EUR.`,
+    html: `
+      <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
+        <div style="background-color: #2E3192; padding: 25px; text-align: center;">
+          <h2 style="color: white; margin: 0;">Dossier reçu !</h2>
+        </div>
+        <div style="padding: 30px; line-height: 1.6;">
+          <p>Bonjour ${exhibitor.firstName} ${exhibitor.lastName},</p>
+          <p>Nous avons bien reçu votre dossier technique pour le <strong>Marché de Noël ${year}</strong>.</p>
+          
+          <div style="background-color: #f0f4f8; border-radius: 8px; padding: 20px; margin: 25px 0;">
+            <h3 style="margin-top: 0; color: #2E3192; border-bottom: 1px solid #d0dbe5; padding-bottom: 10px;">Récapitulatif financier</h3>
+            <table style="width: 100%; font-size: 14px;">
+              <tr><td>Emplacement (${exhibitor.requestedTables} table(s))</td><td style="text-align: right;">${standPrice} €</td></tr>
+              ${electricityPrice > 0 ? `<tr><td>Option Électricité</td><td style="text-align: right;">${electricityPrice} €</td></tr>` : ''}
+              ${mealsPrice > 0 ? `<tr><td>Plateaux repas (${details.sundayLunchCount})</td><td style="text-align: right;">${mealsPrice} €</td></tr>` : ''}
+              <tr style="font-weight: bold; font-size: 18px; color: #2E3192;"><td style="padding-top: 15px;">TOTAL À RÉGLER</td><td style="padding-top: 15px; text-align: right;">${total} €</td></tr>
+            </table>
+          </div>
+          
+          <div style="background-color: #fffaf0; border: 1px dashed #ed8936; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+            <p style="margin: 0; font-size: 14px;">
+              <strong>Règlement par chèque :</strong><br/>
+              Merci d'envoyer votre chèque libellé à l'ordre de <strong>"Les amis d'un Jardin pour Félix"</strong> à l'adresse :<br/>
+              <em>30 rue du Colombier 69380 CHAZAY D'AZERGUES</em>.
+            </p>
+            <p style="font-size: 12px; color: #666; margin-top: 10px;">
+              Le chèque doit nous parvenir sous 15 jours. Il sera encaissé environ 15 jours avant l'événement.
+            </p>
+          </div>
+
+          <p style="font-size: 14px;">
+            <strong>Rappel :</strong> Rendez-vous le <strong>samedi ${satDate}</strong> dès ${satHours} et le <strong>dimanche ${sunDate}</strong> à partir de ${sunHours} à la salle Maurice Baquet.
+          </p>
+          
+          <p>À bientôt !<br/>L'équipe "Un jardin pour Félix"</p>
+        </div>
+      </div>
+    `
   };
 
   try {
