@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
@@ -8,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare, FileText, X as XIcon, Map as MapIcon, Lock, ExternalLink, AlertTriangle, Link2, Star, TrendingUp } from 'lucide-react';
+import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare, FileText, X as XIcon, Map as MapIcon, Lock, ExternalLink, AlertTriangle, Link2, Star, TrendingUp, CreditCard, Shield } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -295,7 +294,7 @@ export default function AdminDashboard() {
       body = freeBulkEmail.body;
     }
 
-    const confirmedExhibitors = filteredExhibitors.filter(e => e.status === 'validated');
+    const confirmedExhibitors = filteredExhibitors.filter(e => e.status === 'validated' || e.status === 'submitted_form2');
     if (confirmedExhibitors.length === 0) return;
     
     setIsSending(true);
@@ -697,7 +696,7 @@ export default function AdminDashboard() {
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Send className="w-6 h-6" /> Message groupé</DialogTitle></DialogHeader>
           <div className="py-6 space-y-6">
-            <Badge variant="secondary" className="px-4 py-2">Destinataires : {filteredExhibitors.filter(e => e.status === 'validated').length} validés</Badge>
+            <Badge variant="secondary" className="px-4 py-2">Destinataires : {filteredExhibitors.filter(e => e.status === 'validated' || e.status === 'submitted_form2').length} acceptés</Badge>
             
             <Tabs value={bulkEmailMode} onValueChange={(v: any) => setBulkEmailMode(v)}>
               <TabsList className="grid w-full grid-cols-2">
@@ -762,19 +761,156 @@ export default function AdminDashboard() {
       </Dialog>
 
       <Dialog open={!!viewingExhibitor} onOpenChange={o => !o && setViewingExhibitor(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh]"><DialogHeader><DialogTitle>Fiche {viewingExhibitor?.companyName}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Fiche : {viewingExhibitor?.companyName}</span>
+              <Badge variant={viewingExhibitor ? getStatusVariant(viewingExhibitor.status) : "outline"}>
+                {viewingExhibitor ? getStatusLabel(viewingExhibitor.status) : ""}
+              </Badge>
+            </DialogTitle>
+          </DialogHeader>
           <ScrollArea className="h-[70vh] pr-4">
              {viewingExhibitor && (
-               <div className="space-y-8 p-4">
-                 <div className="grid md:grid-cols-2 gap-8">
-                   <div className="space-y-2"><p className="text-xs font-bold uppercase text-muted-foreground">Contact</p><p className="font-bold">{viewingExhibitor.firstName} {viewingExhibitor.lastName}</p><p className="text-sm">{viewingExhibitor.email}</p><p className="text-sm">{viewingExhibitor.phone}</p></div>
-                   <div className="space-y-2"><p className="text-xs font-bold uppercase text-muted-foreground">Lieu</p><p className="text-sm">{viewingExhibitor.address}</p><p className="text-sm">{viewingExhibitor.postalCode} {viewingExhibitor.city}</p></div>
+               <div className="space-y-10 p-4">
+                 {/* Section 1: Candidature Initiale */}
+                 <div className="space-y-6">
+                   <h3 className="text-sm font-bold uppercase text-primary border-b pb-2 flex items-center gap-2">
+                     <FileText className="w-4 h-4" /> 1. Candidature Initiale
+                   </h3>
+                   <div className="grid md:grid-cols-2 gap-8">
+                     <div className="space-y-3">
+                       <p className="text-xs font-bold uppercase text-muted-foreground">Coordonnées</p>
+                       <p className="font-bold">{viewingExhibitor.firstName} {viewingExhibitor.lastName}</p>
+                       <p className="text-sm flex items-center gap-2"><Mail className="w-3 h-3" /> {viewingExhibitor.email}</p>
+                       <p className="text-sm flex items-center gap-2"><Clock className="w-3 h-3" /> {viewingExhibitor.phone}</p>
+                       <p className="text-sm pt-2">{viewingExhibitor.address}<br/>{viewingExhibitor.postalCode} {viewingExhibitor.city}</p>
+                     </div>
+                     <div className="space-y-3">
+                       <p className="text-xs font-bold uppercase text-muted-foreground">Profil Exposant</p>
+                       <div className="flex flex-wrap gap-2">
+                         <Badge variant="outline">{viewingExhibitor.isRegistered ? "Professionnel" : "Particulier"}</Badge>
+                         <Badge variant="secondary">{viewingExhibitor.requestedTables} table(s)</Badge>
+                       </div>
+                       {viewingExhibitor.websiteUrl && (
+                         <a href={viewingExhibitor.websiteUrl} target="_blank" className="text-sm text-primary flex items-center gap-1 hover:underline">
+                           <ExternalLink className="w-3 h-3" /> Site / Réseaux
+                         </a>
+                       )}
+                       <p className="text-xs text-muted-foreground mt-4 italic">Inscrit le {new Date(viewingExhibitor.createdAt).toLocaleDateString()}</p>
+                     </div>
+                   </div>
+                   <div className="space-y-2">
+                     <p className="text-xs font-bold uppercase text-muted-foreground">Description Stand & Produits</p>
+                     <p className="text-sm bg-muted/30 p-4 rounded-lg border leading-relaxed">{viewingExhibitor.productDescription}</p>
+                   </div>
+                   {viewingExhibitor.productImages && (
+                     <div className="space-y-2">
+                       <p className="text-xs font-bold uppercase text-muted-foreground">Galerie Photos Produits</p>
+                       <div className="grid grid-cols-3 gap-4">
+                         {viewingExhibitor.productImages.map((img, i) => (
+                           <a key={i} href={img} target="_blank" className="relative aspect-square block overflow-hidden rounded-lg border shadow-sm group">
+                             <img src={img} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                             <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                               <ExternalLink className="text-white w-6 h-6" />
+                             </div>
+                           </a>
+                         ))}
+                       </div>
+                     </div>
+                   )}
                  </div>
-                 <div className="space-y-2"><p className="text-xs font-bold uppercase text-muted-foreground">Stand</p><div className="flex gap-2"><Badge>{viewingExhibitor.requestedTables} table(s)</Badge><Badge variant="outline">{viewingExhibitor.isRegistered ? "Pro" : "Particulier"}</Badge></div><p className="text-sm bg-muted/30 p-4 rounded-lg border mt-2">{viewingExhibitor.productDescription}</p></div>
-                 {viewingExhibitor.productImages && <div className="grid grid-cols-3 gap-4">{viewingExhibitor.productImages.map((img, i) => <img key={i} src={img} className="rounded border aspect-square object-cover" />)}</div>}
+
+                 {/* Section 2: Dossier Technique */}
+                 {viewingExhibitor.detailedInfo ? (
+                   <div className="space-y-6 pt-6 border-t">
+                     <h3 className="text-sm font-bold uppercase text-primary border-b pb-2 flex items-center gap-2">
+                       <Zap className="w-4 h-4" /> 2. Dossier Technique (Finalisation)
+                     </h3>
+                     <div className="grid md:grid-cols-2 gap-8">
+                       <div className="space-y-4">
+                         <div className="space-y-1">
+                           <p className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1"><CreditCard className="w-3 h-3" /> Administratif</p>
+                           {viewingExhibitor.detailedInfo.siret && <p className="text-sm">SIRET : <strong>{viewingExhibitor.detailedInfo.siret}</strong></p>}
+                           <div className="mt-2">
+                             <p className="text-[10px] mb-1">Pièce d'identité :</p>
+                             <a href={viewingExhibitor.detailedInfo.idCardPhoto} target="_blank" className="block relative aspect-video w-full max-w-[250px] border rounded overflow-hidden">
+                               <img src={viewingExhibitor.detailedInfo.idCardPhoto} className="w-full h-full object-cover" />
+                             </a>
+                           </div>
+                         </div>
+                         <div className="space-y-1">
+                           <p className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1"><Shield className="w-3 h-3" /> Assurance & Accord</p>
+                           <p className="text-sm">Cie : {viewingExhibitor.detailedInfo.insuranceCompany || "N/A"}</p>
+                           <p className="text-sm">Police : {viewingExhibitor.detailedInfo.insurancePolicyNumber || "N/A"}</p>
+                           <div className="flex gap-2 mt-1">
+                             {viewingExhibitor.detailedInfo.agreedToImageRights && <Badge variant="outline" className="text-[10px]">Droit Image OK</Badge>}
+                             {viewingExhibitor.detailedInfo.agreedToTerms && <Badge variant="outline" className="text-[10px]">Règlement OK</Badge>}
+                           </div>
+                         </div>
+                       </div>
+                       <div className="space-y-4">
+                         <div className="space-y-1">
+                           <p className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1"><Settings className="w-3 h-3" /> Logistique</p>
+                           <div className="flex flex-col gap-2">
+                             <div className="flex items-center justify-between text-sm bg-muted/20 p-2 rounded">
+                               <span className="flex items-center gap-2"><Zap className="w-3 h-3 text-amber-500" /> Électricité</span>
+                               <Badge variant={viewingExhibitor.detailedInfo.needsElectricity ? "default" : "secondary"}>{viewingExhibitor.detailedInfo.needsElectricity ? "OUI" : "NON"}</Badge>
+                             </div>
+                             <div className="flex items-center justify-between text-sm bg-muted/20 p-2 rounded">
+                               <span className="flex items-center gap-2"><LayoutGrid className="w-3 h-3 text-blue-500" /> Grille Expo</span>
+                               <Badge variant={viewingExhibitor.detailedInfo.needsGrid ? "default" : "secondary"}>{viewingExhibitor.detailedInfo.needsGrid ? "OUI" : "NON"}</Badge>
+                             </div>
+                             <div className="flex items-center justify-between text-sm bg-muted/20 p-2 rounded">
+                               <span className="flex items-center gap-2"><Utensils className="w-3 h-3 text-green-500" /> Repas Dimanche</span>
+                               <Badge>{viewingExhibitor.detailedInfo.sundayLunchCount || 0}</Badge>
+                             </div>
+                           </div>
+                         </div>
+                         <div className="space-y-1">
+                           <p className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1"><Gift className="w-3 h-3" /> Tombola Solidaire</p>
+                           <p className="text-sm">{viewingExhibitor.detailedInfo.tombolaLot ? "✅ Offre un lot" : "❌ Pas de lot"}</p>
+                           {viewingExhibitor.detailedInfo.tombolaLotDescription && (
+                             <p className="text-xs italic bg-amber-50 p-2 rounded border border-amber-100 mt-1">
+                               "{viewingExhibitor.detailedInfo.tombolaLotDescription}"
+                             </p>
+                           )}
+                         </div>
+                       </div>
+                     </div>
+                     {viewingExhibitor.detailedInfo.additionalComments && (
+                       <div className="space-y-2">
+                         <p className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Commentaires supplémentaires</p>
+                         <p className="text-sm bg-primary/5 p-4 rounded-lg border italic">"{viewingExhibitor.detailedInfo.additionalComments}"</p>
+                       </div>
+                     )}
+                   </div>
+                 ) : (
+                   <div className="p-8 border-2 border-dashed rounded-xl text-center bg-muted/10">
+                     <Clock className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
+                     <p className="text-sm text-muted-foreground font-medium">Le dossier technique n'a pas encore été complété par l'artisan.</p>
+                     <p className="text-[10px] text-muted-foreground">Une fois l'étape 1 validée, l'exposant reçoit un lien pour remplir ces informations.</p>
+                   </div>
+                 )}
+
+                 {/* Section 3: Refus (si applicable) */}
+                 {viewingExhibitor.status === 'rejected' && viewingExhibitor.rejectionJustification && (
+                   <div className="space-y-2 pt-6 border-t">
+                     <h3 className="text-sm font-bold uppercase text-destructive border-b pb-2 flex items-center gap-2">
+                       <XCircle className="w-4 h-4" /> Motif du refus
+                     </h3>
+                     <p className="text-sm bg-destructive/5 p-4 rounded-lg border border-destructive/10 italic leading-relaxed">
+                       {viewingExhibitor.rejectionJustification}
+                     </p>
+                   </div>
+                 )}
                </div>
              )}
           </ScrollArea>
+          <DialogFooter className="mt-4 flex sm:justify-between items-center gap-4">
+             <div className="text-[10px] text-muted-foreground">ID : {viewingExhibitor?.id}</div>
+             <Button variant="outline" onClick={() => setViewingExhibitor(null)}>Fermer</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
