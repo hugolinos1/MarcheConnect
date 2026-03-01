@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { Gift, TreePine, Star, ChevronRight, Info, ShoppingBag, Calendar, ShieldCheck } from 'lucide-react';
+import { Gift, TreePine, Star, ChevronRight, Info, ShoppingBag, Calendar, ShieldCheck, Facebook } from 'lucide-react';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
@@ -126,6 +126,11 @@ export default function Home() {
                     <Button variant="outline" size="sm" className="gap-2 border-primary text-primary hover:bg-primary/10" asChild>
                       <a href="https://www.lemarchedefelix.com/" target="_blank" rel="noopener noreferrer">
                         <ShoppingBag className="w-4 h-4" /> Boutique Solidaire
+                      </a>
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-2 border-blue-600 text-blue-600 hover:bg-blue-600/10" asChild>
+                      <a href="https://www.facebook.com/lemarchedeFelix" target="_blank" rel="noopener noreferrer">
+                        <Facebook className="w-4 h-4" /> Facebook du Marché
                       </a>
                     </Button>
                   </div>
