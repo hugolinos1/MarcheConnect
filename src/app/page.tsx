@@ -124,7 +124,7 @@ export default function Home() {
                       </a>
                     </Button>
                     <Button variant="outline" size="sm" className="gap-2 border-primary text-primary hover:bg-primary/10" asChild>
-                      <a href="https://boutique.unjardinpourfelix.com" target="_blank" rel="noopener noreferrer">
+                      <a href="https://www.lemarchedefelix.com/" target="_blank" rel="noopener noreferrer">
                         <ShoppingBag className="w-4 h-4" /> Boutique Solidaire
                       </a>
                     </Button>
