@@ -437,6 +437,7 @@ export default function AdminDashboard() {
         <Tabs defaultValue="exhibitors">
           <TabsList className="mb-6">
             <TabsTrigger value="exhibitors">Exposants</TabsTrigger>
+            <TabsTrigger value="map">Carte</TabsTrigger>
             <TabsTrigger value="settings">Configuration</TabsTrigger>
             <TabsTrigger value="admins">Administrateurs</TabsTrigger>
           </TabsList>
@@ -503,6 +504,12 @@ export default function AdminDashboard() {
                     })}
                 </TableBody>
               </Table>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="map" className="space-y-6">
+            <Card className="p-4">
+              <AdminMap exhibitors={exhibitorsData || []} onViewExhibitor={setViewingExhibitor} />
             </Card>
           </TabsContent>
 
