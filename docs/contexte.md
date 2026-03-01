@@ -3,7 +3,6 @@
 
 ## 1. Présentation Générale
 **MarcheConnect** est une application web développée pour l'association "Un jardin pour Félix". Elle vise à automatiser et centraliser la gestion des candidatures des artisans et créateurs pour le Marché de Noël annuel de Chazay d'Azergues.
-
 L'application remplace les échanges d'emails manuels par un workflow structuré en deux étapes, garantissant une collecte de données propre et un suivi rigoureux des dossiers administratifs et financiers.
 
 ## 2. Architecture Technique
@@ -11,38 +10,41 @@ L'application remplace les échanges d'emails manuels par un workflow structuré
 - **Langage :** TypeScript
 - **Base de données :** Firebase Firestore (NoSQL)
 - **Authentification :** Firebase Auth (Email/Mot de passe)
-- **IA :** Genkit (Modèle Gemini 2.5 Flash) pour l'assistance à la rédaction des refus.
-- **Emails :** Nodemailer (via SMTP Gmail avec mot de passe d'application).
-- **Composants UI :** Shadcn/UI, Tailwind CSS, Lucide Icons, Leaflet (Cartographie).
+- **IA :** Genkit (Modèle Gemini 2.5 Flash) pour l'assistance à la rédaction
+- **Emails :** Nodemailer (via SMTP Gmail)
+- **Composants UI :** Shadcn/UI, Tailwind CSS, Lucide Icons, Leaflet (Cartographie)
 
-## 3. Parcours Utilisateur
+## 3. Entités de Données (Firestore)
+- **market_configurations :** Paramètres globaux de l'édition (Année, Prix des tables, Date du marché, etc.).
+- **pre_registrations :** Dossiers des exposants incluant les données de l'Étape 1 (candidature) et de l'Étape 2 (dossier technique).
+- **email_templates :** Modèles d'emails pré-enregistrés pour les communications récurrentes.
+- **roles_admin :** Liste des utilisateurs ayant accès au back-office avec distinction Super Admin.
+- **admin_requests :** Demandes de création de compte administrateur en attente de validation.
 
-### A. Exposant (Candidat)
-1. **Étape 1 (Candidature) :** Formulaire public collectant les informations de base, la nature du stand et 3 photos (compressées localement).
-2. **Étape 2 (Dossier Technique) :** Accessible via un lien unique après acceptation. Collecte du SIRET, pièce d'identité, besoins logistiques (électricité, grilles), assurance et commande de repas.
-3. **Paiement :** Calculateur dynamique du montant total dû à régler par chèque.
+## 4. Fonctionnalités Clés
 
-### B. Administrateur
-1. **Pilotage :** Dashboard avec statistiques et suivi visuel des délais (Attente Dossier / Paiement) affichés directement sous le badge de statut.
-2. **Communication :** 
-   - Envoi d'emails individuels avec bouton CTA vers le dossier technique.
-   - Envoi d'emails groupés aux exposants confirmés.
-   - Éditeur de texte enrichi (gras, italique, etc.) pour des messages personnalisés.
-3. **Logistique :** 
-   - Cartographie interactive pour visualiser le rayonnement des artisans.
-   - Édition directe des fiches exposants (icône crayon à gauche de la poubelle) pour ajuster les besoins.
-   - Export Excel exhaustif de toutes les données (Étape 1 + Étape 2).
+### A. Parcours Exposant
+- **Candidature (Étape 1) :** Collecte des informations de base, description des produits et téléchargement de 3 photos (compressées côté client).
+- **Dossier Technique (Étape 2) :** Formulaire accessible via lien unique. Gestion du SIRET, photo d'identité, besoins électriques, grilles d'expo, et commande de repas.
+- **Calculateur de Frais :** Génération dynamique du montant total à régler en fonction des options choisies.
 
-## 4. Configuration & Sécurité
-- **Paramétrage Global :** Gestion de l'affiche, des dates, des horaires et de la grille tarifaire.
-- **Outils SMTP :** Configuration sécurisée Gmail avec test d'envoi vers une destination personnalisable et visibilité des mots de passe (icône œil).
-- **Master Admin :** Accès prioritaire codé pour `hugues.rabier@gmail.com`.
-- **Gestion d'Équipe :** Système de validation des nouveaux admins et gestion des droits Super Admin.
+### B. Gestion Administrateur
+- **Dashboard :** Vue d'ensemble des statistiques et suivi des délais ("Attente Dossier" ou "Attente Paiement") avec alertes visuelles après 15 jours.
+- **Outils de Communication :**
+  - Envoi d'emails groupés (aux confirmés).
+  - Envoi d'emails individuels avec insertion dynamique d'un bouton (CTA) vers le dossier technique.
+  - Éditeur de texte libre avec barre d'outils d'enrichissement.
+- **Aide à la Décision IA :** Génération de messages de refus personnalisés et argumentés basés sur le contenu de la candidature.
+- **Cartographie :** Géolocalisation automatique des artisans pour visualiser le rayonnement local du marché.
+- **Export Data :** Export Excel complet de tous les champs (Step 1 + Step 2) pour la gestion comptable et logistique.
 
-## 5. Entités Firestore
-- `market_configurations` : Paramètres de l'édition annuelle.
-- `pre_registrations` : Dossiers des exposants (Étape 1 + Étape 2).
-- `email_templates` : Modèles de communication pré-enregistrés.
-- `roles_admin` : Privilèges des utilisateurs du back-office.
-- `admin_requests` : Demandes de création de compte en attente.
-- `exhibitor_details` : Données techniques détaillées (Étape 2).
+### C. Configuration & Sécurité
+- **Master Admin :** Accès prioritaire codé en dur pour `hugues.rabier@gmail.com`.
+- **Gestion des Rôles :** Les Super Admins peuvent valider de nouveaux administrateurs et gérer les privilèges de l'équipe.
+- **SMTP Tooling :** Configuration des identifiants Gmail avec masquage/affichage du mot de passe et outil de test vers une destination au choix.
+
+## 5. Règles de Sécurité
+Les règles Firestore (`firestore.rules`) sont configurées pour :
+- Permettre la lecture publique des configurations de marché.
+- Permettre aux exposants de créer leur fiche et de mettre à jour leur dossier technique (via ID unique).
+- Restreindre l'accès à la liste complète et aux outils d'édition/suppression aux seuls administrateurs authentifiés et validés.
