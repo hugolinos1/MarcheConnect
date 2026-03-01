@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
@@ -13,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
-import { sendAcceptanceEmail, sendRejectionEmail, sendBulkEmailAction, sendTestEmailAction } from '@/app/actions/email-actions';
+import { sendAcceptanceEmail, sendRejectionEmail, sendBulkEmailAction, sendTestEmailAction, sendCustomIndividualEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useMemoFirebase, useCollection, useUser, useAuth, useDoc } from '@/firebase';
 import { collection, doc, query, orderBy, where } from 'firebase/firestore';
@@ -23,6 +22,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import * as XLSX from 'xlsx';
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
 import { differenceInDays } from 'date-fns';
@@ -67,6 +68,7 @@ export default function AdminDashboard() {
   const { user, isUserLoading } = useUser();
   const templateTextareaRef = useRef<HTMLTextAreaElement>(null);
   const freeBulkEmailRef = useRef<HTMLTextAreaElement>(null);
+  const individualEmailRef = useRef<HTMLTextAreaElement>(null);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [isAuthLoading, setIsAuthLoading] = useState(false);
@@ -81,12 +83,17 @@ export default function AdminDashboard() {
   const [isAcceptDialogOpen, setIsAcceptDialogOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [isBulkEmailDialogOpen, setIsBulkEmailDialogOpen] = useState(false);
+  const [isIndividualEmailDialogOpen, setIsIndividualEmailDialogOpen] = useState(false);
   const [actingExhibitor, setActingExhibitor] = useState<Exhibitor | null>(null);
   
   const [bulkEmailMode, setBulkEmailMode] = useState<'template' | 'free'>('template');
+  const [individualEmailMode, setIndividualEmailMode] = useState<'template' | 'free'>('template');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [freeBulkEmail, setFreeBulkEmail] = useState({ subject: '', body: '' });
+  const [individualEmail, setIndividualEmail] = useState({ subject: '', body: '' });
+  const [includeDossierLink, setIncludeDossierLink] = useState(false);
   const [isFreeEmailPreview, setIsFreeEmailPreview] = useState(false);
+  const [isIndividualEmailPreview, setIsIndividualEmailPreview] = useState(false);
   const [isTemplatePreviewMode, setIsTemplatePreviewMode] = useState(false);
   const [isTemplateFormVisible, setIsTemplateFormVisible] = useState(false);
   
@@ -147,11 +154,6 @@ export default function AdminDashboard() {
     // Sort by date DESC client-side (Last registered first)
     return [...filtered].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [exhibitorsData, searchTerm]);
-
-  const confirmedExhibitors = useMemo(() => {
-    if (!exhibitorsData) return [];
-    return exhibitorsData.filter(e => e.status === 'validated');
-  }, [exhibitorsData]);
 
   const stats = useMemo(() => {
     if (!exhibitorsData) return { total: 0, pending: 0, accepted: 0, rejected: 0, validated: 0, submitted: 0, revenue: 0 };
@@ -250,6 +252,33 @@ export default function AdminDashboard() {
     setIsSendingTest(false);
   };
 
+  const handleIndividualEmailSend = async () => {
+    if (!actingExhibitor) return;
+    let subject = '';
+    let body = '';
+    
+    if (individualEmailMode === 'template') {
+      const template = templates?.find(t => t.id === selectedTemplateId);
+      if (!template) return;
+      subject = template.subject;
+      body = template.body;
+    } else {
+      if (!individualEmail.subject || !individualEmail.body) return;
+      subject = individualEmail.subject;
+      body = individualEmail.body;
+    }
+
+    setIsSending(true);
+    const res = await sendCustomIndividualEmail(actingExhibitor, subject, body, includeDossierLink, configForm);
+    if (res.success) toast({ title: "Email envoyé à " + actingExhibitor.companyName });
+    else toast({ variant: "destructive", title: "Erreur", description: res.error });
+    
+    setIsIndividualEmailDialogOpen(false);
+    setIsSending(false);
+    setIndividualEmail({ subject: '', body: '' });
+    setIncludeDossierLink(false);
+  };
+
   const handleBulkEmailSend = async () => {
     let subject = '';
     let body = '';
@@ -265,6 +294,7 @@ export default function AdminDashboard() {
       body = freeBulkEmail.body;
     }
 
+    const confirmedExhibitors = filteredExhibitors.filter(e => e.status === 'validated');
     if (confirmedExhibitors.length === 0) return;
     
     setIsSending(true);
@@ -455,6 +485,7 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
+                              <Button variant="outline" size="sm" onClick={() => { setActingExhibitor(ex); setIsIndividualEmailDialogOpen(true); }} className="text-primary border-primary/20"><Mail className="w-4 h-4" /></Button>
                               <Button variant="outline" size="sm" onClick={() => setViewingExhibitor(ex)}><Eye className="w-4 h-4" /></Button>
                               {ex.status === 'pending' && (
                                 <>
@@ -588,11 +619,76 @@ export default function AdminDashboard() {
         </Tabs>
       </main>
 
+      {/* Individual Email Dialog */}
+      <Dialog open={isIndividualEmailDialogOpen} onOpenChange={setIsIndividualEmailDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Mail className="w-6 h-6" /> Email à {actingExhibitor?.companyName}</DialogTitle></DialogHeader>
+          <div className="py-6 space-y-6">
+            <Tabs value={individualEmailMode} onValueChange={(v: any) => setIndividualEmailMode(v)}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="template">Modèle</TabsTrigger>
+                <TabsTrigger value="free">Message libre</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="template" className="pt-4 space-y-4">
+                <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                  <SelectTrigger><SelectValue placeholder="Choisir un modèle..." /></SelectTrigger>
+                  <SelectContent>{templates?.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+                </Select>
+                {selectedTemplateId && (
+                  <div className="p-4 border rounded-xl bg-muted/20 max-h-60 overflow-y-auto">
+                    <p className="text-sm font-bold mb-2">Sujet : {templates?.find(t => t.id === selectedTemplateId)?.subject}</p>
+                    <div className="text-sm prose max-w-none" dangerouslySetInnerHTML={{ __html: templates?.find(t => t.id === selectedTemplateId)?.body || "" }} />
+                  </div>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="free" className="pt-4 space-y-4">
+                <Input placeholder="Sujet..." value={individualEmail.subject} onChange={e => setIndividualEmail({...individualEmail, subject: e.target.value})} />
+                <div className="space-y-2">
+                  <EditorToolbar 
+                    textareaRef={individualEmailRef} 
+                    setter={setIndividualEmail} 
+                    isPreview={isIndividualEmailPreview} 
+                    onTogglePreview={() => setIsIndividualEmailPreview(!isIndividualEmailPreview)} 
+                  />
+                  {!isIndividualEmailPreview ? (
+                    <Textarea 
+                      ref={individualEmailRef} 
+                      placeholder="Message..." 
+                      value={individualEmail.body} 
+                      onChange={e => setIndividualEmail({...individualEmail, body: e.target.value})} 
+                      rows={6} 
+                      className="font-mono text-xs rounded-t-none" 
+                    />
+                  ) : (
+                    <div className="p-4 bg-white border border-t-0 rounded-b-lg min-h-[150px] text-sm prose max-w-none" dangerouslySetInnerHTML={{ __html: individualEmail.body }} />
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            <div className="flex items-center space-x-2 p-3 bg-primary/5 rounded-lg border border-primary/10">
+              <Checkbox id="include-link" checked={includeDossierLink} onCheckedChange={(v: any) => setIncludeDossierLink(v)} />
+              <Label htmlFor="include-link" className="text-sm font-bold cursor-pointer flex items-center gap-2">
+                <Link2 className="w-4 h-4" /> Inclure un bouton vers le dossier technique
+              </Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsIndividualEmailDialogOpen(false)}>Annuler</Button>
+            <Button onClick={handleIndividualEmailSend} disabled={isSending || (individualEmailMode === 'template' && !selectedTemplateId) || (individualEmailMode === 'free' && (!individualEmail.subject || !individualEmail.body))} className="gap-2">
+              {isSending ? <Loader2 className="animate-spin" /> : "Envoyer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isBulkEmailDialogOpen} onOpenChange={setIsBulkEmailDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Send className="w-6 h-6" /> Message groupé</DialogTitle></DialogHeader>
           <div className="py-6 space-y-6">
-            <Badge variant="secondary" className="px-4 py-2">Destinataires : {confirmedExhibitors.length} validés</Badge>
+            <Badge variant="secondary" className="px-4 py-2">Destinataires : {filteredExhibitors.filter(e => e.status === 'validated').length} validés</Badge>
             
             <Tabs value={bulkEmailMode} onValueChange={(v: any) => setBulkEmailMode(v)}>
               <TabsList className="grid w-full grid-cols-2">

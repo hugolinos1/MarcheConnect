@@ -32,10 +32,6 @@ function createTransporter(marketConfig?: any) {
   const user = (marketConfig?.smtpUser || process.env.SMTP_USER || "").trim();
   const pass = (marketConfig?.smtpPass || process.env.SMTP_PASS || "").trim();
 
-  if (!user || !pass) {
-    console.warn("SMTP_USER ou SMTP_PASS manquant.");
-  }
-
   return nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -46,6 +42,55 @@ function createTransporter(marketConfig?: any) {
     greetingTimeout: 15000,
     socketTimeout: 30000,
   });
+}
+
+/**
+ * Envoie un email personnalisé à un exposant individuel.
+ */
+export async function sendCustomIndividualEmail(exhibitor: any, subject: string, body: string, includeDossierLink: boolean, marketConfig: any) {
+  const transporter = createTransporter(marketConfig);
+  const baseUrl = await getBaseUrl();
+  const detailsLink = `${baseUrl}/details/${exhibitor.id}`;
+  const smtpUser = (marketConfig?.smtpUser || process.env.SMTP_USER || "").trim();
+
+  const mailOptions = {
+    from: `"Le Marché de Félix" <${smtpUser}>`,
+    to: exhibitor.email,
+    subject: subject,
+    text: body.replace(/<[^>]*>?/gm, ''),
+    html: `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden;">
+        <div style="background-color: #2E3192; padding: 25px; text-align: center;">
+          <h2 style="color: white; margin: 0;">Message de l'organisateur</h2>
+        </div>
+        <div style="padding: 30px; line-height: 1.6;">
+          <p>Bonjour ${exhibitor.firstName} ${exhibitor.lastName},</p>
+          <div style="margin: 20px 0;">
+            ${body}
+          </div>
+          
+          ${includeDossierLink ? `
+            <div style="text-align: center; margin: 35px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
+              <p style="margin-bottom: 15px; font-weight: bold;">Accès à votre dossier technique :</p>
+              <a href="${detailsLink}" style="background-color: #2E3192; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Compléter mon dossier</a>
+              <p style="font-size: 11px; color: #888; margin-top: 15px;">Lien direct : <a href="${detailsLink}" style="color: #2E3192;">${detailsLink}</a></p>
+            </div>
+          ` : ''}
+          
+          <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;" />
+          <p style="margin: 0;">L'équipe "Un jardin pour Félix"</p>
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return { success: true };
+  } catch (error: any) {
+    console.error('SMTP Error (Individual Custom):', error);
+    return { success: false, error: error.message };
+  }
 }
 
 /**
