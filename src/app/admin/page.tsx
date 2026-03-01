@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare, FileText, X as XIcon, Map as MapIcon, Lock, ExternalLink, AlertTriangle, Link2, Star } from 'lucide-react';
+import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare, FileText, X as XIcon, Map as MapIcon, Lock, ExternalLink, AlertTriangle, Link2, Star, TrendingUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import * as XLSX from 'xlsx';
 import { generateRejectionJustification } from '@/ai/flows/generate-rejection-justification';
+import { differenceInDays } from 'date-fns';
 
 // Helper for status display
 export const getStatusLabel = (status: ApplicationStatus): string => {
@@ -100,7 +101,8 @@ export default function AdminDashboard() {
   const userRoleRef = useMemoFirebase(() => user ? doc(db, 'roles_admin', user.uid) : null, [db, user]);
   const { data: userRoleDoc, isLoading: isRoleLoading } = useDoc(userRoleRef);
   
-  const isSuperAdmin = user?.email === "hugues.rabier@gmail.com" || !!userRoleDoc?.isSuperAdmin;
+  const isMasterAdmin = user?.email === "hugues.rabier@gmail.com";
+  const isSuperAdmin = isMasterAdmin || !!userRoleDoc?.isSuperAdmin;
   const isAuthorized = isSuperAdmin || !!userRoleDoc;
 
   const marketConfigsQuery = useMemoFirebase(() => query(collection(db, 'market_configurations'), orderBy('marketYear', 'desc')), [db]);
@@ -327,6 +329,19 @@ export default function AdminDashboard() {
     </div>
   );
 
+  const getExhibitorDelay = (ex: Exhibitor) => {
+    const now = new Date();
+    if (ex.status === 'accepted_form1' && ex.acceptedAt) {
+      const days = differenceInDays(now, new Date(ex.acceptedAt));
+      return { days, label: "Attente Dossier", color: days > 15 ? "text-amber-600 font-bold" : "" };
+    }
+    if (ex.status === 'submitted_form2' && ex.detailedInfo?.submittedAt) {
+      const days = differenceInDays(now, new Date(ex.detailedInfo.submittedAt));
+      return { days, label: "Attente Paiement", color: days > 15 ? "text-amber-600 font-bold" : "" };
+    }
+    return null;
+  };
+
   if (isUserLoading || isRoleLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
 
   if (!user) {
@@ -413,23 +428,40 @@ export default function AdminDashboard() {
             <Card className="overflow-hidden">
               <Table>
                 <TableHeader className="bg-muted/30">
-                  <TableRow><TableHead>Exposant</TableHead><TableHead>Tables</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Actions</TableHead></TableRow>
+                  <TableRow>
+                    <TableHead>Exposant</TableHead>
+                    <TableHead>Tables</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead>Délais</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isExhibitorsLoading ? <TableRow><TableCell colSpan={4} className="text-center py-12"><Loader2 className="animate-spin mx-auto text-primary" /></TableCell></TableRow> :
-                    filteredExhibitors.map(ex => (
-                      <TableRow key={ex.id}>
-                        <TableCell><div className="font-bold">{ex.companyName}</div><div className="text-[10px] text-muted-foreground">{ex.firstName} {ex.lastName}</div></TableCell>
-                        <TableCell><Badge variant="outline">{ex.requestedTables}</Badge></TableCell>
-                        <TableCell><Badge variant={getStatusVariant(ex.status)}>{getStatusLabel(ex.status)}</Badge></TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="outline" size="sm" onClick={() => setViewingExhibitor(ex)}><Eye className="w-4 h-4" /></Button>
-                            {ex.status === 'pending' && <><Button size="sm" className="bg-green-600" onClick={() => { setActingExhibitor(ex); setIsAcceptDialogOpen(true); }}><CheckCircle className="w-4 h-4" /></Button><Button size="sm" variant="destructive" onClick={() => { setActingExhibitor(ex); setIsRejectDialogOpen(true); }}><XCircle className="w-4 h-4" /></Button></>}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                  {isExhibitorsLoading ? <TableRow><TableCell colSpan={5} className="text-center py-12"><Loader2 className="animate-spin mx-auto text-primary" /></TableCell></TableRow> :
+                    filteredExhibitors.map(ex => {
+                      const delay = getExhibitorDelay(ex);
+                      return (
+                        <TableRow key={ex.id}>
+                          <TableCell><div className="font-bold">{ex.companyName}</div><div className="text-[10px] text-muted-foreground">{ex.firstName} {ex.lastName}</div></TableCell>
+                          <TableCell><Badge variant="outline">{ex.requestedTables}</Badge></TableCell>
+                          <TableCell><Badge variant={getStatusVariant(ex.status)}>{getStatusLabel(ex.status)}</Badge></TableCell>
+                          <TableCell>
+                            {delay && (
+                              <div className={`text-[10px] flex items-center gap-1 ${delay.color}`}>
+                                {delay.days > 15 && <AlertTriangle className="w-3 h-3" />}
+                                <span>{delay.label} : <strong>{delay.days}j</strong></span>
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button variant="outline" size="sm" onClick={() => setViewingExhibitor(ex)}><Eye className="w-4 h-4" /></Button>
+                              {ex.status === 'pending' && <><Button size="sm" className="bg-green-600" onClick={() => { setActingExhibitor(ex); setIsAcceptDialogOpen(true); }}><CheckCircle className="w-4 h-4" /></Button><Button size="sm" variant="destructive" onClick={() => { setActingExhibitor(ex); setIsRejectDialogOpen(true); }}><XCircle className="w-4 h-4" /></Button></>}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                 </TableBody>
               </Table>
             </Card>
