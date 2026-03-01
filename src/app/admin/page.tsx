@@ -754,8 +754,24 @@ export default function AdminDashboard() {
                 <CardContent className="space-y-3">
                   {adminRoles?.map(a => (
                     <div key={a.id} className="p-3 border rounded-lg flex justify-between items-center text-sm">
-                      <div className="font-medium">{a.email}</div>
-                      {a.id !== user.uid && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteDocumentNonBlocking(doc(db, 'roles_admin', a.id))}><Trash2 className="w-4 h-4" /></Button>}
+                      <div className="flex flex-col">
+                        <div className="font-medium">{a.email}</div>
+                        {a.isSuperAdmin && <div className="text-[10px] text-primary font-bold flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Super Admin</div>}
+                      </div>
+                      <div className="flex gap-2">
+                        {isSuperAdmin && a.id !== user.uid && (
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            title={a.isSuperAdmin ? "Retirer Super Admin" : "Promouvoir Super Admin"}
+                            onClick={() => updateDocumentNonBlocking(doc(db, 'roles_admin', a.id), { isSuperAdmin: !a.isSuperAdmin })}
+                            className={a.isSuperAdmin ? "text-primary" : "text-muted-foreground"}
+                          >
+                            <ShieldCheck className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {a.id !== user.uid && <Button size="sm" variant="ghost" className="text-destructive" title="Supprimer" onClick={() => { if(confirm("Supprimer cet accès ?")) deleteDocumentNonBlocking(doc(db, 'roles_admin', a.id)); }}><Trash2 className="w-4 h-4" /></Button>}
+                      </div>
                     </div>
                   ))}
                 </CardContent>
