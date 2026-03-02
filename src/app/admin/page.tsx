@@ -981,7 +981,7 @@ export default function AdminDashboard() {
                 {viewingExhibitor ? getStatusLabel(viewingExhibitor.status) : ""}
               </Badge>
             </DialogTitle>
-          </Header>
+          </DialogHeader>
           <ScrollArea className="h-[70vh] pr-4">
              {viewingExhibitor && (
                <div className="space-y-10 p-4">
