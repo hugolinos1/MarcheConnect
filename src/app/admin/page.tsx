@@ -639,9 +639,12 @@ export default function AdminDashboard() {
                                 className="text-destructive" 
                                 title="Supprimer" 
                                 onClick={(e) => { 
+                                  e.preventDefault();
                                   e.stopPropagation();
-                                  if(window.confirm("Supprimer cet exposant ?")) {
-                                    deleteDocumentNonBlocking(doc(db, 'pre_registrations', ex.id)); 
+                                  const confirmed = window.confirm("Êtes-vous sûr de vouloir supprimer cet exposant ? Cette action est irréversible.");
+                                  if (confirmed) {
+                                    deleteDocumentNonBlocking(doc(db, 'pre_registrations', ex.id));
+                                    toast({ title: "Suppression effectuée" });
                                   }
                                 }}
                               >
