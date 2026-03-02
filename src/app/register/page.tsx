@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -99,6 +100,18 @@ export default function RegisterPage() {
     setIsProcessingImage(true);
     const file = files[0];
 
+    // Handle PDF separately (no compression)
+    if (file.type === 'application/pdf') {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setImages(prev => [...prev, ev.target?.result as string]);
+        setIsProcessingImage(false);
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+      return;
+    }
+
     const compressImage = (file: File): Promise<string> => {
       return new Promise((resolve) => {
         const reader = new FileReader();
@@ -151,7 +164,7 @@ export default function RegisterPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (images.length === 0) {
-      alert("Merci de fournir au moins une photo de vos produits.");
+      alert("Merci de fournir au moins une photo ou un document illustrant vos produits.");
       return;
     }
     setIsSubmitting(true);
@@ -227,7 +240,7 @@ export default function RegisterPage() {
                       <h4 className="font-bold text-foreground underline mb-1">Article 4</h4>
                       <p>L’installation des exposants (artisans/créateurs exclusivement) aura lieu le samedi entre 11h et 13h. Les emplacements seront attribués à l’arrivée de chaque exposant. Grilles, tables et chaises sont fournies et installées préalablement, en fonction des besoins exprimés.</p>
                       <p className="mt-2">Nous pourrons fournir en électricité 8 à 10 stands maximum, merci d’en faire la demande lors de l’inscription. Nous ne garantirons pas de pouvoir répondre à toutes les demandes, priorité sera donnée aux produits alimentaires. Les rallonges sont à prévoir par l'exposant.</p>
-                      <p className="mt-2">Nous vous préviendrons début novembre de l’attribution du point électrique. Le jour du marché, nous vous indiquerons l’emplacement avec l’électricité pour un supplément de {priceElectricity}€.</p>
+                      <p className="mt-2">Vous vous préviendrons début novembre de l’attribution du point électrique. Le jour du marché, nous vous indiquerons l’emplacement avec l’électricité pour un supplément de {priceElectricity}€.</p>
                       <p className="mt-2">Il est essentiel de respecter les horaires d’installation pour ne pas retarder l’ouverture du marché de Noël. Si vous pensez avoir du retard ou avez un empêchement de dernière minute à la suite d’une contrainte familiale ou médicale, merci de me prévenir au 06 81 14 77 76 (Cécile Rabier).</p>
                       <p className="mt-2">Merci de prendre en compte le temps d’installation de votre stand pour qu’il soit prêt à l’ouverture au public. Le démontage du stand ne pourra se faire que le dimanche après la fermeture du marché soit {sunHours}.</p>
                       <p className="mt-2">Nous ne prévoyons pas de bénévoles pour vous aider à ranger, nos bénévoles sont là pour l’organisation du marché en priorité.</p>
@@ -460,23 +473,31 @@ export default function RegisterPage() {
                 <div className="space-y-4 p-6 bg-muted/20 rounded-xl border-2 border-dashed border-primary/20">
                   <div className="flex items-center gap-3 text-primary mb-2">
                     <Camera className="w-6 h-6" />
-                    <h3 className="text-lg font-bold">Photos de vos produits</h3>
+                    <h3 className="text-lg font-bold">Photos ou documents de vos produits</h3>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {images.map((img, idx) => (
                       <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border shadow-sm group">
-                        <Image src={img} alt={`Produit ${idx + 1}`} fill className="object-cover" />
+                        {img.startsWith('data:application/pdf') ? (
+                          <div className="w-full h-full flex flex-col items-center justify-center bg-primary/5 text-primary">
+                            <FileText className="w-10 h-10 mb-1" />
+                            <span className="text-[10px] font-bold">PDF</span>
+                          </div>
+                        ) : (
+                          <Image src={img} alt={`Produit ${idx + 1}`} fill className="object-cover" />
+                        )}
                         <button type="button" onClick={() => removeImage(idx)} className="absolute top-1 right-1 bg-destructive text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-4 h-4" /></button>
                       </div>
                     ))}
                     {images.length < 3 && (
-                      <label className="flex flex-col items-center justify-center aspect-square rounded-lg border-2 border-dashed border-muted-foreground/30 bg-white hover:bg-muted/50 cursor-pointer">
+                      <label className="flex flex-col items-center justify-center aspect-square rounded-lg border-2 border-dashed border-muted-foreground/30 bg-white hover:bg-muted/50 cursor-pointer text-center p-2">
                         {isProcessingImage ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-8 h-8 text-muted-foreground" />}
-                        <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={isProcessingImage} />
+                        <span className="text-[10px] mt-2 font-medium">Ajouter photo ou PDF</span>
+                        <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleImageUpload} disabled={isProcessingImage} />
                       </label>
                     )}
                   </div>
-                  <p className="text-[10px] text-muted-foreground">Merci de fournir 3 photos illustrant vos créations.</p>
+                  <p className="text-[10px] text-muted-foreground">Merci de fournir 3 fichiers (photo ou PDF) illustrant vos créations.</p>
                 </div>
 
                 <div className="p-4 bg-muted/30 rounded-lg">

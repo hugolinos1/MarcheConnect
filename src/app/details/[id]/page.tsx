@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
@@ -31,7 +32,7 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
   const formSchema = useMemo(() => {
     return z.object({
       siret: z.string().optional(),
-      idCardPhoto: z.string().min(1, "La photo de la pièce d'identité est obligatoire"),
+      idCardPhoto: z.string().min(1, "La pièce d'identité (photo ou PDF) est obligatoire"),
       needsElectricity: z.boolean().default(false),
       needsGrid: z.boolean().default(false),
       sundayLunchCount: z.coerce.number().min(0).max(10),
@@ -78,9 +79,21 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
     if (!file) return;
     setIsProcessingImage(true);
     
+    // Handle PDF directly
+    if (file.type === 'application/pdf') {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        form.setValue('idCardPhoto', ev.target?.result as string, { shouldValidate: true });
+        setIsProcessingImage(false);
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    // Handle Image with compression
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const img = new Image();
+      const img = new (window as any).Image();
       img.src = ev.target?.result as string;
       img.onload = () => {
         const canvas = document.createElement('canvas');
@@ -148,18 +161,26 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
                   )}
                   <FormField control={form.control} name="idCardPhoto" render={() => (
                     <FormItem>
-                      <FormLabel>Pièce d'identité (Recto) *</FormLabel>
+                      <FormLabel>Pièce d'identité (Recto - Photo ou PDF) *</FormLabel>
                       <FormControl>
                         <div className="flex flex-col gap-4">
                           {idCardPhoto ? (
-                            <div className="relative aspect-video max-w-sm rounded-lg overflow-hidden border bg-muted">
-                              <img src={idCardPhoto} alt="ID" className="w-full h-full object-contain" />
+                            <div className="relative aspect-video max-w-sm rounded-lg overflow-hidden border bg-muted flex items-center justify-center">
+                              {idCardPhoto.startsWith('data:application/pdf') ? (
+                                <div className="flex flex-col items-center justify-center text-primary">
+                                  <FileText className="w-16 h-16 mb-2" />
+                                  <span className="font-bold">DOCUMENT PDF</span>
+                                </div>
+                              ) : (
+                                <img src={idCardPhoto} alt="ID" className="w-full h-full object-contain" />
+                              )}
                               <Button type="button" variant="destructive" size="icon" className="absolute top-2 right-2" onClick={() => form.setValue('idCardPhoto', '')}><X className="w-4 h-4" /></Button>
                             </div>
                           ) : (
-                            <label className="flex flex-col items-center justify-center aspect-video max-w-sm rounded-lg border-2 border-dashed border-primary/20 bg-primary/5 cursor-pointer">
+                            <label className="flex flex-col items-center justify-center aspect-video max-w-sm rounded-lg border-2 border-dashed border-primary/20 bg-primary/5 cursor-pointer p-4 text-center">
                               {isProcessingImage ? <Loader2 className="animate-spin" /> : <Camera className="w-10 h-10 text-primary/50" />}
-                              <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                              <span className="text-xs mt-2 font-medium text-primary/70">Charger photo ou scan PDF</span>
+                              <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleImageUpload} />
                             </label>
                           )}
                         </div>
