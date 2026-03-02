@@ -240,9 +240,6 @@ export async function sendFinalConfirmationEmail(exhibitor: any, details: any, m
   const total = standPrice + electricityPrice + mealsPrice;
 
   const satDate = marketConfig?.saturdayDate || "5/12/2026";
-  const satHours = marketConfig?.saturdayHours || "14h à 19h";
-  const sunDate = marketConfig?.sundayDate || "06/12/2026";
-  const sunHours = marketConfig?.sundayHours || "10h à 17h30";
 
   const mailOptions = {
     from: `"Le Marché de Félix" <${smtpUser}>`,
@@ -275,12 +272,12 @@ export async function sendFinalConfirmationEmail(exhibitor: any, details: any, m
               <em>30 rue du Colombier 69380 CHAZAY D'AZERGUES</em>.
             </p>
             <p style="font-size: 12px; color: #666; margin-top: 10px;">
-              Le chèque doit nous parvenir sous 15 jours. Il sera encaissé environ 15 jours avant l'événement.
+              Le chèque doit nous parvenir sous 15 jours. Il sera encaissé 15 jours avant l'événement.
             </p>
           </div>
 
           <p style="font-size: 14px;">
-            <strong>Rappel :</strong> Rendez-vous le <strong>samedi ${satDate}</strong> dès ${satHours} et le <strong>dimanche ${sunDate}</strong> à partir de ${sunHours} à la salle Maurice Baquet.
+            <strong>Rappel :</strong> Rendez-vous le <strong>samedi ${satDate}</strong> dès 11h à la salle Maurice Baquet.
           </p>
           
           <p>À bientôt !<br/>L'équipe "Un jardin pour Félix"</p>
