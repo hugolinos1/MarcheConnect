@@ -525,11 +525,13 @@ export default function AdminDashboard() {
           </Card>
         )}
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="border-l-4 border-l-primary"><CardContent className="p-4"><p className="text-xs text-muted-foreground font-bold">Total</p><p className="text-2xl font-bold">{stats.total}</p></CardContent></Card>
-          <Card className="border-l-4 border-l-amber-500"><CardContent className="p-4"><p className="text-xs text-muted-foreground font-bold">À Étudier</p><p className="text-2xl font-bold">{stats.pending}</p></CardContent></Card>
-          <Card className="border-l-4 border-l-green-600"><CardContent className="p-4"><p className="text-xs text-muted-foreground font-bold">Confirmés</p><p className="text-2xl font-bold">{stats.validated}</p></CardContent></Card>
-          <Card className="border-l-4 border-l-secondary"><CardContent className="p-4"><p className="text-xs text-muted-foreground font-bold">Recettes</p><p className="text-2xl font-bold">{stats.revenue}€</p></CardContent></Card>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <Card className="border-l-4 border-l-primary shadow-sm"><CardContent className="p-4"><p className="text-[10px] text-muted-foreground font-bold uppercase">Total</p><p className="text-2xl font-bold">{stats.total}</p></CardContent></Card>
+          <Card className="border-l-4 border-l-amber-500 shadow-sm"><CardContent className="p-4"><p className="text-[10px] text-muted-foreground font-bold uppercase">À Étudier</p><p className="text-2xl font-bold text-amber-600">{stats.pending}</p></CardContent></Card>
+          <Card className="border-l-4 border-l-indigo-500 shadow-sm"><CardContent className="p-4"><p className="text-[10px] text-muted-foreground font-bold uppercase leading-tight">Attente Dossier</p><p className="text-2xl font-bold text-indigo-600">{stats.accepted}</p></CardContent></Card>
+          <Card className="border-l-4 border-l-orange-500 shadow-sm"><CardContent className="p-4"><p className="text-[10px] text-muted-foreground font-bold uppercase leading-tight">Attente Paiement</p><p className="text-2xl font-bold text-orange-600">{stats.submitted}</p></CardContent></Card>
+          <Card className="border-l-4 border-l-green-600 shadow-sm"><CardContent className="p-4"><p className="text-[10px] text-muted-foreground font-bold uppercase">Confirmés</p><p className="text-2xl font-bold text-green-600">{stats.validated}</p></CardContent></Card>
+          <Card className="border-l-4 border-l-secondary shadow-sm"><CardContent className="p-4"><p className="text-[10px] text-muted-foreground font-bold uppercase">Recettes</p><p className="text-2xl font-bold text-secondary">{stats.revenue}€</p></CardContent></Card>
         </div>
 
         <Tabs defaultValue="exhibitors">
@@ -771,7 +773,7 @@ export default function AdminDashboard() {
                       <div className="font-bold text-sm">{r.email}</div>
                       <div className="flex gap-2">
                         <Button size="sm" className="bg-green-600" onClick={() => { setDocumentNonBlocking(doc(db, 'roles_admin', r.id), { email: r.email, addedAt: new Date().toISOString(), isSuperAdmin: false }, { merge: true }); updateDocumentNonBlocking(doc(db, 'admin_requests', r.id), { status: 'APPROVED' }); }}><CheckCircle className="w-4 h-4" /></Button>
-                        <Button size="sm" variant="destructive" onClick={() => updateDocumentNonBlocking(doc(db, 'admin_requests', r.id), { status: 'REJECTED' })}><XCircle className="w-4 h-4" /></Button>
+                        <Button size="sm" variant="destructive" onClick={() => updateDocumentNonBlocking(doc(db, 'admin_requests', r.id), { status: 'REJECTED' }); }}><XCircle className="w-4 h-4" /></Button>
                       </div>
                     </div>
                   ))}
