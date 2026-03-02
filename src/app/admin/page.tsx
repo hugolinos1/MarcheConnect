@@ -602,6 +602,14 @@ export default function AdminDashboard() {
                                   <Button size="sm" variant="destructive" title="Refuser" onClick={() => { setActingExhibitor(ex); setIsRejectDialogOpen(true); }}><XCircle className="w-4 h-4" /></Button>
                                 </>
                               )}
+                              {ex.status === 'submitted_form2' && (
+                                <Button size="sm" className="bg-green-600" title="Confirmer le paiement et valider" onClick={() => {
+                                  if (confirm(`Confirmer la réception du paiement pour ${ex.companyName} et valider définitivement le dossier ?`)) {
+                                    updateDocumentNonBlocking(doc(db, 'pre_registrations', ex.id), { status: 'validated' });
+                                    toast({ title: "Dossier validé !", description: "L'exposant est désormais confirmé." });
+                                  }
+                                }}><CheckCircle className="w-4 h-4" /></Button>
+                              )}
                               <Button variant="outline" size="sm" title="Modifier" onClick={() => handleOpenEdit(ex)} className="text-secondary border-secondary/20"><Pencil className="w-4 h-4" /></Button>
                               <Button variant="ghost" size="sm" className="text-destructive" title="Supprimer" onClick={() => { if(confirm("Supprimer cet exposant ?")) deleteDocumentNonBlocking(doc(db, 'pre_registrations', ex.id)); }}><Trash2 className="w-4 h-4" /></Button>
                             </div>
@@ -973,7 +981,7 @@ export default function AdminDashboard() {
                 {viewingExhibitor ? getStatusLabel(viewingExhibitor.status) : ""}
               </Badge>
             </DialogTitle>
-          </DialogHeader>
+          </Header>
           <ScrollArea className="h-[70vh] pr-4">
              {viewingExhibitor && (
                <div className="space-y-10 p-4">
