@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
@@ -391,6 +390,27 @@ export default function AdminDashboard() {
     updateDocumentNonBlocking(doc(db, 'pre_registrations', actingExhibitor.id), updates);
     setIsEditDialogOpen(false);
     toast({ title: "Fiche mise à jour avec succès" });
+  };
+
+  /**
+   * Helper to open base64 PDF reliably in a new tab
+   */
+  const handleOpenPdf = (dataUri: string) => {
+    try {
+      const base64WithoutPrefix = dataUri.split(',')[1];
+      const byteCharacters = atob(base64WithoutPrefix);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      window.open(url);
+    } catch (e) {
+      console.error("Erreur lors de l'ouverture du PDF", e);
+      window.open(dataUri, '_blank');
+    }
   };
 
   const insertTag = (ref: React.RefObject<HTMLTextAreaElement>, tag: string, setter: React.Dispatch<React.SetStateAction<any>>, closeTag?: string) => {
@@ -1022,7 +1042,19 @@ export default function AdminDashboard() {
                          {viewingExhibitor.productImages.map((img, i) => {
                            const isPdf = img.startsWith('data:application/pdf');
                            return (
-                             <a key={i} href={img} target="_blank" rel="noopener noreferrer" className="relative aspect-square block overflow-hidden rounded-lg border shadow-sm group bg-muted/20">
+                             <a 
+                               key={i} 
+                               href={img} 
+                               target="_blank" 
+                               rel="noopener noreferrer" 
+                               onClick={(e) => {
+                                 if (isPdf) {
+                                   e.preventDefault();
+                                   handleOpenPdf(img);
+                                 }
+                               }}
+                               className="relative aspect-square block overflow-hidden rounded-lg border shadow-sm group bg-muted/20"
+                             >
                                {isPdf ? (
                                  <div className="w-full h-full flex flex-col items-center justify-center text-primary">
                                    <FileText className="w-12 h-12 mb-1" />
@@ -1055,7 +1087,18 @@ export default function AdminDashboard() {
                            <div className="mt-2">
                              <p className="text-[10px] mb-1">Pièce d'identité :</p>
                              {viewingExhibitor.detailedInfo.idCardPhoto && (
-                               <a href={viewingExhibitor.detailedInfo.idCardPhoto} target="_blank" rel="noopener noreferrer" className="block relative aspect-video w-full max-w-[250px] border rounded overflow-hidden group bg-muted/20">
+                               <a 
+                                 href={viewingExhibitor.detailedInfo.idCardPhoto} 
+                                 target="_blank" 
+                                 rel="noopener noreferrer" 
+                                 onClick={(e) => {
+                                   if (viewingExhibitor.detailedInfo?.idCardPhoto?.startsWith('data:application/pdf')) {
+                                     e.preventDefault();
+                                     handleOpenPdf(viewingExhibitor.detailedInfo.idCardPhoto);
+                                   }
+                                 }}
+                                 className="block relative aspect-video w-full max-w-[250px] border rounded overflow-hidden group bg-muted/20"
+                               >
                                  {viewingExhibitor.detailedInfo.idCardPhoto.startsWith('data:application/pdf') ? (
                                    <div className="w-full h-full flex flex-col items-center justify-center text-primary">
                                      <FileText className="w-10 h-10 mb-1" />
