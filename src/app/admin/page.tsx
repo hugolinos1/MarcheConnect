@@ -633,7 +633,20 @@ export default function AdminDashboard() {
                                 }}><CheckCircle className="w-4 h-4" /></Button>
                               )}
                               <Button variant="outline" size="sm" title="Modifier" onClick={() => handleOpenEdit(ex)} className="text-secondary border-secondary/20"><Pencil className="w-4 h-4" /></Button>
-                              <Button variant="ghost" size="sm" className="text-destructive" title="Supprimer" onClick={() => { if(window.confirm("Supprimer cet exposant ?")) deleteDocumentNonBlocking(doc(db, 'pre_registrations', ex.id)); }}><Trash2 className="w-4 h-4" /></Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-destructive" 
+                                title="Supprimer" 
+                                onClick={(e) => { 
+                                  e.stopPropagation();
+                                  if(window.confirm("Supprimer cet exposant ?")) {
+                                    deleteDocumentNonBlocking(doc(db, 'pre_registrations', ex.id)); 
+                                  }
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -773,7 +786,7 @@ export default function AdminDashboard() {
                       <div className="font-bold text-sm">{r.email}</div>
                       <div className="flex gap-2">
                         <Button size="sm" className="bg-green-600" onClick={() => { setDocumentNonBlocking(doc(db, 'roles_admin', r.id), { email: r.email, addedAt: new Date().toISOString(), isSuperAdmin: false }, { merge: true }); updateDocumentNonBlocking(doc(db, 'admin_requests', r.id), { status: 'APPROVED' }); }}><CheckCircle className="w-4 h-4" /></Button>
-                        <Button size="sm" variant="destructive" onClick={() => updateDocumentNonBlocking(doc(db, 'admin_requests', r.id), { status: 'REJECTED' })}><XCircle className="w-4 h-4" /></Button>
+                        <Button size="sm" variant="destructive" onClick={() => { if(window.confirm("Refuser cette demande ?")) { updateDocumentNonBlocking(doc(db, 'admin_requests', r.id), { status: 'REJECTED' }); } }}><XCircle className="w-4 h-4" /></Button>
                       </div>
                     </div>
                   ))}
