@@ -1017,16 +1017,26 @@ export default function AdminDashboard() {
                    </div>
                    {viewingExhibitor.productImages && (
                      <div className="space-y-2">
-                       <p className="text-xs font-bold uppercase text-muted-foreground">Galerie Photos Produits</p>
+                       <p className="text-xs font-bold uppercase text-muted-foreground">Galerie Photos & Documents</p>
                        <div className="grid grid-cols-3 gap-4">
-                         {viewingExhibitor.productImages.map((img, i) => (
-                           <a key={i} href={img} target="_blank" className="relative aspect-square block overflow-hidden rounded-lg border shadow-sm group">
-                             <img src={img} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                             <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                               <ExternalLink className="text-white w-6 h-6" />
-                             </div>
-                           </a>
-                         ))}
+                         {viewingExhibitor.productImages.map((img, i) => {
+                           const isPdf = img.startsWith('data:application/pdf');
+                           return (
+                             <a key={i} href={img} target="_blank" rel="noopener noreferrer" className="relative aspect-square block overflow-hidden rounded-lg border shadow-sm group bg-muted/20">
+                               {isPdf ? (
+                                 <div className="w-full h-full flex flex-col items-center justify-center text-primary">
+                                   <FileText className="w-12 h-12 mb-1" />
+                                   <span className="text-[10px] font-bold uppercase">Document PDF</span>
+                                 </div>
+                               ) : (
+                                 <img src={img} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt={`Produit ${i+1}`} />
+                               )}
+                               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                 <ExternalLink className="text-white w-6 h-6" />
+                               </div>
+                             </a>
+                           );
+                         })}
                        </div>
                      </div>
                    )}
@@ -1044,9 +1054,21 @@ export default function AdminDashboard() {
                            {viewingExhibitor.detailedInfo.siret && <p className="text-sm">SIRET : <strong>{viewingExhibitor.detailedInfo.siret}</strong></p>}
                            <div className="mt-2">
                              <p className="text-[10px] mb-1">Pièce d'identité :</p>
-                             <a href={viewingExhibitor.detailedInfo.idCardPhoto} target="_blank" className="block relative aspect-video w-full max-w-[250px] border rounded overflow-hidden">
-                               <img src={viewingExhibitor.detailedInfo.idCardPhoto} className="w-full h-full object-cover" />
-                             </a>
+                             {viewingExhibitor.detailedInfo.idCardPhoto && (
+                               <a href={viewingExhibitor.detailedInfo.idCardPhoto} target="_blank" rel="noopener noreferrer" className="block relative aspect-video w-full max-w-[250px] border rounded overflow-hidden group bg-muted/20">
+                                 {viewingExhibitor.detailedInfo.idCardPhoto.startsWith('data:application/pdf') ? (
+                                   <div className="w-full h-full flex flex-col items-center justify-center text-primary">
+                                     <FileText className="w-10 h-10 mb-1" />
+                                     <span className="text-[10px] font-bold uppercase">Ouvrir le PDF</span>
+                                   </div>
+                                 ) : (
+                                   <img src={viewingExhibitor.detailedInfo.idCardPhoto} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt="Pièce d'identité" />
+                                 )}
+                                 <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                   <ExternalLink className="text-white w-5 h-5" />
+                                 </div>
+                               </a>
+                             )}
                            </div>
                          </div>
                          <div className="space-y-1">
