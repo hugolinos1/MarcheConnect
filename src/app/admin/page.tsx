@@ -626,14 +626,14 @@ export default function AdminDashboard() {
                               )}
                               {ex.status === 'submitted_form2' && (
                                 <Button size="sm" className="bg-green-600" title="Confirmer le paiement et valider" onClick={() => {
-                                  if (confirm(`Confirmer la réception du paiement pour ${ex.companyName} et valider définitivement le dossier ?`)) {
+                                  if (window.confirm(`Confirmer la réception du paiement pour ${ex.companyName} et valider définitivement le dossier ?`)) {
                                     updateDocumentNonBlocking(doc(db, 'pre_registrations', ex.id), { status: 'validated' });
                                     toast({ title: "Dossier validé !", description: "L'exposant est désormais confirmé." });
                                   }
                                 }}><CheckCircle className="w-4 h-4" /></Button>
                               )}
                               <Button variant="outline" size="sm" title="Modifier" onClick={() => handleOpenEdit(ex)} className="text-secondary border-secondary/20"><Pencil className="w-4 h-4" /></Button>
-                              <Button variant="ghost" size="sm" className="text-destructive" title="Supprimer" onClick={() => { if(confirm("Supprimer cet exposant ?")) deleteDocumentNonBlocking(doc(db, 'pre_registrations', ex.id)); }}><Trash2 className="w-4 h-4" /></Button>
+                              <Button variant="ghost" size="sm" className="text-destructive" title="Supprimer" onClick={() => { if(window.confirm("Supprimer cet exposant ?")) deleteDocumentNonBlocking(doc(db, 'pre_registrations', ex.id)); }}><Trash2 className="w-4 h-4" /></Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -800,7 +800,7 @@ export default function AdminDashboard() {
                             <ShieldCheck className="w-4 h-4" />
                           </Button>
                         )}
-                        {a.id !== user.uid && <Button size="sm" variant="ghost" className="text-destructive" title="Supprimer" onClick={() => { if(confirm("Supprimer cet accès ?")) deleteDocumentNonBlocking(doc(db, 'roles_admin', a.id)); }}><Trash2 className="w-4 h-4" /></Button>}
+                        {a.id !== user.uid && <Button size="sm" variant="ghost" className="text-destructive" title="Supprimer" onClick={() => { if(window.confirm("Supprimer cet accès ?")) deleteDocumentNonBlocking(doc(db, 'roles_admin', a.id)); }}><Trash2 className="w-4 h-4" /></Button>}
                       </div>
                     </div>
                   ))}
