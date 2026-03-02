@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare, FileText, X as XIcon, Map as MapIcon, Lock, ExternalLink, AlertTriangle, Link2, Star, TrendingUp, CreditCard, Shield, LayoutGrid, Pencil } from 'lucide-react';
+import { CheckCircle, XCircle, Search, Mail, Loader2, Trash2, Eye, ShieldCheck, Sparkles, Download, Settings, Clock, ArrowLeft, Key, UserPlus, EyeOff, Plus, Send, Type, WrapText, Bold, Italic, Underline, Link as LucideLink, Image as ImageIcon, Zap, Utensils, Gift, Calculator, MessageSquare, FileText, X as XIcon, Map as MapIcon, Lock, ExternalLink, AlertTriangle, Link2, Star, TrendingUp, CreditCard, Shield, LayoutGrid, Pencil, Layout } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import Link from 'next/link';
 import { sendAcceptanceEmail, sendRejectionEmail, sendBulkEmailAction, sendTestEmailAction, sendCustomIndividualEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
@@ -172,14 +173,20 @@ export default function AdminDashboard() {
   }, [exhibitorsData, searchTerm]);
 
   const stats = useMemo(() => {
-    if (!exhibitorsData) return { total: 0, pending: 0, accepted: 0, rejected: 0, validated: 0, submitted: 0, revenue: 0 };
+    if (!exhibitorsData) return { total: 0, pending: 0, accepted: 0, rejected: 0, validated: 0, submitted: 0, revenue: 0, totalTables: 0 };
     let totalRevenue = 0;
+    let totalTables = 0;
     const priceTable1 = currentConfig?.priceTable1 ?? 40;
     const priceTable2 = currentConfig?.priceTable2 ?? 60;
     const priceMeal = currentConfig?.priceMeal ?? 8;
     const priceElec = currentConfig?.priceElectricity ?? 1;
 
     exhibitorsData.forEach(e => {
+      // Logic for tables: sum tables for anyone not pending/rejected
+      if (['accepted_form1', 'submitted_form2', 'validated'].includes(e.status)) {
+        totalTables += parseInt(e.requestedTables) || 0;
+      }
+
       if (e.status === 'submitted_form2' || e.status === 'validated') {
         const stand = e.requestedTables === '1' ? priceTable1 : priceTable2;
         const meals = (e.detailedInfo?.sundayLunchCount || 0) * priceMeal;
@@ -195,7 +202,8 @@ export default function AdminDashboard() {
       rejected: exhibitorsData.filter(e => e.status === 'rejected').length,
       validated: exhibitorsData.filter(e => e.status === 'validated').length,
       submitted: exhibitorsData.filter(e => e.status === 'submitted_form2').length,
-      revenue: totalRevenue
+      revenue: totalRevenue,
+      totalTables
     };
   }, [exhibitorsData, currentConfig]);
 
@@ -525,14 +533,30 @@ export default function AdminDashboard() {
           </Card>
         )}
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
           <Card className="border-l-4 border-l-primary shadow-sm"><CardContent className="p-4"><p className="text-[10px] text-muted-foreground font-bold uppercase">Total</p><p className="text-2xl font-bold">{stats.total}</p></CardContent></Card>
           <Card className="border-l-4 border-l-amber-500 shadow-sm"><CardContent className="p-4"><p className="text-[10px] text-muted-foreground font-bold uppercase">À Étudier</p><p className="text-2xl font-bold text-amber-600">{stats.pending}</p></CardContent></Card>
           <Card className="border-l-4 border-l-indigo-500 shadow-sm"><CardContent className="p-4"><p className="text-[10px] text-muted-foreground font-bold uppercase leading-tight">Attente Dossier</p><p className="text-2xl font-bold text-indigo-600">{stats.accepted}</p></CardContent></Card>
           <Card className="border-l-4 border-l-orange-500 shadow-sm"><CardContent className="p-4"><p className="text-[10px] text-muted-foreground font-bold uppercase leading-tight">Attente Paiement</p><p className="text-2xl font-bold text-orange-600">{stats.submitted}</p></CardContent></Card>
           <Card className="border-l-4 border-l-green-600 shadow-sm"><CardContent className="p-4"><p className="text-[10px] text-muted-foreground font-bold uppercase">Confirmés</p><p className="text-2xl font-bold text-green-600">{stats.validated}</p></CardContent></Card>
+          <Card className="border-l-4 border-l-slate-500 shadow-sm"><CardContent className="p-4"><p className="text-[10px] text-muted-foreground font-bold uppercase">Tables</p><p className={`text-2xl font-bold ${stats.totalTables >= 53 ? "text-destructive" : stats.totalTables >= 48 ? "text-amber-600" : ""}`}>{stats.totalTables}/53</p></CardContent></Card>
           <Card className="border-l-4 border-l-secondary shadow-sm"><CardContent className="p-4"><p className="text-[10px] text-muted-foreground font-bold uppercase">Recettes</p><p className="text-2xl font-bold text-secondary">{stats.revenue}€</p></CardContent></Card>
         </div>
+
+        {stats.totalTables >= 48 && (
+          <Alert variant={stats.totalTables >= 53 ? "destructive" : "default"} className={stats.totalTables >= 48 && stats.totalTables < 53 ? "border-amber-500 bg-amber-50 text-amber-900" : ""}>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle className="font-bold">
+              {stats.totalTables >= 53 ? "Capacité maximale atteinte !" : "Attention : Capacité presque atteinte"}
+            </AlertTitle>
+            <AlertDescription>
+              {stats.totalTables >= 53 
+                ? `Le quota de 53 tables est atteint ou dépassé (${stats.totalTables} tables réservées).` 
+                : `Il ne reste plus que ${53 - stats.totalTables} table(s) disponible(s) sur 53.`
+              }
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Tabs defaultValue="exhibitors">
           <TabsList className="mb-6">
@@ -625,7 +649,8 @@ export default function AdminDashboard() {
                                 </>
                               )}
                               {ex.status === 'submitted_form2' && (
-                                <Button size="sm" className="bg-green-600" title="Confirmer le paiement et valider" onClick={() => {
+                                <Button size="sm" className="bg-green-600" title="Confirmer le paiement et valider" onClick={(e) => {
+                                  e.preventDefault();
                                   if (window.confirm(`Confirmer la réception du paiement pour ${ex.companyName} et valider définitivement le dossier ?`)) {
                                     updateDocumentNonBlocking(doc(db, 'pre_registrations', ex.id), { status: 'validated' });
                                     toast({ title: "Dossier validé !", description: "L'exposant est désormais confirmé." });
@@ -788,8 +813,15 @@ export default function AdminDashboard() {
                     <div key={r.id} className="p-4 border rounded-lg bg-amber-50/50 flex justify-between items-center">
                       <div className="font-bold text-sm">{r.email}</div>
                       <div className="flex gap-2">
-                        <Button size="sm" className="bg-green-600" onClick={() => { setDocumentNonBlocking(doc(db, 'roles_admin', r.id), { email: r.email, addedAt: new Date().toISOString(), isSuperAdmin: false }, { merge: true }); updateDocumentNonBlocking(doc(db, 'admin_requests', r.id), { status: 'APPROVED' }); }}><CheckCircle className="w-4 h-4" /></Button>
-                        <Button size="sm" variant="destructive" onClick={() => { if(window.confirm("Refuser cette demande ?")) { updateDocumentNonBlocking(doc(db, 'admin_requests', r.id), { status: 'REJECTED' }); } }}><XCircle className="w-4 h-4" /></Button>
+                        <Button size="sm" className="bg-green-600" onClick={(e) => { 
+                          e.preventDefault();
+                          setDocumentNonBlocking(doc(db, 'roles_admin', r.id), { email: r.email, addedAt: new Date().toISOString(), isSuperAdmin: false }, { merge: true }); 
+                          updateDocumentNonBlocking(doc(db, 'admin_requests', r.id), { status: 'APPROVED' }); 
+                        }}><CheckCircle className="w-4 h-4" /></Button>
+                        <Button size="sm" variant="destructive" onClick={(e) => { 
+                          e.preventDefault();
+                          if(window.confirm("Refuser cette demande ?")) { updateDocumentNonBlocking(doc(db, 'admin_requests', r.id), { status: 'REJECTED' }); } 
+                        }}><XCircle className="w-4 h-4" /></Button>
                       </div>
                     </div>
                   ))}
@@ -860,12 +892,12 @@ export default function AdminDashboard() {
               
               <div className="flex flex-wrap gap-4 pt-2">
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="e-elec" checked={editFormData.needsElectricity} onCheckedChange={(v: any) => setEditFormData({...editFormData, needsElectricity: v})} />
-                  <Label htmlFor="e-elec">Electricité</Label>
+                  <Checkbox id="edit-elec" checked={editFormData.needsElectricity} onCheckedChange={(v: any) => setEditFormData({...editFormData, needsElectricity: !!v})} />
+                  <Label htmlFor="edit-elec">Electricité</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="e-grid" checked={editFormData.needsGrid} onCheckedChange={(v: any) => setEditFormData({...editFormData, needsGrid: v})} />
-                  <Label htmlFor="e-grid">Grille Expo</Label>
+                  <Checkbox id="edit-grid" checked={editFormData.needsGrid} onCheckedChange={(v: any) => setEditFormData({...editFormData, needsGrid: !!v})} />
+                  <Label htmlFor="edit-grid">Grille Expo</Label>
                 </div>
               </div>
             </div>
@@ -927,7 +959,7 @@ export default function AdminDashboard() {
             </Tabs>
 
             <div className="flex items-center space-x-2 p-3 bg-primary/5 rounded-lg border border-primary/10">
-              <Checkbox id="include-link" checked={includeDossierLink} onCheckedChange={(v: any) => setIncludeDossierLink(v)} />
+              <Checkbox id="include-link" checked={includeDossierLink} onCheckedChange={(v: any) => setIncludeDossierLink(!!v)} />
               <Label htmlFor="include-link" className="text-sm font-bold cursor-pointer flex items-center gap-2">
                 <Link2 className="w-4 h-4" /> Inclure un bouton vers le dossier technique
               </Label>
