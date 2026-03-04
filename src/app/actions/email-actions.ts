@@ -277,7 +277,7 @@ export async function sendFinalConfirmationEmail(exhibitor: any, details: any, m
           </div>
 
           <p style="font-size: 14px;">
-            <strong>Rappel :</strong> Rendez-vous le <strong>samedi ${satDate}</strong> dès 11h à la salle Maurice Baquet.
+            <strong>Rappel :</strong> Rendez-vous le <strong>samedi ${satDate}</strong> dès 11h à la salle Maurice Baquet - Chazay d'Azergues
           </p>
           
           <p>À bientôt !<br/>L'équipe "Un jardin pour Félix"</p>
