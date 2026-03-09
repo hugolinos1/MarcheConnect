@@ -77,9 +77,21 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Check size (approx 800KB limit for base64 safety in Firestore document)
+    if (file.size > 800 * 1024) {
+      toast({
+        variant: "destructive",
+        title: "Fichier trop lourd",
+        description: "Merci de fournir un fichier de moins de 800 Ko (utilisez un compresseur en ligne si besoin)."
+      });
+      e.target.value = '';
+      return;
+    }
+
     setIsProcessingImage(true);
     
-    // Handle PDF directly
+    // Handle PDF directement
     if (file.type === 'application/pdf') {
       const reader = new FileReader();
       reader.onload = (ev) => {
@@ -122,18 +134,24 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
         adminValidationStatus: 'PENDING_REVIEW'
       };
       
+      // We initiate Firestore updates first. 
+      // With the updated security rules, the exhibitor CAN now update their pre_registration status.
       setDocumentNonBlocking(doc(db, 'exhibitor_details', exhibitor.id), detailedData, { merge: true });
       updateDocumentNonBlocking(doc(db, 'pre_registrations', exhibitor.id), { 
         status: 'submitted_form2',
         detailedInfo: detailedData
       });
 
+      // Send email. This is awaited so we are sure the server action is triggered.
       await sendFinalConfirmationEmail(exhibitor, values, currentConfig);
       
       toast({ title: "Dossier enregistré !", description: "Merci pour votre finalisation." });
-      setTimeout(() => router.push('/register/success?type=final'), 1000);
+      
+      // Delay slightly to ensure background firestore sync has time to start
+      setTimeout(() => router.push('/register/success?type=final'), 1500);
     } catch (error) {
-      toast({ variant: "destructive", title: "Erreur technique lors de l'enregistrement" });
+      console.error("Submission error:", error);
+      toast({ variant: "destructive", title: "Erreur technique", description: "Une erreur est survenue lors de l'enregistrement. Veuillez vérifier la taille de vos fichiers." });
     } finally {
       setIsSubmitting(false);
     }

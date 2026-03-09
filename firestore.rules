@@ -38,7 +38,8 @@ service cloud.firestore {
 
     match /pre_registrations/{preRegistrationId} {
       allow read, create: if true;
-      allow write: if isAdmin();
+      // Permettre à l'exposant de mettre à jour son statut et ses infos détaillées via son lien unique
+      allow update: if isAdmin() || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'detailedInfo']));
       allow delete: if isAdmin();
     }
 

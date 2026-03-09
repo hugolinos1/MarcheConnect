@@ -149,6 +149,10 @@
         "status": {
           "type": "string",
           "description": "The current status of the pre-registration application."
+        },
+        "detailedInfo": {
+          "type": "object",
+          "description": "Embedded copy of technical details if submitted."
         }
       },
       "required": [
@@ -161,6 +165,31 @@
         "applicationDate",
         "status"
       ]
+    },
+    "ExhibitorDetail": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ExhibitorDetail",
+      "type": "object",
+      "description": "Technical details and administrative documents for an exhibitor (Form 2).",
+      "properties": {
+        "id": { "type": "string" },
+        "preRegistrationId": { "type": "string" },
+        "marketConfigurationId": { "type": "string" },
+        "siret": { "type": "string" },
+        "idCardPhoto": { "type": "string", "description": "Base64 string of ID card" },
+        "needsElectricity": { "type": "boolean" },
+        "needsGrid": { "type": "boolean" },
+        "sundayLunchCount": { "type": "number" },
+        "tombolaLot": { "type": "boolean" },
+        "tombolaLotDescription": { "type": "string" },
+        "insuranceCompany": { "type": "string" },
+        "insurancePolicyNumber": { "type": "string" },
+        "agreedToImageRights": { "type": "boolean" },
+        "agreedToTerms": { "type": "boolean" },
+        "additionalComments": { "type": "string" },
+        "submittedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "preRegistrationId", "idCardPhoto", "submittedAt"]
     },
     "EmailTemplate": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -253,6 +282,15 @@
           "entityName": "PreRegistration",
           "schema": {
             "$ref": "#/backend/entities/PreRegistration"
+          }
+        }
+      },
+      {
+        "path": "/exhibitor_details/{exhibitorDetailId}",
+        "definition": {
+          "entityName": "ExhibitorDetail",
+          "schema": {
+            "$ref": "#/backend/entities/ExhibitorDetail"
           }
         }
       },
