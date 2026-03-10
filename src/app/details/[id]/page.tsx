@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useMemoFirebase, useDoc, useCollection } from '@/firebase';
 import { doc, setDoc, updateDoc, collection } from 'firebase/firestore';
 
-const CHUNK_SIZE = 800000; // ~800KB chunks
+const CHUNK_SIZE = 800000; // ~800KB chunks pour rester sous la limite de 1Mo de Firestore
 
 function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; currentConfig: any }) {
   const router = useRouter();
@@ -78,6 +78,7 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Autoriser jusqu'à 4 Mo (le chunking s'occupera du reste)
     if (file.size > 4 * 1024 * 1024) {
       toast({
         variant: "destructive",
@@ -105,6 +106,7 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
       const fullPhoto = values.idCardPhoto;
       const isChunked = fullPhoto.length > CHUNK_SIZE;
       
+      // 1. Préparation des données pour le document de détail (exhibitor_details)
       const detailedData: any = {
         ...values,
         id: exhibitor.id,
@@ -115,8 +117,10 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
         idCardPhoto: isChunked ? "CHUNKED_FILE" : fullPhoto
       };
       
+      // Enregistrement du document de base
       await setDoc(doc(db, 'exhibitor_details', exhibitor.id), detailedData, { merge: true });
       
+      // 2. Gestion des morceaux si le fichier est gros
       if (isChunked) {
         const totalChunks = Math.ceil(fullPhoto.length / CHUNK_SIZE);
         for (let i = 0; i < totalChunks; i++) {
@@ -128,15 +132,21 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
         }
       }
       
+      // 3. Mise à jour du document principal (pre_registrations)
+      // On retire la photo du résumé pour ne pas saturer le document principal
+      const summaryInfo = { ...detailedData };
+      delete summaryInfo.idCardPhoto; 
+
       await updateDoc(doc(db, 'pre_registrations', exhibitor.id), { 
         status: 'submitted_form2',
-        detailedInfo: {
-          ...detailedData,
-          idCardPhoto: undefined
-        }
+        detailedInfo: summaryInfo
       });
 
-      await sendFinalConfirmationEmail(exhibitor, values, currentConfig);
+      // 4. Envoi de l'email (on nettoie values pour ne pas dépasser la limite de payload des Actions Serveur)
+      const emailValues = { ...values };
+      delete emailValues.idCardPhoto; // L'email n'a pas besoin de la photo Base64
+
+      await sendFinalConfirmationEmail(exhibitor, emailValues, currentConfig);
       
       toast({ title: "Dossier enregistré !", description: "Merci pour votre finalisation." });
       router.push('/register/success?type=final');
@@ -145,7 +155,7 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
       toast({ 
         variant: "destructive", 
         title: "Échec de l'enregistrement", 
-        description: "Une erreur est survenue. Le fichier est peut-être corrompu." 
+        description: "Une erreur est survenue. Le fichier est peut-être trop lourd pour votre connexion." 
       });
     } finally {
       setIsSubmitting(false);
