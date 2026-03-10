@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
@@ -16,7 +17,7 @@ import Link from 'next/link';
 import { sendAcceptanceEmail, sendRejectionEmail, sendBulkEmailAction, sendTestEmailAction, sendCustomIndividualEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useMemoFirebase, useCollection, useUser, useAuth, useDoc } from '@/firebase';
-import { collection, doc, query, orderBy, where } from 'firebase/firestore';
+import { collection, doc, query, orderBy, where, getDocs } from 'firebase/firestore';
 import { updateDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { initiateEmailSignIn, initiateEmailSignUp } from '@/firebase/non-blocking-login';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -81,6 +82,8 @@ export default function AdminDashboard() {
   const [acceptanceMessage, setAcceptanceMessage] = useState('');
   const [selectedConfigId, setSelectedConfigId] = useState<string>('');
   const [viewingExhibitor, setViewingExhibitor] = useState<Exhibitor | null>(null);
+  const [fullDetailedInfo, setFullDetailedInfo] = useState<any>(null);
+  const [isLoadingFile, setIsLoadingFile] = useState(false);
   
   const [isAcceptDialogOpen, setIsAcceptDialogOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
@@ -182,7 +185,6 @@ export default function AdminDashboard() {
     const priceElec = currentConfig?.priceElectricity ?? 1;
 
     exhibitorsData.forEach(e => {
-      // Logic for tables: sum tables for anyone not pending/rejected
       if (['accepted_form1', 'submitted_form2', 'validated'].includes(e.status)) {
         totalTables += parseInt(e.requestedTables) || 0;
       }
@@ -400,9 +402,31 @@ export default function AdminDashboard() {
     toast({ title: "Fiche mise à jour avec succès" });
   };
 
-  /**
-   * Helper to open base64 PDF reliably in a new tab
-   */
+  const handleViewExhibitor = async (ex: Exhibitor) => {
+    setViewingExhibitor(ex);
+    setFullDetailedInfo(null);
+    setIsLoadingFile(true);
+    
+    try {
+      const detailDoc = await getDocs(query(collection(db, 'exhibitor_details'), where('id', '==', ex.id)));
+      if (!detailDoc.empty) {
+        let detailData = detailDoc.docs[0].data();
+        
+        // Reconstitution si découpé
+        if (detailData.isChunked) {
+          const chunkDocs = await getDocs(query(collection(db, 'exhibitor_details', ex.id, 'chunks'), orderBy('index', 'asc')));
+          const fullBase64 = chunkDocs.docs.map(d => d.data().data).join('');
+          detailData.idCardPhoto = fullBase64;
+        }
+        setFullDetailedInfo(detailData);
+      }
+    } catch (e) {
+      console.error("Erreur lors de la récupération des détails", e);
+    } finally {
+      setIsLoadingFile(false);
+    }
+  };
+
   const handleOpenPdf = (dataUri: string) => {
     try {
       const base64WithoutPrefix = dataUri.split(',')[1];
@@ -587,7 +611,6 @@ export default function AdminDashboard() {
                     "Tables": e.requestedTables,
                     "Description Produits": e.productDescription,
                     "Site/Réseaux": e.websiteUrl || "",
-                    // Form 2 Info
                     "SIRET": e.detailedInfo?.siret || "",
                     "Electricité": e.detailedInfo?.needsElectricity ? "OUI" : "NON",
                     "Grille": e.detailedInfo?.needsGrid ? "OUI" : "NON",
@@ -641,7 +664,7 @@ export default function AdminDashboard() {
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button variant="outline" size="sm" title="Email" onClick={() => { setActingExhibitor(ex); setIsIndividualEmailDialogOpen(true); }} className="text-primary border-primary/20"><Mail className="w-4 h-4" /></Button>
-                              <Button variant="outline" size="sm" title="Voir" onClick={() => setViewingExhibitor(ex)}><Eye className="w-4 h-4" /></Button>
+                              <Button variant="outline" size="sm" title="Voir" onClick={() => handleViewExhibitor(ex)}><Eye className="w-4 h-4" /></Button>
                               {ex.status === 'pending' && (
                                 <>
                                   <Button size="sm" className="bg-green-600" title="Accepter" onClick={() => { setActingExhibitor(ex); setIsAcceptDialogOpen(true); }}><CheckCircle className="w-4 h-4" /></Button>
@@ -687,7 +710,7 @@ export default function AdminDashboard() {
 
           <TabsContent value="map" className="space-y-6">
             <Card className="p-4">
-              <AdminMap exhibitors={exhibitorsData || []} onViewExhibitor={setViewingExhibitor} />
+              <AdminMap exhibitors={exhibitorsData || []} onViewExhibitor={handleViewExhibitor} />
             </Card>
           </TabsContent>
 
@@ -1136,31 +1159,35 @@ export default function AdminDashboard() {
                            {viewingExhibitor.detailedInfo.siret && <p className="text-sm">SIRET : <strong>{viewingExhibitor.detailedInfo.siret}</strong></p>}
                            <div className="mt-2">
                              <p className="text-[10px] mb-1">Pièce d'identité :</p>
-                             {viewingExhibitor.detailedInfo.idCardPhoto && (
-                               <a 
-                                 href={viewingExhibitor.detailedInfo.idCardPhoto} 
-                                 target="_blank" 
-                                 rel="noopener noreferrer" 
-                                 onClick={(e) => {
-                                   if (viewingExhibitor.detailedInfo?.idCardPhoto?.startsWith('data:application/pdf')) {
-                                     e.preventDefault();
-                                     handleOpenPdf(viewingExhibitor.detailedInfo.idCardPhoto);
-                                   }
-                                 }}
-                                 className="block relative aspect-video w-full max-w-[250px] border rounded overflow-hidden group bg-muted/20"
-                               >
-                                 {viewingExhibitor.detailedInfo.idCardPhoto.startsWith('data:application/pdf') ? (
-                                   <div className="w-full h-full flex flex-col items-center justify-center text-primary">
-                                     <FileText className="w-10 h-10 mb-1" />
-                                     <span className="text-[10px] font-bold uppercase">Ouvrir le PDF</span>
+                             {isLoadingFile ? (
+                               <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="w-3 h-3 animate-spin" /> Chargement du document...</div>
+                             ) : (
+                               fullDetailedInfo?.idCardPhoto && (
+                                 <a 
+                                   href={fullDetailedInfo.idCardPhoto} 
+                                   target="_blank" 
+                                   rel="noopener noreferrer" 
+                                   onClick={(e) => {
+                                     if (fullDetailedInfo?.idCardPhoto?.startsWith('data:application/pdf')) {
+                                       e.preventDefault();
+                                       handleOpenPdf(fullDetailedInfo.idCardPhoto);
+                                     }
+                                   }}
+                                   className="block relative aspect-video w-full max-w-[250px] border rounded overflow-hidden group bg-muted/20"
+                                 >
+                                   {fullDetailedInfo.idCardPhoto.startsWith('data:application/pdf') ? (
+                                     <div className="w-full h-full flex flex-col items-center justify-center text-primary">
+                                       <FileText className="w-10 h-10 mb-1" />
+                                       <span className="text-[10px] font-bold uppercase">Ouvrir le PDF</span>
+                                     </div>
+                                   ) : (
+                                     <img src={fullDetailedInfo.idCardPhoto} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt="Pièce d'identité" />
+                                   )}
+                                   <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                     <ExternalLink className="text-white w-5 h-5" />
                                    </div>
-                                 ) : (
-                                   <img src={viewingExhibitor.detailedInfo.idCardPhoto} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt="Pièce d'identité" />
-                                 )}
-                                 <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                   <ExternalLink className="text-white w-5 h-5" />
-                                 </div>
-                               </a>
+                                 </a>
+                               )
                              )}
                            </div>
                          </div>

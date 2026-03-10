@@ -9,8 +9,6 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // BYPASS MASTER ADMIN (God Mode)
-    // Priorité absolue pour le compte de Hugues
     function isMasterAdmin() {
       return isSignedIn() && (
         request.auth.token.email == "hugues.rabier@gmail.com" ||
@@ -38,14 +36,21 @@ service cloud.firestore {
 
     match /pre_registrations/{preRegistrationId} {
       allow read, create: if true;
-      // Permettre à l'exposant de mettre à jour son statut et ses infos détaillées via son lien unique
       allow update: if isAdmin() || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'detailedInfo']));
       allow delete: if isAdmin();
+    }
+    
+    match /pre_registrations/{preRegistrationId}/chunks/{chunkId} {
+      allow read, write: if true;
     }
 
     match /exhibitor_details/{exhibitorDetailId} {
       allow read, create, update: if true;
       allow list, delete: if isAdmin();
+    }
+    
+    match /exhibitor_details/{exhibitorDetailId}/chunks/{chunkId} {
+      allow read, write: if true;
     }
 
     match /email_templates/{templateId} {

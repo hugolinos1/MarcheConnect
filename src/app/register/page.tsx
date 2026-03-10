@@ -18,10 +18,12 @@ import { useRouter } from 'next/navigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { sendApplicationNotification } from '@/app/actions/email-actions';
 import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
-import { collection, query, orderBy, addDoc } from 'firebase/firestore';
+import { collection, query, orderBy, addDoc, doc, setDoc } from 'firebase/firestore';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
+
+const CHUNK_SIZE = 800000;
 
 const formSchema = z.object({
   firstName: z.string().min(2, "Le prénom est requis"),
@@ -70,7 +72,6 @@ export default function RegisterPage() {
   const priceTable2 = currentConfig?.priceTable2 ?? 60;
   const priceMeal = currentConfig?.priceMeal ?? 8;
   const priceElectricity = currentConfig?.priceElectricity ?? 1;
-  const priceTombola = currentConfig?.priceTombola ?? 2;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -98,12 +99,11 @@ export default function RegisterPage() {
     if (images.length >= 3) return;
 
     const file = files[0];
-    // On limite à 300KB par image car il y en a 3, pour ne pas saturer le doc Firestore (1MB)
-    if (file.size > 350 * 1024) {
+    if (file.size > 3 * 1024 * 1024) {
       toast({
         variant: "destructive",
-        title: "Image trop lourde",
-        description: "Chaque photo doit faire moins de 350 Ko."
+        title: "Fichier trop lourd",
+        description: "Chaque fichier doit faire moins de 3 Mo."
       });
       e.target.value = '';
       return;
@@ -111,52 +111,13 @@ export default function RegisterPage() {
 
     setIsProcessingImage(true);
 
-    if (file.type === 'application/pdf') {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setImages(prev => [...prev, ev.target?.result as string]);
-        setIsProcessingImage(false);
-      };
-      reader.readAsDataURL(file);
-      e.target.value = '';
-      return;
-    }
-
-    const compressImage = (file: File): Promise<string> => {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (event) => {
-          const img = new (window as any).Image();
-          img.src = event.target?.result;
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 800;
-            let width = img.width;
-            let height = img.height;
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx?.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/jpeg', 0.5));
-          };
-        };
-      });
-    };
-
-    try {
-      const compressed = await compressImage(file);
-      setImages(prev => [...prev, compressed]);
-    } catch (err) {
-      console.error("Compression error:", err);
-    } finally {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setImages(prev => [...prev, ev.target?.result as string]);
       setIsProcessingImage(false);
-      e.target.value = '';
-    }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   const removeImage = (index: number) => {
@@ -176,6 +137,9 @@ export default function RegisterPage() {
     }
     
     try {
+      // Nettoyage des images pour le doc principal (on stocke des placeholders si trop gros)
+      const sanitizedImages = images.map(img => img.length > CHUNK_SIZE ? "CHUNKED_IMAGE" : img);
+
       const newExhibitor = {
         ...values,
         websiteUrl: finalWebsiteUrl,
@@ -184,22 +148,35 @@ export default function RegisterPage() {
         status: 'pending',
         marketConfigurationId: currentConfig?.id || 'default',
         createdAt: new Date().toISOString(),
-        productImages: images,
+        productImages: sanitizedImages,
       };
       
-      // On attend explicitement la réussite de Firestore avant de passer à l'email
-      await addDoc(collection(db, 'pre_registrations'), newExhibitor);
+      const docRef = await addDoc(collection(db, 'pre_registrations'), newExhibitor);
       
-      // Si on arrive ici, Firestore a réussi
+      // Enregistrement des morceaux pour chaque image trop grosse
+      for (let imgIdx = 0; imgIdx < images.length; imgIdx++) {
+        const fullImg = images[imgIdx];
+        if (fullImg.length > CHUNK_SIZE) {
+          const totalChunks = Math.ceil(fullImg.length / CHUNK_SIZE);
+          for (let i = 0; i < totalChunks; i++) {
+            const chunk = fullImg.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+            await setDoc(doc(db, 'pre_registrations', docRef.id, 'chunks', `img_${imgIdx}_${i}`), {
+              data: chunk,
+              imgIndex: imgIdx,
+              chunkIndex: i
+            });
+          }
+        }
+      }
+      
       await sendApplicationNotification(newExhibitor, currentConfig);
-      
       router.push('/register/success');
     } catch (error) {
       console.error("Erreur lors de la soumission :", error);
       toast({ 
         variant: "destructive", 
         title: "Échec de l'envoi", 
-        description: "Votre candidature n'a pas pu être envoyée. Vérifiez la taille de vos photos." 
+        description: "Votre candidature n'a pas pu être envoyée. Essayez de réduire la taille des fichiers." 
       });
     } finally {
       setIsSubmitting(false);
@@ -322,7 +299,7 @@ export default function RegisterPage() {
                 )} />
 
                 <div className="space-y-4 p-6 bg-muted/20 rounded-xl border-2 border-dashed border-primary/20">
-                  <h3 className="text-lg font-bold flex items-center gap-3 text-primary"><Camera className="w-6 h-6" /> Photos de vos produits</h3>
+                  <h3 className="text-lg font-bold flex items-center gap-3 text-primary"><Camera className="w-6 h-6" /> Photos de vos produits (Max 3 Mo / fichier)</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {images.map((img, idx) => (
                       <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border shadow-sm group">
@@ -339,7 +316,7 @@ export default function RegisterPage() {
                     {images.length < 3 && (
                       <label className="flex flex-col items-center justify-center aspect-square rounded-lg border-2 border-dashed border-muted-foreground/30 bg-white hover:bg-muted/50 cursor-pointer text-center p-2">
                         {isProcessingImage ? <Loader2 className="animate-spin" /> : <Camera className="w-8 h-8 text-muted-foreground" />}
-                        <span className="text-[10px] mt-2">Ajouter photo (max 350ko)</span>
+                        <span className="text-[10px] mt-2">Ajouter photo ou PDF</span>
                         <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleImageUpload} disabled={isProcessingImage} />
                       </label>
                     )}

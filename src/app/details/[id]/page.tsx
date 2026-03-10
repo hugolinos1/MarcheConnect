@@ -19,7 +19,9 @@ import Link from 'next/link';
 import { sendFinalConfirmationEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { doc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, collection } from 'firebase/firestore';
+
+const CHUNK_SIZE = 800000; // ~800KB chunks
 
 function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; currentConfig: any }) {
   const router = useRouter();
@@ -49,7 +51,7 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
     resolver: zodResolver(formSchema),
     defaultValues: {
       siret: exhibitor.detailedInfo?.siret || "",
-      idCardPhoto: exhibitor.detailedInfo?.idCardPhoto || "",
+      idCardPhoto: "",
       needsElectricity: exhibitor.detailedInfo?.needsElectricity || false,
       needsGrid: exhibitor.detailedInfo?.needsGrid || false,
       sundayLunchCount: exhibitor.detailedInfo?.sundayLunchCount || 0,
@@ -77,12 +79,12 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Limite à 900KB pour éviter de dépasser 1MB au total avec les autres champs
-    if (file.size > 900 * 1024) {
+    // Limite à 4MB maintenant
+    if (file.size > 4 * 1024 * 1024) {
       toast({
         variant: "destructive",
         title: "Fichier trop volumineux",
-        description: "Merci de réduire la taille de votre fichier en dessous de 900 Ko."
+        description: "Le fichier ne doit pas dépasser 4 Mo."
       });
       e.target.value = '';
       return;
@@ -90,32 +92,11 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
 
     setIsProcessingImage(true);
     
-    if (file.type === 'application/pdf') {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        form.setValue('idCardPhoto', ev.target?.result as string, { shouldValidate: true });
-        setIsProcessingImage(false);
-      };
-      reader.readAsDataURL(file);
-      return;
-    }
-
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const img = new (window as any).Image();
-      img.src = ev.target?.result as string;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1200;
-        const scaleSize = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scaleSize;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-        // Compression à 0.6 pour gagner de la place tout en gardant une lisibilité correcte
-        form.setValue('idCardPhoto', canvas.toDataURL('image/jpeg', 0.6), { shouldValidate: true });
-        setIsProcessingImage(false);
-      };
+      const data = ev.target?.result as string;
+      form.setValue('idCardPhoto', data, { shouldValidate: true });
+      setIsProcessingImage(false);
     };
     reader.readAsDataURL(file);
   };
@@ -123,27 +104,43 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     try {
-      const detailedData = {
+      const fullPhoto = values.idCardPhoto;
+      const isChunked = fullPhoto.length > CHUNK_SIZE;
+      
+      const detailedData: any = {
         ...values,
         id: exhibitor.id,
         preRegistrationId: exhibitor.id,
         marketConfigurationId: currentConfig?.id || 'default',
         submittedAt: new Date().toISOString(),
-        adminValidationStatus: 'PENDING_REVIEW'
+        isChunked: isChunked,
+        idCardPhoto: isChunked ? "CHUNKED_FILE" : fullPhoto
       };
       
-      // On sauvegarde d'abord les données techniques complètes
+      // Enregistrement des métadonnées du détail
       await setDoc(doc(db, 'exhibitor_details', exhibitor.id), detailedData, { merge: true });
       
-      // On met à jour le statut dans le document principal. 
-      // Note: On n'embarque pas la photo d'identité ici pour ne pas saturer le doc principal (limite 1Mo).
-      const { idCardPhoto, ...detailedInfoSummary } = detailedData;
+      // Si le fichier est gros, on le découpe
+      if (isChunked) {
+        const totalChunks = Math.ceil(fullPhoto.length / CHUNK_SIZE);
+        for (let i = 0; i < totalChunks; i++) {
+          const chunk = fullPhoto.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+          await setDoc(doc(db, 'exhibitor_details', exhibitor.id, 'chunks', i.toString()), {
+            data: chunk,
+            index: i
+          });
+        }
+      }
+      
+      // Mise à jour du statut dans le document principal (sans les données lourdes)
       await updateDoc(doc(db, 'pre_registrations', exhibitor.id), { 
         status: 'submitted_form2',
-        detailedInfo: detailedInfoSummary
+        detailedInfo: {
+          ...detailedData,
+          idCardPhoto: undefined // On ne pollue pas le doc principal
+        }
       });
 
-      // On n'envoie l'email que SI les écritures en base ont réussi
       await sendFinalConfirmationEmail(exhibitor, values, currentConfig);
       
       toast({ title: "Dossier enregistré !", description: "Merci pour votre finalisation." });
@@ -153,7 +150,7 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
       toast({ 
         variant: "destructive", 
         title: "Échec de l'enregistrement", 
-        description: "Une erreur est survenue lors de l'envoi de votre dossier. Vos fichiers sont peut-être trop lourds." 
+        description: "Une erreur est survenue. Le fichier est peut-être corrompu." 
       });
     } finally {
       setIsSubmitting(false);
@@ -182,7 +179,7 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
                   )}
                   <FormField control={form.control} name="idCardPhoto" render={() => (
                     <FormItem>
-                      <FormLabel>Pièce d'identité (Recto - Photo ou PDF) *</FormLabel>
+                      <FormLabel>Pièce d'identité (Photo ou PDF - Max 4 Mo) *</FormLabel>
                       <FormControl>
                         <div className="flex flex-col gap-4">
                           {idCardPhoto ? (
@@ -190,7 +187,7 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
                               {idCardPhoto.startsWith('data:application/pdf') ? (
                                 <div className="flex flex-col items-center justify-center text-primary">
                                   <FileText className="w-16 h-16 mb-2" />
-                                  <span className="font-bold">DOCUMENT PDF</span>
+                                  <span className="font-bold">DOCUMENT PDF CHARGÉ</span>
                                 </div>
                               ) : (
                                 <img src={idCardPhoto} alt="ID" className="w-full h-full object-contain" />
