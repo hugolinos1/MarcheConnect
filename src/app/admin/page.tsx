@@ -360,6 +360,13 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteExhibitor = (id: string, name: string) => {
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer l'exposant "${name}" ? Cette action est irréversible.`)) {
+      deleteDocumentNonBlocking(doc(db, 'pre_registrations', id));
+      toast({ title: "Suppression effectuée" });
+    }
+  };
+
   const handleOpenEdit = (ex: Exhibitor) => {
     setActingExhibitor(ex);
     setEditFormData({
@@ -687,13 +694,8 @@ export default function AdminDashboard() {
                                 className="text-destructive" 
                                 title="Supprimer" 
                                 onClick={(e) => { 
-                                  e.preventDefault();
                                   e.stopPropagation();
-                                  const confirmed = window.confirm("Êtes-vous sûr de vouloir supprimer cet exposant ? Cette action est irréversible.");
-                                  if (confirmed) {
-                                    deleteDocumentNonBlocking(doc(db, 'pre_registrations', ex.id));
-                                    toast({ title: "Suppression effectuée" });
-                                  }
+                                  handleDeleteExhibitor(ex.id, ex.companyName);
                                 }}
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -871,7 +873,7 @@ export default function AdminDashboard() {
                             <ShieldCheck className="w-4 h-4" />
                           </Button>
                         )}
-                        {a.id !== user.uid && <Button size="sm" variant="ghost" className="text-destructive" title="Supprimer" onClick={() => { if(window.confirm("Supprimer cet accès ?")) deleteDocumentNonBlocking(doc(db, 'roles_admin', a.id)); }}><Trash2 className="w-4 h-4" /></Button>}
+                        {a.id !== user.uid && <Button size="sm" variant="ghost" className="text-destructive" title="Supprimer" onClick={(e) => { e.preventDefault(); if(window.confirm("Supprimer cet accès ?")) deleteDocumentNonBlocking(doc(db, 'roles_admin', a.id)); }}><Trash2 className="w-4 h-4" /></Button>}
                       </div>
                     </div>
                   ))}
