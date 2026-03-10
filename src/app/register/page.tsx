@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChristmasSnow } from '@/components/ChristmasSnow';
-import { TreePine, ArrowLeft, Send, FileText, Star, Camera, X, MapPin, Loader2, ShieldCheck, Info, Lock } from 'lucide-react';
+import { TreePine, ArrowLeft, Send, FileText, Star, Camera, X, MapPin, Loader2, ShieldCheck, Info, Lock, ShieldAlert } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
@@ -137,7 +137,6 @@ export default function RegisterPage() {
     }
     
     try {
-      // Nettoyage des images pour le doc principal (on stocke des placeholders si trop gros)
       const sanitizedImages = images.map(img => img.length > CHUNK_SIZE ? "CHUNKED_IMAGE" : img);
 
       const newExhibitor = {
@@ -153,7 +152,6 @@ export default function RegisterPage() {
       
       const docRef = await addDoc(collection(db, 'pre_registrations'), newExhibitor);
       
-      // Enregistrement des morceaux pour chaque image trop grosse
       for (let imgIdx = 0; imgIdx < images.length; imgIdx++) {
         const fullImg = images[imgIdx];
         if (fullImg.length > CHUNK_SIZE) {
@@ -202,28 +200,53 @@ export default function RegisterPage() {
                 </span>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6">
-                <ScrollArea className="h-[500px] pr-4 text-xs text-muted-foreground">
+                <ScrollArea className="h-[400px] pr-4 text-xs text-muted-foreground">
                   <div className="space-y-6 pb-12 leading-relaxed">
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 1</h4>
-                      <p>Le marché aura lieu le samedi {satDate} de {satHours} et le dimanche {sunDate} de {sunHours} à la salle Maurice Baquet, rue Pierre Coubertin à Chazay d’Azergues (69380).</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 1 : Lieu et Dates</h4>
+                      <p>Le marché aura lieu le samedi {satDate} de {satHours} et le dimanche {sunDate} de {sunHours} à la salle Maurice Baquet, rue Pierre Coubertin à Chazay d’Azergues (69380). L'inscription n'est possible que sur les 2 jours consécutifs.</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 2</h4>
-                      <p>L’inscription n’est possible que sur les 2 jours.</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 2 : Admission</h4>
+                      <p>Le marché est ouvert aux artisans, créateurs et producteurs. Le comité de sélection privilégie l'artisanat local et les produits originaux. Une réponse vous sera adressée sous 3 semaines après réception de votre dossier complet.</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 3</h4>
-                      <p>Nous répondrons à toutes les candidatures dans les 3 semaines. Nous privilégions l’artisanat.</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 3 : Installation et Logistique</h4>
+                      <p>L’installation a lieu le samedi entre 11h et 13h. Les exposants s'engagent à maintenir leur stand ouvert pendant toute la durée des horaires officiels. L'électricité est disponible pour un supplément de {priceElectricity}€ (amener ses propres rallonges de 10m minimum).</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 4</h4>
-                      <p>L’installation a lieu le samedi entre 11h et 13h. Électricité disponible pour un supplément de {priceElectricity}€.</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 4 : Tarification et Paiement</h4>
+                      <p>Tarifs : {priceTable1}€ (1 table de 1.75m) / {priceTable2}€ (2 tables de 3.50m). Le règlement par chèque est à envoyer sous 15 jours après acceptation de la candidature.</p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground underline mb-1">Article 5</h4>
-                      <p>Tarifs : {priceTable1}€ (1 table) / {priceTable2}€ (2 tables). Repas dimanche : {priceMeal}€.</p>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 5 : Assurance et Responsabilité</h4>
+                      <p>L'exposant doit être couvert par une assurance Responsabilité Civile professionnelle (ou personnelle pour les particuliers). L'association décline toute responsabilité en cas de vol ou de dégradation sur les stands.</p>
                     </div>
+                    <div>
+                      <h4 className="font-bold text-foreground underline mb-1">Article 6 : Engagement Solidaire</h4>
+                      <p>En participant, vous soutenez l'association "Un Jardin pour Félix". Nous demandons à chaque exposant, dans la mesure du possible, d'offrir un petit lot (valeur indicative 10-15€) pour la tombola solidaire du dimanche.</p>
+                    </div>
+                  </div>
+                </ScrollArea>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="rgpd">
+              <AccordionTrigger className="px-6 hover:no-underline hover:bg-muted/50 text-left">
+                <span className="flex items-center gap-2 font-bold text-primary">
+                  <ShieldAlert className="w-5 h-5" /> Politique de Confidentialité (RGPD)
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-6">
+                <ScrollArea className="h-[200px] pr-4 text-xs text-muted-foreground">
+                  <div className="space-y-4 leading-relaxed">
+                    <p>Conformément au Règlement Général sur la Protection des Données (RGPD), nous vous informons sur l'usage de vos données :</p>
+                    <ul className="list-disc pl-5 space-y-2">
+                      <li><strong>Finalité :</strong> Les données collectées servent exclusivement à la gestion de votre candidature et à l'organisation logistique du marché de Noël.</li>
+                      <li><strong>Destinataires :</strong> Seuls les membres du bureau de l'association "Un Jardin pour Félix" ont accès à vos informations.</li>
+                      <li><strong>Durée de conservation :</strong> Vos données sont conservées pendant 3 ans pour vous informer des éditions futures, sauf demande contraire de votre part.</li>
+                      <li><strong>Vos droits :</strong> Vous disposez d'un droit d'accès, de rectification et de suppression de vos données en contactant l'organisateur à l'adresse : lemarchedefelix2020@gmail.com.</li>
+                    </ul>
                   </div>
                 </ScrollArea>
               </AccordionContent>
@@ -344,10 +367,10 @@ export default function RegisterPage() {
                 <div className="space-y-4 p-6 bg-primary/5 border border-primary/20 rounded-2xl">
                   <h3 className="text-sm font-bold text-primary flex items-center gap-2 uppercase"><ShieldCheck className="w-4 h-4" /> Consentements</h3>
                   <FormField control={form.control} name="agreedToGdpr" render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="text-xs">J'accepte la politique de confidentialité (RGPD) *</FormLabel></FormItem>
+                    <FormItem className="flex flex-row items-start space-x-3"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1"><FormLabel className="text-xs">J'accepte la politique de confidentialité (RGPD) *</FormLabel><FormDescription className="text-[10px]">Mes données seront traitées pour la gestion de l'événement.</FormDescription></div><FormMessage /></FormItem>
                   )} />
                   <FormField control={form.control} name="agreedToTerms" render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="text-xs">J'accepte le règlement du Marché *</FormLabel></FormItem>
+                    <FormItem className="flex flex-row items-start space-x-3 pt-2 border-t"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1"><FormLabel className="text-xs">J'accepte le règlement complet du Marché *</FormLabel><FormDescription className="text-[10px]">J'ai lu et j'accepte les conditions de participation.</FormDescription></div><FormMessage /></FormItem>
                   )} />
                 </div>
 
