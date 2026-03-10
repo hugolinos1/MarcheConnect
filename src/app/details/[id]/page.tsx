@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
@@ -18,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import { sendFinalConfirmationEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { useFirestore, useMemoFirebase, useDoc, useCollection } from '@/firebase';
 import { doc, setDoc, updateDoc, collection } from 'firebase/firestore';
 
 const CHUNK_SIZE = 800000; // ~800KB chunks
@@ -79,7 +78,6 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Limite à 4MB maintenant
     if (file.size > 4 * 1024 * 1024) {
       toast({
         variant: "destructive",
@@ -117,10 +115,8 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
         idCardPhoto: isChunked ? "CHUNKED_FILE" : fullPhoto
       };
       
-      // Enregistrement des métadonnées du détail
       await setDoc(doc(db, 'exhibitor_details', exhibitor.id), detailedData, { merge: true });
       
-      // Si le fichier est gros, on le découpe
       if (isChunked) {
         const totalChunks = Math.ceil(fullPhoto.length / CHUNK_SIZE);
         for (let i = 0; i < totalChunks; i++) {
@@ -132,12 +128,11 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
         }
       }
       
-      // Mise à jour du statut dans le document principal (sans les données lourdes)
       await updateDoc(doc(db, 'pre_registrations', exhibitor.id), { 
         status: 'submitted_form2',
         detailedInfo: {
           ...detailedData,
-          idCardPhoto: undefined // On ne pollue pas le doc principal
+          idCardPhoto: undefined
         }
       });
 
