@@ -278,15 +278,43 @@ export default function RegisterPage() {
                 </span>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6">
-                <ScrollArea className="h-[200px] pr-4 text-xs text-muted-foreground">
+                <ScrollArea className="h-[400px] pr-4 text-xs text-muted-foreground">
                   <div className="space-y-4 leading-relaxed">
-                    <p>Conformément au Règlement Général sur la Protection des Données (RGPD), nous vous informons sur l'usage de vos données :</p>
-                    <ul className="list-disc pl-5 space-y-2">
-                      <li><strong>Finalité :</strong> Les données collectées servent exclusivement à la gestion de votre candidature et à l'organisation logistique du marché de Noël.</li>
-                      <li><strong>Destinataires :</strong> Seuls les membres du bureau de l'association "Un Jardin pour Félix" ont accès à vos informations.</li>
-                      <li><strong>Durée de conservation :</strong> Vos données sont conservées pendant 3 ans pour vous informer des éditions futures, sauf demande contraire de votre part.</li>
-                      <li><strong>Vos droits :</strong> Vous disposez d'un droit d'accès, de rectification et de suppression de vos données en contactant l'organisateur à l'adresse : lemarchedefelix2020@gmail.com.</li>
-                    </ul>
+                    <p>L'association Un jardin pour Félix attache une grande importance à la protection de vos données personnelles.</p>
+                    
+                    <div>
+                      <h4 className="font-bold text-foreground mb-1">Responsable du traitement :</h4>
+                      <p>Association Un jardin pour Félix – 30 rue du Colombier 69380 Chazay d'Azergues</p>
+                      <p>Email : lemarchedefelix2020@gmail.com</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-foreground mb-1">Collecte et finalité :</h4>
+                      <p>Les données collectées via ce formulaire (nom, e-mail, téléphone, adresse, photos) sont nécessaires à la gestion de votre candidature et à l’organisation logistique du marché de Noël.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-foreground mb-1">Base légale :</h4>
+                      <p>Le traitement repose sur votre consentement, que vous pouvez retirer à tout moment.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-foreground mb-1">Destinataires :</h4>
+                      <p>Les données sont exclusivement destinées aux membres habilités de l’association.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-foreground mb-1">Conservation :</h4>
+                      <p>Vos données sont conservées pendant la durée nécessaire à l’organisation de l’événement et pour une durée maximale de 2 ans afin de vous inviter aux éditions futures, sauf demande de suppression de votre part.</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-foreground mb-1">Vos droits :</h4>
+                      <p>Conformément au RGPD, vous disposez d’un droit d’accès, de rectification, de suppression, ainsi que d’un droit à la limitation du traitement de vos données.</p>
+                      <p>Vous pouvez exercer ces droits en nous contactant à : <span className="font-semibold">lemarchedefelix2020@gmail.com</span></p>
+                    </div>
+
+                    <p className="pt-2 border-t">Vous disposez également du droit d’introduire une réclamation auprès de la CNIL.</p>
                   </div>
                 </ScrollArea>
               </AccordionContent>
