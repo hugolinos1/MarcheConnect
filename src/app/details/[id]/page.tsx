@@ -18,9 +18,8 @@ import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import { sendFinalConfirmationEmail } from '@/app/actions/email-actions';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useMemoFirebase, useDoc, useCollection } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
-import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { doc, setDoc, updateDoc } from 'firebase/firestore';
 
 function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; currentConfig: any }) {
   const router = useRouter();
@@ -78,12 +77,12 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check size (approx 800KB limit for base64 safety in Firestore document)
-    if (file.size > 800 * 1024) {
+    // Limite à 900KB pour éviter de dépasser 1MB au total avec les autres champs
+    if (file.size > 900 * 1024) {
       toast({
         variant: "destructive",
-        title: "Fichier trop lourd",
-        description: "Merci de fournir un fichier de moins de 800 Ko (utilisez un compresseur en ligne si besoin)."
+        title: "Fichier trop volumineux",
+        description: "Merci de réduire la taille de votre fichier en dessous de 900 Ko."
       });
       e.target.value = '';
       return;
@@ -91,7 +90,6 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
 
     setIsProcessingImage(true);
     
-    // Handle PDF directement
     if (file.type === 'application/pdf') {
       const reader = new FileReader();
       reader.onload = (ev) => {
@@ -102,7 +100,6 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
       return;
     }
 
-    // Handle Image with compression
     const reader = new FileReader();
     reader.onload = (ev) => {
       const img = new (window as any).Image();
@@ -115,7 +112,8 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
         canvas.height = img.height * scaleSize;
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-        form.setValue('idCardPhoto', canvas.toDataURL('image/jpeg', 0.7), { shouldValidate: true });
+        // Compression à 0.6 pour gagner de la place tout en gardant une lisibilité correcte
+        form.setValue('idCardPhoto', canvas.toDataURL('image/jpeg', 0.6), { shouldValidate: true });
         setIsProcessingImage(false);
       };
     };
@@ -134,24 +132,29 @@ function FinalizationForm({ exhibitor, currentConfig }: { exhibitor: Exhibitor; 
         adminValidationStatus: 'PENDING_REVIEW'
       };
       
-      // We initiate Firestore updates first. 
-      // With the updated security rules, the exhibitor CAN now update their pre_registration status.
-      setDocumentNonBlocking(doc(db, 'exhibitor_details', exhibitor.id), detailedData, { merge: true });
-      updateDocumentNonBlocking(doc(db, 'pre_registrations', exhibitor.id), { 
+      // On sauvegarde d'abord les données techniques complètes
+      await setDoc(doc(db, 'exhibitor_details', exhibitor.id), detailedData, { merge: true });
+      
+      // On met à jour le statut dans le document principal. 
+      // Note: On n'embarque pas la photo d'identité ici pour ne pas saturer le doc principal (limite 1Mo).
+      const { idCardPhoto, ...detailedInfoSummary } = detailedData;
+      await updateDoc(doc(db, 'pre_registrations', exhibitor.id), { 
         status: 'submitted_form2',
-        detailedInfo: detailedData
+        detailedInfo: detailedInfoSummary
       });
 
-      // Send email. This is awaited so we are sure the server action is triggered.
+      // On n'envoie l'email que SI les écritures en base ont réussi
       await sendFinalConfirmationEmail(exhibitor, values, currentConfig);
       
       toast({ title: "Dossier enregistré !", description: "Merci pour votre finalisation." });
-      
-      // Delay slightly to ensure background firestore sync has time to start
-      setTimeout(() => router.push('/register/success?type=final'), 1500);
+      router.push('/register/success?type=final');
     } catch (error) {
       console.error("Submission error:", error);
-      toast({ variant: "destructive", title: "Erreur technique", description: "Une erreur est survenue lors de l'enregistrement. Veuillez vérifier la taille de vos fichiers." });
+      toast({ 
+        variant: "destructive", 
+        title: "Échec de l'enregistrement", 
+        description: "Une erreur est survenue lors de l'envoi de votre dossier. Vos fichiers sont peut-être trop lourds." 
+      });
     } finally {
       setIsSubmitting(false);
     }
