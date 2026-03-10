@@ -3,4 +3,4 @@ runConfig:
   maxInstances: 5
   memory: 1Gi
   cpu: 1
-  timeoutSeconds: 60
+  timeoutSeconds: 120 # Augmenté à 2 minutes pour sécuriser les traitements lourds et l'IA
