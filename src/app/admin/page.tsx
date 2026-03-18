@@ -492,6 +492,15 @@ export default function AdminDashboard() {
     return null;
   };
 
+  const getExhibitorPricing = (ex: Exhibitor) => {
+    if (!currentConfig) return null;
+    const standPrice = ex.requestedTables === '1' ? (currentConfig.priceTable1 ?? 40) : (currentConfig.priceTable2 ?? 60);
+    const electricityPrice = ex.detailedInfo?.needsElectricity ? (currentConfig.priceElectricity ?? 1) : 0;
+    const mealsPrice = (ex.detailedInfo?.sundayLunchCount || 0) * (currentConfig.priceMeal ?? 8);
+    const total = standPrice + electricityPrice + mealsPrice;
+    return { standPrice, electricityPrice, mealsPrice, total };
+  };
+
   if (isUserLoading || isRoleLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
 
   if (!user) {
@@ -1150,95 +1159,127 @@ export default function AdminDashboard() {
                  </div>
 
                  {viewingExhibitor.detailedInfo ? (
-                   <div className="space-y-6 pt-6 border-t">
-                     <h3 className="text-sm font-bold uppercase text-primary border-b pb-2 flex items-center gap-2">
-                       <Zap className="w-4 h-4" /> 2. Dossier Technique (Finalisation)
-                     </h3>
-                     <div className="grid md:grid-cols-2 gap-8">
-                       <div className="space-y-4">
-                         <div className="space-y-1">
-                           <p className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1"><CreditCard className="w-3 h-3" /> Administratif</p>
-                           {viewingExhibitor.detailedInfo.siret && <p className="text-sm">SIRET : <strong>{viewingExhibitor.detailedInfo.siret}</strong></p>}
-                           <div className="mt-2">
-                             <p className="text-[10px] mb-1">Pièce d'identité :</p>
-                             {isLoadingFile ? (
-                               <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="w-3 h-3 animate-spin" /> Chargement du document...</div>
-                             ) : (
-                               fullDetailedInfo?.idCardPhoto && (
-                                 <a 
-                                   href={fullDetailedInfo.idCardPhoto} 
-                                   target="_blank" 
-                                   rel="noopener noreferrer" 
-                                   onClick={(e) => {
-                                     if (fullDetailedInfo?.idCardPhoto?.startsWith('data:application/pdf')) {
-                                       e.preventDefault();
-                                       handleOpenPdf(fullDetailedInfo.idCardPhoto);
-                                     }
-                                   }}
-                                   className="block relative aspect-video w-full max-w-[250px] border rounded overflow-hidden group bg-muted/20"
-                                 >
-                                   {fullDetailedInfo.idCardPhoto.startsWith('data:application/pdf') ? (
-                                     <div className="w-full h-full flex flex-col items-center justify-center text-primary">
-                                       <FileText className="w-10 h-10 mb-1" />
-                                       <span className="text-[10px] font-bold uppercase">Ouvrir le PDF</span>
+                   <>
+                     <div className="space-y-6 pt-6 border-t">
+                       <h3 className="text-sm font-bold uppercase text-primary border-b pb-2 flex items-center gap-2">
+                         <Zap className="w-4 h-4" /> 2. Dossier Technique (Finalisation)
+                       </h3>
+                       <div className="grid md:grid-cols-2 gap-8">
+                         <div className="space-y-4">
+                           <div className="space-y-1">
+                             <p className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1"><CreditCard className="w-3 h-3" /> Administratif</p>
+                             {viewingExhibitor.detailedInfo.siret && <p className="text-sm">SIRET : <strong>{viewingExhibitor.detailedInfo.siret}</strong></p>}
+                             <div className="mt-2">
+                               <p className="text-[10px] mb-1">Pièce d'identité :</p>
+                               {isLoadingFile ? (
+                                 <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="w-3 h-3 animate-spin" /> Chargement du document...</div>
+                               ) : (
+                                 fullDetailedInfo?.idCardPhoto && (
+                                   <a 
+                                     href={fullDetailedInfo.idCardPhoto} 
+                                     target="_blank" 
+                                     rel="noopener noreferrer" 
+                                     onClick={(e) => {
+                                       if (fullDetailedInfo?.idCardPhoto?.startsWith('data:application/pdf')) {
+                                         e.preventDefault();
+                                         handleOpenPdf(fullDetailedInfo.idCardPhoto);
+                                       }
+                                     }}
+                                     className="block relative aspect-video w-full max-w-[250px] border rounded overflow-hidden group bg-muted/20"
+                                   >
+                                     {fullDetailedInfo.idCardPhoto.startsWith('data:application/pdf') ? (
+                                       <div className="w-full h-full flex flex-col items-center justify-center text-primary">
+                                         <FileText className="w-10 h-10 mb-1" />
+                                         <span className="text-[10px] font-bold uppercase">Ouvrir le PDF</span>
+                                       </div>
+                                     ) : (
+                                       <img src={fullDetailedInfo.idCardPhoto} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt="Pièce d'identité" />
+                                     )}
+                                     <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                       <ExternalLink className="text-white w-5 h-5" />
                                      </div>
-                                   ) : (
-                                     <img src={fullDetailedInfo.idCardPhoto} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt="Pièce d'identité" />
-                                   )}
-                                   <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                     <ExternalLink className="text-white w-5 h-5" />
-                                   </div>
-                                 </a>
-                               )
+                                   </a>
+                                 )
+                               )}
+                             </div>
+                           </div>
+                           <div className="space-y-1">
+                             <p className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1"><Shield className="w-3 h-3" /> Assurance & Accord</p>
+                             <p className="text-sm">Cie : {viewingExhibitor.detailedInfo.insuranceCompany || "N/A"}</p>
+                             <p className="text-sm">Police : {viewingExhibitor.detailedInfo.insurancePolicyNumber || "N/A"}</p>
+                             <div className="flex gap-2 mt-1">
+                               {viewingExhibitor.detailedInfo.agreedToImageRights && <Badge variant="outline" className="text-[10px]">Droit Image OK</Badge>}
+                               {viewingExhibitor.detailedInfo.agreedToTerms && <Badge variant="outline" className="text-[10px]">Règlement OK</Badge>}
+                             </div>
+                           </div>
+                         </div>
+                         <div className="space-y-4">
+                           <div className="space-y-1">
+                             <p className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1"><Settings className="w-3 h-3" /> Logistique</p>
+                             <div className="flex flex-col gap-2">
+                               <div className="flex items-center justify-between text-sm bg-muted/20 p-2 rounded">
+                                 <span className="flex items-center gap-2"><Zap className="w-3 h-3 text-amber-500" /> Électricité</span>
+                                 <Badge variant={viewingExhibitor.detailedInfo.needsElectricity ? "default" : "secondary"}>{viewingExhibitor.detailedInfo.needsElectricity ? "OUI" : "NON"}</Badge>
+                               </div>
+                               <div className="flex items-center justify-between text-sm bg-muted/20 p-2 rounded">
+                                 <span className="flex items-center gap-2"><LayoutGrid className="w-3 h-3 text-blue-500" /> Grille Expo</span>
+                                 <Badge variant={viewingExhibitor.detailedInfo.needsGrid ? "default" : "secondary"}>{viewingExhibitor.detailedInfo.needsGrid ? "OUI" : "NON"}</Badge>
+                               </div>
+                               <div className="flex items-center justify-between text-sm bg-muted/20 p-2 rounded">
+                                 <span className="flex items-center gap-2"><Utensils className="w-3 h-3 text-green-500" /> Repas Dimanche</span>
+                                 <Badge>{viewingExhibitor.detailedInfo.sundayLunchCount || 0}</Badge>
+                               </div>
+                             </div>
+                           </div>
+                           <div className="space-y-1">
+                             <p className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1"><Gift className="w-3 h-3" /> Tombola solidaire</p>
+                             <p className="text-sm">{viewingExhibitor.detailedInfo.tombolaLot ? "✅ Offre un lot" : "❌ Pas de lot"}</p>
+                             {viewingExhibitor.detailedInfo.tombolaLotDescription && (
+                               <p className="text-xs italic bg-amber-50 p-2 rounded border border-amber-100 mt-1">
+                                 "{viewingExhibitor.detailedInfo.tombolaLotDescription}"
+                               </p>
                              )}
                            </div>
                          </div>
-                         <div className="space-y-1">
-                           <p className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1"><Shield className="w-3 h-3" /> Assurance & Accord</p>
-                           <p className="text-sm">Cie : {viewingExhibitor.detailedInfo.insuranceCompany || "N/A"}</p>
-                           <p className="text-sm">Police : {viewingExhibitor.detailedInfo.insurancePolicyNumber || "N/A"}</p>
-                           <div className="flex gap-2 mt-1">
-                             {viewingExhibitor.detailedInfo.agreedToImageRights && <Badge variant="outline" className="text-[10px]">Droit Image OK</Badge>}
-                             {viewingExhibitor.detailedInfo.agreedToTerms && <Badge variant="outline" className="text-[10px]">Règlement OK</Badge>}
-                           </div>
-                         </div>
                        </div>
-                       <div className="space-y-4">
-                         <div className="space-y-1">
-                           <p className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1"><Settings className="w-3 h-3" /> Logistique</p>
-                           <div className="flex flex-col gap-2">
-                             <div className="flex items-center justify-between text-sm bg-muted/20 p-2 rounded">
-                               <span className="flex items-center gap-2"><Zap className="w-3 h-3 text-amber-500" /> Électricité</span>
-                               <Badge variant={viewingExhibitor.detailedInfo.needsElectricity ? "default" : "secondary"}>{viewingExhibitor.detailedInfo.needsElectricity ? "OUI" : "NON"}</Badge>
-                             </div>
-                             <div className="flex items-center justify-between text-sm bg-muted/20 p-2 rounded">
-                               <span className="flex items-center gap-2"><LayoutGrid className="w-3 h-3 text-blue-500" /> Grille Expo</span>
-                               <Badge variant={viewingExhibitor.detailedInfo.needsGrid ? "default" : "secondary"}>{viewingExhibitor.detailedInfo.needsGrid ? "OUI" : "NON"}</Badge>
-                             </div>
-                             <div className="flex items-center justify-between text-sm bg-muted/20 p-2 rounded">
-                               <span className="flex items-center gap-2"><Utensils className="w-3 h-3 text-green-500" /> Repas Dimanche</span>
-                               <Badge>{viewingExhibitor.detailedInfo.sundayLunchCount || 0}</Badge>
-                             </div>
-                           </div>
+                       {viewingExhibitor.detailedInfo.additionalComments && (
+                         <div className="space-y-2">
+                           <p className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Commentaires supplémentaires</p>
+                           <p className="text-sm bg-primary/5 p-4 rounded-lg border italic">"{viewingExhibitor.detailedInfo.additionalComments}"</p>
                          </div>
-                         <div className="space-y-1">
-                           <p className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1"><Gift className="w-3 h-3" /> Tombola solidaire</p>
-                           <p className="text-sm">{viewingExhibitor.detailedInfo.tombolaLot ? "✅ Offre un lot" : "❌ Pas de lot"}</p>
-                           {viewingExhibitor.detailedInfo.tombolaLotDescription && (
-                             <p className="text-xs italic bg-amber-50 p-2 rounded border border-amber-100 mt-1">
-                               "{viewingExhibitor.detailedInfo.tombolaLotDescription}"
-                             </p>
-                           )}
-                         </div>
-                       </div>
+                       )}
                      </div>
-                     {viewingExhibitor.detailedInfo.additionalComments && (
-                       <div className="space-y-2">
-                         <p className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Commentaires supplémentaires</p>
-                         <p className="text-sm bg-primary/5 p-4 rounded-lg border italic">"{viewingExhibitor.detailedInfo.additionalComments}"</p>
-                       </div>
-                     )}
-                   </div>
+
+                     <div className="space-y-6 pt-6 border-t">
+                       <h3 className="text-sm font-bold uppercase text-primary border-b pb-2 flex items-center gap-2">
+                         <Calculator className="w-4 h-4" /> 3. Récapitulatif Financier
+                       </h3>
+                       {getExhibitorPricing(viewingExhibitor) && (
+                         <div className="bg-primary/5 rounded-xl p-4 border border-primary/10 space-y-2">
+                           <div className="flex justify-between text-sm">
+                             <span>Emplacement ({viewingExhibitor.requestedTables} table(s))</span>
+                             <span className="font-bold">{getExhibitorPricing(viewingExhibitor)?.standPrice} €</span>
+                           </div>
+                           {viewingExhibitor.detailedInfo.needsElectricity && (
+                             <div className="flex justify-between text-sm">
+                               <span>Option Électricité</span>
+                               <span className="font-bold">{getExhibitorPricing(viewingExhibitor)?.electricityPrice} €</span>
+                             </div>
+                           )}
+                           {viewingExhibitor.detailedInfo.sundayLunchCount > 0 && (
+                             <div className="flex justify-between text-sm">
+                               <span>Repas Dimanche ({viewingExhibitor.detailedInfo.sundayLunchCount})</span>
+                               <span className="font-bold">{getExhibitorPricing(viewingExhibitor)?.mealsPrice} €</span>
+                             </div>
+                           )}
+                           <div className="flex justify-between items-center pt-2 border-t mt-2 text-lg font-bold text-primary">
+                             <span>TOTAL À RÉGLER</span>
+                             <span>{getExhibitorPricing(viewingExhibitor)?.total} €</span>
+                           </div>
+                         </div>
+                       )}
+                     </div>
+                   </>
                  ) : (
                    <div className="p-8 border-2 border-dashed rounded-xl text-center bg-muted/10">
                      <Clock className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
